@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
+import java.sql.Timestamp;
 import java.sql.ResultSet;
 import java.time.Instant;
 import java.util.UUID;
@@ -31,8 +31,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  */
 @Testcontainers
 @ActiveProfiles("test")
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-class FlywayIdentityMigrationIT {
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+class FlywayIdentityMigrationIntegrationTest {
 
     @Container
     static final PostgreSQLContainer<?> POSTGRES =
@@ -90,7 +90,7 @@ class FlywayIdentityMigrationIT {
         jdbc.update(
                 "INSERT INTO tenant (id, name, status, timezone, created_at, updated_at) "
                         + "VALUES (?, ?, ?, ?, ?, ?)",
-                id, name, "ACTIVE", "Europe/Madrid", now, now);
+                id, name, "ACTIVE", "Europe/Madrid", Timestamp.from(now), Timestamp.from(now));
         return id;
     }
 
@@ -101,7 +101,7 @@ class FlywayIdentityMigrationIT {
                 "INSERT INTO app_user (id, tenant_id, email, password_hash, first_name, "
                         + "last_name, status, created_at, updated_at) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                id, tenantId, email, "hash", "First", "Last", "ACTIVE", now, now);
+                id, tenantId, email, "hash", "First", "Last", "ACTIVE", Timestamp.from(now), Timestamp.from(now));
     }
 
     private static boolean tableExists(Connection connection, String tableName) throws Exception {

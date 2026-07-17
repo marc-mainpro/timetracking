@@ -72,7 +72,7 @@ Sin stack traces ni detalles internos. `errorCode` estable y documentado. Errore
 ## 8. Testing
 
 - Unitario: dominio ≥90 %, aplicación ≥80 % (JaCoCo lo verifica en build).
-- Integración: Testcontainers PostgreSQL (repositorios, Flyway, seguridad, multitenancy, controladores, outbox).
+- Integración: Testcontainers PostgreSQL (repositorios, Flyway, seguridad, multitenancy, controladores, outbox). **Convención de nombre: `*IntegrationTest.java`** (Surefire NO ejecuta `*IT.java`: no hay Failsafe configurado; un test mal nombrado no se ejecuta nunca).
 - Arquitectura: ArchUnit según §4.
 - Prohibido bajar umbrales de cobertura u omitir tests "por tiempo".
 
