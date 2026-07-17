@@ -14,6 +14,11 @@ public record WorkdayAdjustment(Instant startedAt, Instant endedAt, List<Adjuste
             throw new IllegalArgumentException("La jornada ajustada no puede finalizar antes de comenzar");
         }
         breaks = List.copyOf(breaks);
+        for (AdjustedBreak breakEntry : breaks) {
+            if (breakEntry.startedAt().isBefore(startedAt) || breakEntry.endedAt().isAfter(endedAt)) {
+                throw new IllegalArgumentException("Las pausas ajustadas deben quedar dentro de la jornada");
+            }
+        }
     }
 
     public record AdjustedBreak(Instant startedAt, Instant endedAt) {
