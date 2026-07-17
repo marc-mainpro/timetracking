@@ -7,7 +7,7 @@
 | T103 | Docker Compose + Flyway | hecha | validada: compose up → health UP, Flyway v1 aplicada |
 | T104 | CI | pendiente | |
 | T105 | Docs, ADR, AGENTS, skills | hecha | validada: AGENTS literal, 8 skills completas, ADR 1-6 |
-| T106 | ArchUnit | pendiente | |
+| T106 | ArchUnit | hecha | validada: 14 tests verdes, detección de violaciones probada |
 | T201 | Migración identidad | pendiente | |
 | T202 | Dominio Tenant/User | pendiente | |
 | T203 | RegisterTenant | pendiente | |
