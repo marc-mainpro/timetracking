@@ -9,6 +9,7 @@ import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.timetracking.domain.Workday;
 import com.tfp.timetracking.timetracking.domain.WorkdayAlreadyOpenException;
 import com.tfp.timetracking.timetracking.domain.WorkdayRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,7 +49,12 @@ public class StartWorkdayUseCase {
             throw new WorkdayAlreadyOpenException();
         }
         Workday workday = Workday.start(tenantId, userId, clock.now(), idGenerator);
-        Workday saved = workdayRepository.save(workday);
+        Workday saved;
+        try {
+            saved = workdayRepository.save(workday);
+        } catch (DataIntegrityViolationException ex) {
+            throw new WorkdayAlreadyOpenException();
+        }
         domainEventPublisher.publish(workday.pullDomainEvents());
         return saved;
     }

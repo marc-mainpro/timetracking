@@ -35,6 +35,7 @@ class CorrectionRequestTest {
 
         assertThat(request.id()).isEqualTo(correctionId);
         assertThat(request.status()).isEqualTo(CorrectionRequestStatus.PENDING);
+        assertThat(request.version()).isZero();
         assertThat(request.reason()).isEqualTo("Olvido de salida");
         List<Object> events = request.pullDomainEvents();
         assertThat(events).hasSize(1);
@@ -91,6 +92,7 @@ class CorrectionRequestTest {
                 null,
                 null,
                 null,
+                0L,
                 NOW);
 
         assertThat(request.pullDomainEvents()).isEmpty();

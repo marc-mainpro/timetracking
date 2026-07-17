@@ -22,6 +22,7 @@ public final class CorrectionRequest {
     private UUID resolvedBy;
     private Instant resolvedAt;
     private String resolutionComment;
+    private final long version;
     private final Instant createdAt;
     private final List<Object> domainEvents = new ArrayList<>();
 
@@ -36,6 +37,7 @@ public final class CorrectionRequest {
             UUID resolvedBy,
             Instant resolvedAt,
             String resolutionComment,
+            long version,
             Instant createdAt) {
         this.id = id;
         this.tenantId = tenantId;
@@ -47,6 +49,7 @@ public final class CorrectionRequest {
         this.resolvedBy = resolvedBy;
         this.resolvedAt = resolvedAt;
         this.resolutionComment = resolutionComment;
+        this.version = version;
         this.createdAt = createdAt;
     }
 
@@ -77,6 +80,7 @@ public final class CorrectionRequest {
                 null,
                 null,
                 null,
+                0L,
                 now);
         correctionRequest.domainEvents.add(new CorrectionRequested(idGenerator.newId(), now, tenantId, id, workdayId, requestedBy));
         return correctionRequest;
@@ -93,6 +97,7 @@ public final class CorrectionRequest {
             UUID resolvedBy,
             Instant resolvedAt,
             String resolutionComment,
+            long version,
             Instant createdAt) {
         Objects.requireNonNull(id, "id no puede ser null");
         Objects.requireNonNull(tenantId, "tenantId no puede ser null");
@@ -112,6 +117,7 @@ public final class CorrectionRequest {
                 resolvedBy,
                 resolvedAt,
                 resolutionComment,
+                version,
                 createdAt);
     }
 
@@ -172,5 +178,6 @@ public final class CorrectionRequest {
     public UUID resolvedBy() { return resolvedBy; }
     public Instant resolvedAt() { return resolvedAt; }
     public String resolutionComment() { return resolutionComment; }
+    public long version() { return version; }
     public Instant createdAt() { return createdAt; }
 }

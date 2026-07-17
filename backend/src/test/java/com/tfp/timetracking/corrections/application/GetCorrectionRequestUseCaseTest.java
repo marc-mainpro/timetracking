@@ -25,7 +25,7 @@ class GetCorrectionRequestUseCaseTest {
         UUID userId = UUID.randomUUID();
         CorrectionRequest correction = CorrectionRequest.reconstitute(
                 UUID.randomUUID(), tenantId, UUID.randomUUID(), UUID.randomUUID(), "reason", validChanges(),
-                CorrectionRequestStatus.PENDING, null, null, null, Instant.now());
+                CorrectionRequestStatus.PENDING, null, null, null, 0L, Instant.now());
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(tenantContext.currentUserId()).thenReturn(userId);
         when(tenantContext.currentRoles()).thenReturn(java.util.Set.of("EMPLOYEE"));

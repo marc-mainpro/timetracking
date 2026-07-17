@@ -44,7 +44,7 @@ class ApproveCorrectionRequestUseCaseTest {
                 Instant.parse("2026-01-15T09:00:00Z"), Instant.parse("2026-01-15T18:00:00Z"), List.of());
         CorrectionRequest correction = CorrectionRequest.reconstitute(
                 UUID.randomUUID(), tenantId, workday.id(), workday.employeeId(), "ajuste", validChanges(),
-                CorrectionRequestStatus.PENDING, null, null, null, Instant.parse("2026-01-16T09:00:00Z"));
+                CorrectionRequestStatus.PENDING, null, null, null, 0L, Instant.parse("2026-01-16T09:00:00Z"));
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(tenantContext.currentUserId()).thenReturn(resolverId);
         when(correctionRepository.findById(tenantId, correction.id())).thenReturn(java.util.Optional.of(correction));

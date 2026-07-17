@@ -30,7 +30,7 @@ class RejectCorrectionRequestUseCaseTest {
         UUID actorId = UUID.randomUUID();
         CorrectionRequest correction = CorrectionRequest.reconstitute(
                 UUID.randomUUID(), tenantId, UUID.randomUUID(), UUID.randomUUID(), "reason", validChanges(),
-                CorrectionRequestStatus.PENDING, null, null, null, Instant.parse("2026-01-16T09:00:00Z"));
+                CorrectionRequestStatus.PENDING, null, null, null, 0L, Instant.parse("2026-01-16T09:00:00Z"));
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(tenantContext.currentUserId()).thenReturn(actorId);
         when(repository.findById(tenantId, correction.id())).thenReturn(java.util.Optional.of(correction));

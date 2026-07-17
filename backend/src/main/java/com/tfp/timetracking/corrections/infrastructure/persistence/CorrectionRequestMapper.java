@@ -22,7 +22,8 @@ final class CorrectionRequestMapper {
                 correctionRequest.resolvedBy(),
                 correctionRequest.resolvedAt(),
                 correctionRequest.resolutionComment(),
-                correctionRequest.createdAt());
+                correctionRequest.createdAt(),
+                correctionRequest.version());
     }
 
     static CorrectionRequest toDomain(CorrectionRequestJpaEntity entity, ObjectMapper objectMapper) {
@@ -37,6 +38,7 @@ final class CorrectionRequestMapper {
                 entity.getResolvedBy(),
                 entity.getResolvedAt(),
                 entity.getResolutionComment(),
+                entity.getVersion(),
                 entity.getCreatedAt());
     }
 

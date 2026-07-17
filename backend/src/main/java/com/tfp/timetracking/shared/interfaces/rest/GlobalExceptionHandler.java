@@ -2,6 +2,7 @@ package com.tfp.timetracking.shared.interfaces.rest;
 
 import com.tfp.timetracking.shared.application.ResourceNotFoundException;
 import com.tfp.timetracking.shared.domain.DomainException;
+import jakarta.persistence.OptimisticLockException;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.UUID;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -81,8 +83,23 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
-    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
-    public ProblemDetail handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
+    @ExceptionHandler({ObjectOptimisticLockingFailureException.class, OptimisticLockException.class})
+    public ProblemDetail handleOptimisticLock(Exception ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Conflicto de concurrencia");
+        problem.setTitle("Concurrent modification");
+        enrich(problem, "CONCURRENT_MODIFICATION");
+        return problem;
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        String message = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
+        if (message != null && message.contains("ux_workday_active")) {
+            ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "El empleado ya tiene una jornada activa");
+            problem.setTitle("Business rule violation");
+            enrich(problem, "WORKDAY_ALREADY_OPEN");
+            return problem;
+        }
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Conflicto de concurrencia");
         problem.setTitle("Concurrent modification");
         enrich(problem, "CONCURRENT_MODIFICATION");

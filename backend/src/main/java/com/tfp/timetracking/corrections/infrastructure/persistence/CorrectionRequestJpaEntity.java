@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.UUID;
 import org.hibernate.annotations.ColumnTransformer;
@@ -47,6 +48,10 @@ public class CorrectionRequestJpaEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version;
+
     protected CorrectionRequestJpaEntity() {}
 
     public CorrectionRequestJpaEntity(
@@ -60,7 +65,8 @@ public class CorrectionRequestJpaEntity {
             UUID resolvedBy,
             Instant resolvedAt,
             String resolutionComment,
-            Instant createdAt) {
+            Instant createdAt,
+            long version) {
         this.id = id;
         this.tenantId = tenantId;
         this.workdayId = workdayId;
@@ -72,6 +78,7 @@ public class CorrectionRequestJpaEntity {
         this.resolvedAt = resolvedAt;
         this.resolutionComment = resolutionComment;
         this.createdAt = createdAt;
+        this.version = version;
     }
 
     public UUID getId() { return id; }
@@ -85,4 +92,5 @@ public class CorrectionRequestJpaEntity {
     public Instant getResolvedAt() { return resolvedAt; }
     public String getResolutionComment() { return resolutionComment; }
     public Instant getCreatedAt() { return createdAt; }
+    public long getVersion() { return version; }
 }

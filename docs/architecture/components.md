@@ -43,3 +43,24 @@ Cada módulo se organiza en capas, de dentro hacia fuera:
 
 En `timetracking`, el agregado `Workday` se persiste completo junto a sus
 `BreakEntry` como una unidad con `@Version` para bloqueo optimista.
+
+En `corrections`, `CorrectionRequest` tambien usa `@Version` y se resuelve en
+la misma transaccion que el ajuste de `Workday` y la escritura de auditoria.
+
+## Estrategia de concurrencia
+
+- `Workday` y `CorrectionRequest` usan bloqueo optimista con columna `version`.
+- `GlobalExceptionHandler` traduce `ObjectOptimisticLockingFailureException` y
+  `OptimisticLockException` a HTTP `409` con `errorCode = CONCURRENT_MODIFICATION`.
+- El arranque de jornada tiene una segunda red en base de datos:
+  `ux_workday_active` impide dos jornadas activas para el mismo
+  `tenant_id + employee_id` incluso si dos requests pasan la comprobacion de
+  negocio a la vez.
+- Esa violacion de unicidad tambien se traduce a HTTP `409`; para la jornada
+  activa el `errorCode` es `WORKDAY_ALREADY_OPEN`.
+- Las pruebas de carrera de `T604` fuerzan colisiones reales con barreras en
+  los puertos de repositorio, sin `sleep`, para validar:
+  - doble cierre simultaneo de jornada
+  - doble aprobacion simultanea de la misma correccion
+  - doble `start` simultaneo de jornada
+  - carrera entre `startBreak` y `endWorkday`
