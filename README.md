@@ -1,5 +1,9 @@
 # TFP — MVP control horario
 
+[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+
+> El badge usa el placeholder `OWNER/REPO`: sustitúyelo por el owner/repo reales en cuanto se cree el remote de GitHub.
+
 MVP SaaS multitenant de control horario (fichajes, correcciones, informes, auditoría y eventos vía Transactional Outbox). Monolito modular. Ver `SDD-MVP-control-horario.md` para el diseño completo.
 
 ## Arranque local con Docker Compose
@@ -56,7 +60,13 @@ Requisitos: Docker y Docker Compose.
 - `docs/` — Documentación adicional.
 - `tasks/` — Fichas de tareas y contexto de ejecución.
 
+## CI
+
+`.github/workflows/ci.yml` ejecuta en cada `push` a `main` y en cada `pull_request`:
+
+- **backend**: JDK 21, `mvn -B verify` (tests, ArchUnit, umbrales de cobertura JaCoCo con Testcontainers PostgreSQL) y publica el informe JaCoCo como artefacto.
+- **frontend**: Node 20, `npm ci`, `ng lint`, `ng test --watch=false --browsers=ChromeHeadless`, `ng build`.
+
 ## Fuera de alcance de este compose
 
 - Servicio `frontend` (se añadirá en una tarea posterior).
-- CI (GitHub Actions se configura en una tarea aparte).
