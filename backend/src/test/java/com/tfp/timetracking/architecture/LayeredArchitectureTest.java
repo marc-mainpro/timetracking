@@ -9,6 +9,12 @@ import com.tfp.timetracking.identity.interfaces.rest.EmployeeController;
 import com.tfp.timetracking.identity.domain.User;
 import com.tfp.timetracking.identity.domain.UserStatus;
 import com.tfp.timetracking.identity.domain.Email;
+import com.tfp.timetracking.corrections.interfaces.rest.CorrectionRestMapper;
+import com.tfp.timetracking.corrections.interfaces.rest.CorrectionController;
+import com.tfp.timetracking.corrections.domain.CorrectionRequest;
+import com.tfp.timetracking.corrections.domain.CorrectionRequestStatus;
+import com.tfp.timetracking.corrections.domain.ProposedChanges;
+import com.tfp.timetracking.corrections.domain.ProposedChanges.ProposedBreak;
 import com.tfp.timetracking.timetracking.interfaces.rest.WorkdayRestMapper;
 import com.tfp.timetracking.timetracking.domain.Workday;
 import com.tfp.timetracking.timetracking.domain.BreakEntry;
@@ -63,6 +69,12 @@ class LayeredArchitectureTest {
             .ignoreDependency(EmployeeRestMapper.class, Email.class)
             .ignoreDependency(EmployeeRestMapper.class, PagedResult.class)
             .ignoreDependency(EmployeeController.class, UserStatus.class)
+            .ignoreDependency(CorrectionRestMapper.class, CorrectionRequest.class)
+            .ignoreDependency(CorrectionRestMapper.class, CorrectionRequestStatus.class)
+            .ignoreDependency(CorrectionRestMapper.class, ProposedChanges.class)
+            .ignoreDependency(CorrectionRestMapper.class, ProposedBreak.class)
+            .ignoreDependency(CorrectionRestMapper.class, PagedResult.class)
+            .ignoreDependency(CorrectionController.class, CorrectionRequestStatus.class)
             .ignoreDependency(WorkdayRestMapper.class, Workday.class)
             .ignoreDependency(WorkdayRestMapper.class, BreakEntry.class)
             .ignoreDependency(WorkdayRestMapper.class, WorkdayStatus.class)

@@ -2,6 +2,8 @@ package com.tfp.timetracking.corrections.infrastructure.persistence;
 
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,4 +24,13 @@ interface CorrectionRequestJpaRepository extends JpaRepository<CorrectionRequest
             @Param("tenantId") UUID tenantId,
             @Param("workdayId") UUID workdayId,
             @Param("requestedBy") UUID requestedBy);
+
+    Page<CorrectionRequestJpaEntity> findByTenantId(UUID tenantId, Pageable pageable);
+
+    Page<CorrectionRequestJpaEntity> findByTenantIdAndStatus(UUID tenantId, String status, Pageable pageable);
+
+    Page<CorrectionRequestJpaEntity> findByTenantIdAndRequestedBy(UUID tenantId, UUID requestedBy, Pageable pageable);
+
+    Page<CorrectionRequestJpaEntity> findByTenantIdAndRequestedByAndStatus(
+            UUID tenantId, UUID requestedBy, String status, Pageable pageable);
 }

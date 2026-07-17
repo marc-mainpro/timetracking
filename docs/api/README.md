@@ -30,6 +30,11 @@ especificación cuando exista un pipeline que lo publique.
 | PATCH | `/api/v1/employees/{employeeId}/activate` | `TENANT_ADMIN` | T501 |
 | PATCH | `/api/v1/employees/{employeeId}/deactivate` | `TENANT_ADMIN` | T501 |
 | PUT | `/api/v1/employees/{employeeId}/roles` | `TENANT_ADMIN` | T501 |
+| POST | `/api/v1/workdays/{workdayId}/corrections` | `EMPLOYEE` | T602 |
+| GET | `/api/v1/corrections` | `EMPLOYEE` / `TENANT_ADMIN` | T602 |
+| GET | `/api/v1/corrections/{correctionId}` | `EMPLOYEE` / `TENANT_ADMIN` | T602 |
+| POST | `/api/v1/corrections/{correctionId}/approve` | `TENANT_ADMIN` | T602 |
+| POST | `/api/v1/corrections/{correctionId}/reject` | `TENANT_ADMIN` | T602 |
 
 `POST /api/v1/auth/register`: crea un tenant y su primer usuario
 `TENANT_ADMIN` de forma transaccional. Body: `tenantName`, `timezone`,
@@ -97,6 +102,25 @@ empleado. Desactivar revoca sus refresh tokens.
 `PUT /api/v1/employees/{employeeId}/roles`: reemplaza los roles del empleado.
 No se permite dejar al tenant sin ningún `TENANT_ADMIN` activo (`409`
 `LAST_ADMIN`).
+
+`POST /api/v1/workdays/{workdayId}/corrections`: crea una solicitud de
+corrección sobre una jornada propia del empleado autenticado. Si la jornada no
+es propia o no existe, responde `404`. Si ya existe una solicitud `PENDING`
+del mismo solicitante para esa jornada, responde `409`
+`CORRECTION_ALREADY_PENDING`.
+
+`GET /api/v1/corrections`: listado paginado de correcciones. Un `EMPLOYEE`
+solo ve las suyas; un `TENANT_ADMIN` ve todas las del tenant.
+
+`GET /api/v1/corrections/{correctionId}`: devuelve el detalle si pertenece al
+tenant y el actor tiene visibilidad; en caso contrario, `404`.
+
+`POST /api/v1/corrections/{correctionId}/approve`: aprueba la corrección,
+ajusta la jornada asociada y la deja en estado `ADJUSTED` en la misma
+transacción.
+
+`POST /api/v1/corrections/{correctionId}/reject`: rechaza la corrección. El
+comentario de rechazo es obligatorio.
 
 ## Formato de error
 

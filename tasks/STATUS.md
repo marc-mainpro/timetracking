@@ -23,7 +23,7 @@
 | T501 | API gestión empleados | hecha | validada: `mvn -B verify` verde (152 tests), CRUD admin de empleados, regla LAST_ADMIN y revocación de refresh |
 | T502 | Frontend admin empleados | hecha | validada: `npm test -- --watch=false --browsers=ChromeHeadless` y `npm run build` verdes; listado admin, alta/edición y manejo de 409 |
 | T601 | Dominio correcciones | hecha | validada: `mvn -B verify` verde (164 tests), agregado CorrectionRequest + JSONB + ajuste de Workday |
-| T602 | API correcciones | pendiente | |
+| T602 | API correcciones | hecha | validada: `mvn -B verify` verde (173 tests), request/approve/reject/list/get de correcciones + suite cross-tenant ampliada |
 | T603 | Auditoría | pendiente | |
 | T604 | Concurrencia | pendiente | |
 | T605 | Frontend correcciones | pendiente | |
