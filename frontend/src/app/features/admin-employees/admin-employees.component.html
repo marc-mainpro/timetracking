@@ -1,1 +1,94 @@
-<p>admin-employees works!</p>
+<section class="admin-shell">
+  <header class="admin-header">
+    <div>
+      <p class="eyebrow">Administración</p>
+      <h1>Gestión de empleados</h1>
+    </div>
+    <input
+      type="search"
+      placeholder="Buscar por nombre o correo"
+      [value]="search()"
+      (input)="search.set($any($event.target).value)"
+    />
+  </header>
+
+  <section class="layout">
+    <article class="list-card">
+      <div class="toolbar">
+        <button type="button" (click)="applyStatus('')">Todos</button>
+        <button type="button" (click)="applyStatus('ACTIVE')">Activos</button>
+        <button type="button" (click)="applyStatus('INACTIVE')">Inactivos</button>
+      </div>
+
+      <p class="info" *ngIf="actionMessage() as message">{{ message }}</p>
+
+      <div class="employee-row" *ngFor="let employee of visibleEmployees()">
+        <div>
+          <strong>{{ employee.firstName }} {{ employee.lastName }}</strong>
+          <span>{{ employee.email }}</span>
+        </div>
+        <div>
+          <span class="pill" [class.pill--inactive]="employee.status === 'INACTIVE'">{{ employee.status }}</span>
+          <small>{{ employee.roles.join(', ') }}</small>
+        </div>
+        <div class="row-actions">
+          <button type="button" (click)="edit(employee)">Editar</button>
+          <button type="button" (click)="toggleStatus(employee)">
+            {{ employee.status === 'ACTIVE' ? 'Desactivar' : 'Activar' }}
+          </button>
+        </div>
+      </div>
+
+      <footer class="pager" *ngIf="result() as result">
+        <button type="button" (click)="previousPage()" [disabled]="page() === 0 || loading()">Anterior</button>
+        <span>Página {{ result.page + 1 }} de {{ result.totalPages || 1 }}</span>
+        <button type="button" (click)="nextPage()" [disabled]="result.page + 1 >= result.totalPages || loading()">Siguiente</button>
+      </footer>
+    </article>
+
+    <aside class="form-card">
+      <p class="eyebrow">{{ editingEmployee() ? 'Editar' : 'Alta' }}</p>
+      <h2>{{ editingEmployee() ? 'Actualiza un empleado' : 'Nuevo empleado' }}</h2>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="employee-form">
+        <label>
+          <span>Correo</span>
+          <input type="email" formControlName="email" placeholder="empleado@acme.test" />
+        </label>
+
+        <label>
+          <span>Contraseña inicial</span>
+          <input type="password" formControlName="password" placeholder="Mínimo 10 caracteres" />
+        </label>
+
+        <label>
+          <span>Nombre</span>
+          <input type="text" formControlName="firstName" />
+        </label>
+
+        <label>
+          <span>Apellidos</span>
+          <input type="text" formControlName="lastName" />
+        </label>
+
+        <div class="roles-grid">
+          <label class="role-toggle">
+            <input type="checkbox" formControlName="employee" />
+            <span>EMPLOYEE</span>
+          </label>
+          <label class="role-toggle">
+            <input type="checkbox" formControlName="tenantAdmin" />
+            <span>TENANT_ADMIN</span>
+          </label>
+        </div>
+
+        <p class="error" *ngIf="formError() as message">{{ message }}</p>
+
+        <div class="form-actions">
+          <button type="submit" [disabled]="saving()">{{ saving() ? 'Guardando...' : 'Guardar' }}</button>
+          <button type="button" class="ghost" (click)="resetForm()">Cancelar</button>
+        </div>
+      </form>
+    </aside>
+  </section>
+</section>

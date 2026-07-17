@@ -21,7 +21,7 @@
 | T403 | API fichaje | hecha | validada: `mvn -B verify` verde (142 tests), flujo completo de fichaje + admin workdays + suite cross-tenant ampliada |
 | T404 | Frontend empleado | hecha | validada: `npm test -- --watch=false --browsers=ChromeHeadless` y `npm run build` verdes; auth real + dashboard + historial propio |
 | T501 | API gestión empleados | hecha | validada: `mvn -B verify` verde (152 tests), CRUD admin de empleados, regla LAST_ADMIN y revocación de refresh |
-| T502 | Frontend admin empleados | pendiente | |
+| T502 | Frontend admin empleados | hecha | validada: `npm test -- --watch=false --browsers=ChromeHeadless` y `npm run build` verdes; listado admin, alta/edición y manejo de 409 |
 | T601 | Dominio correcciones | pendiente | |
 | T602 | API correcciones | pendiente | |
 | T603 | Auditoría | pendiente | |
