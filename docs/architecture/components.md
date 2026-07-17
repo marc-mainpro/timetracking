@@ -40,3 +40,6 @@ Cada módulo se organiza en capas, de dentro hacia fuera:
   `TenantContext` previo (`UserRepository.findByEmail/existsByEmail/findById(id)`).
 - Sin ciclos de dependencia entre módulos.
 - Entidades JPA separadas del modelo de dominio y de los DTO de API.
+
+En `timetracking`, el agregado `Workday` se persiste completo junto a sus
+`BreakEntry` como una unidad con `@Version` para bloqueo optimista.
