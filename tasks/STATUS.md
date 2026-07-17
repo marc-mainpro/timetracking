@@ -4,7 +4,7 @@
 |---|---|---|---|
 | T101 | Scaffolding backend | hecha | validada: mvn verify verde, Spring Boot 3.5.9 |
 | T102 | Scaffolding frontend | hecha | validada: build+lint+9 tests verdes, Angular 19.2 |
-| T103 | Docker Compose + Flyway | pendiente | |
+| T103 | Docker Compose + Flyway | hecha | validada: compose up → health UP, Flyway v1 aplicada |
 | T104 | CI | pendiente | |
 | T105 | Docs, ADR, AGENTS, skills | hecha | validada: AGENTS literal, 8 skills completas, ADR 1-6 |
 | T106 | ArchUnit | pendiente | |
