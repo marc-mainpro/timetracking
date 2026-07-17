@@ -28,3 +28,8 @@ Thumbs.db
 
 # LibreOffice
 .~lock.*#
+
+# Eclipse
+.classpath
+.project
+.settings/
