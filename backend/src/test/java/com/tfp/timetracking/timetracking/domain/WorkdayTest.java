@@ -246,6 +246,21 @@ class WorkdayTest {
     }
 
     @Test
+    void rejectsAdjustWhenBreakStartsBeforeWorkdayStart() {
+        Workday workday = Workday.start(TENANT_ID, EMPLOYEE_ID, FIXED_NOW, fixedIdGenerator(UUID.randomUUID()));
+        workday.pullDomainEvents();
+        workday.close(FIXED_NOW.plusSeconds(120), fixedIdGenerator(UUID.randomUUID()));
+
+        assertThatIllegalArgumentException().isThrownBy(() -> workday.adjust(
+                new WorkdayAdjustment(
+                        FIXED_NOW,
+                        FIXED_NOW.plusSeconds(300),
+                        List.of(new WorkdayAdjustment.AdjustedBreak(FIXED_NOW.minusSeconds(60), FIXED_NOW.plusSeconds(60)))),
+                FIXED_NOW.plusSeconds(360),
+                fixedIdGenerator(UUID.randomUUID())));
+    }
+
+    @Test
     void rejectsBreakThatEndsBeforeItStarts() {
         assertThatIllegalArgumentException().isThrownBy(() -> BreakEntry.reconstitute(
                 UUID.randomUUID(), FIXED_NOW.plusSeconds(60), FIXED_NOW.plusSeconds(30)));
