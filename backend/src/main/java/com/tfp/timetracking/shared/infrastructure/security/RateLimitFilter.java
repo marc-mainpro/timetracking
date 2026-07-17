@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -90,8 +91,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
         body.put("status", TOO_MANY_REQUESTS);
         body.put("detail", "Se ha excedido el numero maximo de intentos para este endpoint");
         body.put("errorCode", "RATE_LIMIT_EXCEEDED");
-        body.put("correlationId", UUID.randomUUID().toString());
+        body.put("correlationId", currentCorrelationId());
         body.put("timestamp", Instant.now().toString());
         objectMapper.writeValue(response.getOutputStream(), body);
+    }
+
+    private String currentCorrelationId() {
+        String correlationId = MDC.get(CorrelationIdFilter.MDC_KEY);
+        return correlationId != null ? correlationId : UUID.randomUUID().toString();
     }
 }

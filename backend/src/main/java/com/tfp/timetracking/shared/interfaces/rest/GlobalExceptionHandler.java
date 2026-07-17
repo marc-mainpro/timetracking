@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.validation.FieldError;
@@ -79,7 +80,12 @@ public class GlobalExceptionHandler {
 
     private void enrich(ProblemDetail problem, String errorCode) {
         problem.setProperty("errorCode", errorCode);
-        problem.setProperty("correlationId", UUID.randomUUID().toString());
+        problem.setProperty("correlationId", currentCorrelationId());
         problem.setProperty("timestamp", Instant.now().toString());
+    }
+
+    private String currentCorrelationId() {
+        String correlationId = MDC.get(com.tfp.timetracking.shared.infrastructure.security.CorrelationIdFilter.MDC_KEY);
+        return correlationId != null ? correlationId : UUID.randomUUID().toString();
     }
 }

@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import org.slf4j.MDC;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -38,8 +39,13 @@ public class ProblemDetailsAuthenticationEntryPoint implements AuthenticationEnt
         body.put("status", status);
         body.put("detail", detail);
         body.put("errorCode", errorCode);
-        body.put("correlationId", UUID.randomUUID().toString());
+        body.put("correlationId", currentCorrelationId());
         body.put("timestamp", Instant.now().toString());
         objectMapper.writeValue(response.getOutputStream(), body);
+    }
+
+    private String currentCorrelationId() {
+        String correlationId = MDC.get(com.tfp.timetracking.shared.infrastructure.security.CorrelationIdFilter.MDC_KEY);
+        return correlationId != null ? correlationId : UUID.randomUUID().toString();
     }
 }

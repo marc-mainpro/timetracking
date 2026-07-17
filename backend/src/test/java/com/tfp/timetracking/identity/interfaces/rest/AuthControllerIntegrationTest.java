@@ -26,6 +26,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.context.ActiveProfiles;
@@ -69,11 +70,14 @@ class AuthControllerIntegrationTest {
     @Autowired
     private JwtEncoder jwtEncoder;
 
+    @Autowired
+    private JwtDecoder jwtDecoder;
+
     @Test
     void loginReturnsAccessTokenAndRefreshCookie() throws Exception {
         RegisteredAdmin admin = registerAdmin();
 
-        mockMvc.perform(post("/api/v1/auth/login")
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new AuthLoginRequest(admin.email(), admin.password()))))
                 .andExpect(status().isOk())
@@ -81,7 +85,14 @@ class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.expiresAt").isString())
                 .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("HttpOnly")))
                 .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("Secure")))
-                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("SameSite=Strict")));
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("SameSite=Strict")))
+                .andReturn();
+
+        AuthTokenResponse body = objectMapper.readValue(result.getResponse().getContentAsString(), AuthTokenResponse.class);
+        org.springframework.security.oauth2.jwt.Jwt jwt = jwtDecoder.decode(body.accessToken());
+        assertThat(jwt.getSubject()).isEqualTo(admin.userId().toString());
+        assertThat(jwt.getClaimAsString("tenantId")).isEqualTo(admin.tenantId().toString());
+        assertThat(jwt.getClaimAsStringList("roles")).containsExactly("TENANT_ADMIN");
     }
 
     @Test
@@ -184,7 +195,7 @@ class AuthControllerIntegrationTest {
                 .getResponse()
                 .getContentAsString();
         RegisterTenantResponse response = objectMapper.readValue(responseBody, RegisterTenantResponse.class);
-        return new RegisteredAdmin(response.adminUserId(), email, password);
+        return new RegisteredAdmin(response.tenantId(), response.adminUserId(), email, password);
     }
 
     private LoginResult login(RegisteredAdmin admin) throws Exception {
@@ -224,7 +235,7 @@ class AuthControllerIntegrationTest {
         return new Cookie("refresh_token", cookieValue(cookiePair));
     }
 
-    private record RegisteredAdmin(UUID userId, String email, String password) {}
+    private record RegisteredAdmin(UUID tenantId, UUID userId, String email, String password) {}
 
     private record LoginResult(String accessToken, String cookie) {}
 }

@@ -11,6 +11,10 @@ Paquete base: `com.tfp.timetracking`. Módulos (paquetes de primer nivel):
 - `outbox`: mensajes de integración transaccionales.
 - `shared`: utilidades comunes (errores, tipos de dominio compartidos).
 
+En `shared.application` residen además puertos transversales usados por varios
+módulos, como `TenantContext` (tenant, usuario y roles resueltos desde el
+principal autenticado) y `AuthenticatedPrincipalStateChecker`.
+
 Cada módulo se organiza en capas, de dentro hacia fuera:
 
 ```text
@@ -27,5 +31,7 @@ Cada módulo se organiza en capas, de dentro hacia fuera:
 - Los controladores no contienen lógica de negocio ni acceden a
   repositorios directamente; delegan en casos de uso de `application`.
 - `infrastructure` implementa puertos definidos en `domain`/`application`.
+- El tenant operativo se resuelve desde el principal autenticado, nunca desde
+  DTOs o parámetros del cliente.
 - Sin ciclos de dependencia entre módulos.
 - Entidades JPA separadas del modelo de dominio y de los DTO de API.

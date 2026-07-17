@@ -13,7 +13,7 @@
 | T203 | RegisterTenant | hecha | validada: `mvn -B verify` verde (65 tests), cobertura JaCoCo en verde, commit `1c909ed` |
 | T204 | Autenticación JWT | hecha | validada: `mvn -B verify` verde (84 tests), JWT+refresh rotatorio+logout, ADR-0008 email global único |
 | T205 | Rate limiting + tests seguridad | hecha | validada: `mvn -B verify` verde (91 tests), Bucket4j en login/register, 429 y cabeceras de auth cubiertas |
-| T301 | TenantContext | pendiente | |
+| T301 | TenantContext | hecha | validada: `mvn -B verify` verde (99 tests), tenant/user/roles desde JWT, correlationId por request y revocación por inactividad en cada request autenticada |
 | T302 | Repos tenant-aware | pendiente | |
 | T303 | Suite cross-tenant | pendiente | |
 | T401 | Dominio Workday | pendiente | |

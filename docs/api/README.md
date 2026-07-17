@@ -61,6 +61,10 @@ Errores de validación incluyen detalle por campo
 (`errors: [{field, message}]`). Conflictos de negocio o concurrencia
 responden HTTP 409.
 
+Si la request incluye cabecera `X-Correlation-Id`, ese mismo valor se
+propaga a la respuesta y al campo `correlationId` de Problem Details. Si no,
+el backend genera uno por request.
+
 Errores de autenticación/sesión (`INVALID_CREDENTIALS`,
 `INVALID_REFRESH_TOKEN`, `REFRESH_TOKEN_REUSED`, `USER_INACTIVE`,
 `TENANT_INACTIVE`) responden HTTP 401.

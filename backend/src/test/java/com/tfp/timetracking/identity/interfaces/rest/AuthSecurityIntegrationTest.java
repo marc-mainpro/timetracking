@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tfp.timetracking.shared.infrastructure.security.CorrelationIdFilter;
 import com.tfp.timetracking.tenant.interfaces.rest.RegisterTenantRequest;
 import com.tfp.timetracking.tenant.interfaces.rest.RegisterTenantResponse;
 import jakarta.servlet.http.Cookie;
@@ -99,6 +100,28 @@ class AuthSecurityIntegrationTest {
     }
 
     @Test
+    void deactivatedUserWithValidTokenGets401OnAuthenticatedRequest() throws Exception {
+        RegisteredAdmin admin = registerAdmin(ip("token-user-register"));
+        LoginResult login = login(admin, ip("token-user-login"));
+        jdbcTemplate.update("UPDATE app_user SET status = 'INACTIVE' WHERE id = ?", admin.userId());
+
+        mockMvc.perform(post("/api/v1/auth/logout").header(HttpHeaders.AUTHORIZATION, "Bearer " + login.accessToken()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.errorCode").value("USER_INACTIVE"));
+    }
+
+    @Test
+    void inactiveTenantWithValidTokenGets401OnAuthenticatedRequest() throws Exception {
+        RegisteredAdmin admin = registerAdmin(ip("token-tenant-register"));
+        LoginResult login = login(admin, ip("token-tenant-login"));
+        jdbcTemplate.update("UPDATE tenant SET status = 'INACTIVE' WHERE id = ?", admin.tenantId());
+
+        mockMvc.perform(post("/api/v1/auth/logout").header(HttpHeaders.AUTHORIZATION, "Bearer " + login.accessToken()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.errorCode").value("TENANT_INACTIVE"));
+    }
+
+    @Test
     void reusedRefreshTokenInvalidatesActiveChain() throws Exception {
         RegisteredAdmin admin = registerAdmin(ip("reuse-register"));
         LoginResult login = login(admin, ip("reuse-login"));
@@ -168,11 +191,23 @@ class AuthSecurityIntegrationTest {
                 .andExpect(header().string(HttpHeaders.PRAGMA, "no-cache"));
     }
 
+    @Test
+    void correlationIdIsPropagatedIntoProblemDetails() throws Exception {
+        String correlationId = "corr-" + UUID.randomUUID();
+
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .header(CorrelationIdFilter.CORRELATION_ID_HEADER, correlationId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer not-a-jwt"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().string(CorrelationIdFilter.CORRELATION_ID_HEADER, correlationId))
+                .andExpect(jsonPath("$.correlationId").value(correlationId));
+    }
+
     private RegisteredAdmin registerAdmin(String clientIp) throws Exception {
         RegisterAttempt attempt = register(clientIp, 0);
         String responseBody = attempt.result().andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
         RegisterTenantResponse response = objectMapper.readValue(responseBody, RegisterTenantResponse.class);
-        return new RegisteredAdmin(response.adminUserId(), attempt.email(), "supersecretpwd");
+        return new RegisteredAdmin(response.tenantId(), response.adminUserId(), attempt.email(), "supersecretpwd");
     }
 
     private RegisterAttempt register(String clientIp, int offset) throws Exception {
@@ -232,7 +267,7 @@ class AuthSecurityIntegrationTest {
         return "203.0.113." + octet;
     }
 
-    private record RegisteredAdmin(UUID userId, String email, String password) {}
+    private record RegisteredAdmin(UUID tenantId, UUID userId, String email, String password) {}
 
     private record LoginResult(String accessToken, String cookie) {}
 
