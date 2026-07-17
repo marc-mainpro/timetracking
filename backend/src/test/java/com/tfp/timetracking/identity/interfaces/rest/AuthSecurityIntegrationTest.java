@@ -122,6 +122,17 @@ class AuthSecurityIntegrationTest {
     }
 
     @Test
+    void deactivatedUserCannotRefreshSession() throws Exception {
+        RegisteredAdmin admin = registerAdmin(ip("refresh-deactivated-register"));
+        LoginResult login = login(admin, ip("refresh-deactivated-login"));
+        jdbcTemplate.update("UPDATE app_user SET status = 'INACTIVE' WHERE id = ?", admin.userId());
+
+        mockMvc.perform(post("/api/v1/auth/refresh").cookie(cookie(login.cookie())))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.errorCode").value("USER_INACTIVE"));
+    }
+
+    @Test
     void reusedRefreshTokenInvalidatesActiveChain() throws Exception {
         RegisteredAdmin admin = registerAdmin(ip("reuse-register"));
         LoginResult login = login(admin, ip("reuse-login"));

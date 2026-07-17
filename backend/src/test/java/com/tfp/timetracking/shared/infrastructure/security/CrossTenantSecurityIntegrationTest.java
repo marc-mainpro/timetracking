@@ -158,6 +158,16 @@ class CrossTenantSecurityIntegrationTest {
                 .andExpect(jsonPath("$.content[0].id").value(workdayA));
     }
 
+    @Test
+    void adminOfTenantACannotManageEmployeesOfTenantB() throws Exception {
+        TestTenantFactory.TenantActors tenantA = testTenantFactory.createTenantActors("A-employee-admin");
+        TestTenantFactory.TenantActors tenantB = testTenantFactory.createTenantActors("B-employee-admin");
+
+        mockMvc.perform(get("/api/v1/employees/{employeeId}", tenantB.employee().userId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenantA.admin().token()))
+                .andExpect(status().isNotFound());
+    }
+
     @TestConfiguration
     static class CrossTenantTestConfiguration {
 

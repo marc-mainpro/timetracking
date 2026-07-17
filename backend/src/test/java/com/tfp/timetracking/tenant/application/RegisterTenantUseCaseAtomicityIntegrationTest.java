@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.tfp.timetracking.identity.domain.Email;
 import com.tfp.timetracking.identity.domain.User;
 import com.tfp.timetracking.identity.domain.UserRepository;
+import com.tfp.timetracking.identity.domain.UserStatus;
+import com.tfp.timetracking.shared.domain.PagedResult;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -106,6 +108,21 @@ class RegisterTenantUseCaseAtomicityIntegrationTest {
                 @Override
                 public List<User> findAllByTenantId(UUID tenantId) {
                     return List.of();
+                }
+
+                @Override
+                public PagedResult<User> findByTenant(UUID tenantId, UserStatus status, int page, int size) {
+                    return new PagedResult<>(List.of(), page, size, 0, 0);
+                }
+
+                @Override
+                public long countActiveAdmins(UUID tenantId) {
+                    return 0;
+                }
+
+                @Override
+                public long countActiveAdminsExcludingUser(UUID tenantId, UUID userId) {
+                    return 0;
                 }
             };
         }

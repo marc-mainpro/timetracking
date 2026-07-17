@@ -23,6 +23,13 @@ especificación cuando exista un pipeline que lo publique.
 | GET | `/api/v1/workdays/{workdayId}` | `EMPLOYEE` | T403 |
 | GET | `/api/v1/admin/workdays` | `TENANT_ADMIN` | T403 |
 | GET | `/api/v1/admin/workdays/{workdayId}` | `TENANT_ADMIN` | T403 |
+| GET | `/api/v1/employees` | `TENANT_ADMIN` | T501 |
+| POST | `/api/v1/employees` | `TENANT_ADMIN` | T501 |
+| GET | `/api/v1/employees/{employeeId}` | `TENANT_ADMIN` | T501 |
+| PUT | `/api/v1/employees/{employeeId}` | `TENANT_ADMIN` | T501 |
+| PATCH | `/api/v1/employees/{employeeId}/activate` | `TENANT_ADMIN` | T501 |
+| PATCH | `/api/v1/employees/{employeeId}/deactivate` | `TENANT_ADMIN` | T501 |
+| PUT | `/api/v1/employees/{employeeId}/roles` | `TENANT_ADMIN` | T501 |
 
 `POST /api/v1/auth/register`: crea un tenant y su primer usuario
 `TENANT_ADMIN` de forma transaccional. Body: `tenantName`, `timezone`,
@@ -72,6 +79,24 @@ empleado autenticado; si no, `404`.
 `GET /api/v1/admin/workdays` y `GET /api/v1/admin/workdays/{workdayId}`:
 listado y detalle para `TENANT_ADMIN`, siempre acotados al tenant del
 principal autenticado. Recursos de otro tenant responden `404`.
+
+`GET /api/v1/employees`: listado paginado de empleados del tenant del admin,
+con filtro opcional `status`.
+
+`POST /api/v1/employees`: crea un empleado del tenant autenticado con password
+inicial hasheada y roles explícitos.
+
+`GET /api/v1/employees/{employeeId}` y `PUT /api/v1/employees/{employeeId}`:
+detalle y actualización de nombre/apellidos. Si el empleado pertenece a otro
+tenant responde `404`.
+
+`PATCH /api/v1/employees/{employeeId}/activate` y
+`PATCH /api/v1/employees/{employeeId}/deactivate`: activan o desactivan al
+empleado. Desactivar revoca sus refresh tokens.
+
+`PUT /api/v1/employees/{employeeId}/roles`: reemplaza los roles del empleado.
+No se permite dejar al tenant sin ningún `TENANT_ADMIN` activo (`409`
+`LAST_ADMIN`).
 
 ## Formato de error
 

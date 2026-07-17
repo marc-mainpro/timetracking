@@ -159,6 +159,18 @@ public final class User {
         this.updatedAt = clock.now();
     }
 
+    public void updateProfile(String firstName, String lastName, Clock clock) {
+        Objects.requireNonNull(clock, "clock no puede ser null");
+        this.firstName = requireNonBlank(firstName, "El nombre es obligatorio");
+        this.lastName = requireNonBlank(lastName, "El apellido es obligatorio");
+        this.updatedAt = clock.now();
+    }
+
+    public boolean hasRole(Role role) {
+        Objects.requireNonNull(role, "role no puede ser null");
+        return roles.contains(role);
+    }
+
     public boolean isActive() {
         return status == UserStatus.ACTIVE;
     }

@@ -8,6 +8,7 @@ import com.tfp.timetracking.identity.domain.Role;
 import com.tfp.timetracking.identity.domain.User;
 import com.tfp.timetracking.identity.domain.UserRepository;
 import com.tfp.timetracking.identity.domain.UserStatus;
+import com.tfp.timetracking.shared.domain.PagedResult;
 import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
@@ -142,6 +143,43 @@ class UserRepositoryAdapterIntegrationTest {
     void findByIdReturnsEmptyWhenUserDoesNotExist() {
         assertThat(userRepository.findById(UUID.randomUUID(), UUID.randomUUID())).isEmpty();
         assertThat(userRepository.findById(UUID.randomUUID())).isEmpty();
+    }
+
+    @Test
+    void listByTenantSupportsPagingAndStatusFilter() {
+        UUID tenantId = insertTenant();
+        userRepository.save(newUser(tenantId, "a@example.com"));
+        User inactive = newUser(tenantId, "b@example.com");
+        inactive.deactivate(() -> Instant.now(), UUID::randomUUID);
+        userRepository.save(inactive);
+
+        PagedResult<User> all = userRepository.findByTenant(tenantId, null, 0, 10);
+        PagedResult<User> inactiveOnly = userRepository.findByTenant(tenantId, UserStatus.INACTIVE, 0, 10);
+
+        assertThat(all.content()).hasSize(2);
+        assertThat(inactiveOnly.content()).hasSize(1);
+        assertThat(inactiveOnly.content().get(0).status()).isEqualTo(UserStatus.INACTIVE);
+    }
+
+    @Test
+    void countsActiveAdminsByTenant() {
+        UUID tenantId = insertTenant();
+        User admin = User.reconstitute(
+                UUID.randomUUID(),
+                tenantId,
+                "admin-count@example.com",
+                "hash",
+                "Admin",
+                "One",
+                UserStatus.ACTIVE,
+                Set.of(Role.TENANT_ADMIN),
+                Instant.now(),
+                Instant.now());
+        userRepository.save(admin);
+        userRepository.save(newUser(tenantId, "employee-count@example.com"));
+
+        assertThat(userRepository.countActiveAdmins(tenantId)).isEqualTo(1);
+        assertThat(userRepository.countActiveAdminsExcludingUser(tenantId, admin.id())).isZero();
     }
 
     private User newUser(UUID tenantId, String email) {

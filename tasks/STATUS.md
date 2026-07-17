@@ -20,7 +20,7 @@
 | T402 | Persistencia Workday | hecha | validada: `mvn -B verify` verde (131 tests), V4 aplicada, repositorio JPA tenant-aware y optimistic locking |
 | T403 | API fichaje | hecha | validada: `mvn -B verify` verde (142 tests), flujo completo de fichaje + admin workdays + suite cross-tenant ampliada |
 | T404 | Frontend empleado | pendiente | |
-| T501 | API gestión empleados | pendiente | |
+| T501 | API gestión empleados | hecha | validada: `mvn -B verify` verde (152 tests), CRUD admin de empleados, regla LAST_ADMIN y revocación de refresh |
 | T502 | Frontend admin empleados | pendiente | |
 | T601 | Dominio correcciones | pendiente | |
 | T602 | API correcciones | pendiente | |

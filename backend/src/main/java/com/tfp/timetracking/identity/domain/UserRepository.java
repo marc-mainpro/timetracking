@@ -1,5 +1,6 @@
 package com.tfp.timetracking.identity.domain;
 
+import com.tfp.timetracking.shared.domain.PagedResult;
 import java.util.Optional;
 import java.util.List;
 import java.util.UUID;
@@ -32,4 +33,10 @@ public interface UserRepository {
     boolean existsByEmail(Email email);
 
     List<User> findAllByTenantId(UUID tenantId);
+
+    PagedResult<User> findByTenant(UUID tenantId, UserStatus status, int page, int size);
+
+    long countActiveAdmins(UUID tenantId);
+
+    long countActiveAdminsExcludingUser(UUID tenantId, UUID userId);
 }

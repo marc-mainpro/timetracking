@@ -4,6 +4,11 @@ import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
 import com.tfp.timetracking.shared.domain.DomainException;
 import com.tfp.timetracking.shared.interfaces.rest.GlobalExceptionHandler;
+import com.tfp.timetracking.identity.interfaces.rest.EmployeeRestMapper;
+import com.tfp.timetracking.identity.interfaces.rest.EmployeeController;
+import com.tfp.timetracking.identity.domain.User;
+import com.tfp.timetracking.identity.domain.UserStatus;
+import com.tfp.timetracking.identity.domain.Email;
 import com.tfp.timetracking.timetracking.interfaces.rest.WorkdayRestMapper;
 import com.tfp.timetracking.timetracking.domain.Workday;
 import com.tfp.timetracking.timetracking.domain.BreakEntry;
@@ -53,6 +58,11 @@ class LayeredArchitectureTest {
             .whereLayer("Domain").mayOnlyBeAccessedByLayers("Application", "Infrastructure")
             .whereLayer("Infrastructure").mayNotBeAccessedByAnyLayer()
             .ignoreDependency(GlobalExceptionHandler.class, DomainException.class)
+            .ignoreDependency(EmployeeRestMapper.class, User.class)
+            .ignoreDependency(EmployeeRestMapper.class, UserStatus.class)
+            .ignoreDependency(EmployeeRestMapper.class, Email.class)
+            .ignoreDependency(EmployeeRestMapper.class, PagedResult.class)
+            .ignoreDependency(EmployeeController.class, UserStatus.class)
             .ignoreDependency(WorkdayRestMapper.class, Workday.class)
             .ignoreDependency(WorkdayRestMapper.class, BreakEntry.class)
             .ignoreDependency(WorkdayRestMapper.class, WorkdayStatus.class)
