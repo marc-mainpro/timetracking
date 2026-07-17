@@ -1,1 +1,25 @@
-<p>login works!</p>
+<section class="auth-shell">
+  <div class="auth-panel">
+    <p class="eyebrow">Control horario</p>
+    <h1>Entra y reanuda tu jornada.</h1>
+    <p class="lede">Accede con tu correo corporativo y continúa el fichaje del día sin perder el contexto.</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+      <label>
+        <span>Correo</span>
+        <input type="email" formControlName="email" placeholder="ana@empresa.test" />
+      </label>
+
+      <label>
+        <span>Contraseña</span>
+        <input type="password" formControlName="password" placeholder="Tu contraseña" />
+      </label>
+
+      <p class="error" *ngIf="errorMessage() as message">{{ message }}</p>
+
+      <button type="submit" [disabled]="loading()">{{ loading() ? 'Entrando...' : 'Entrar' }}</button>
+    </form>
+
+    <a routerLink="/auth/register" class="secondary-link">Registrar una nueva organización</a>
+  </div>
+</section>

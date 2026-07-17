@@ -1,12 +1,21 @@
-<nav class="app-nav">
-  <a routerLink="/auth/login">Login</a>
-  <a routerLink="/employee-dashboard">Mi jornada</a>
-  <a routerLink="/workdays">Historial</a>
-  <a routerLink="/corrections">Correcciones</a>
-  <a routerLink="/admin/employees">Empleados</a>
-  <a routerLink="/reports">Informes</a>
+<nav class="app-nav" *ngIf="isAuthenticated(); else guestNav">
+  <div class="app-nav__links">
+    <a routerLink="/employee-dashboard">Mi jornada</a>
+    <a routerLink="/workdays">Historial</a>
+    <a routerLink="/corrections">Correcciones</a>
+    <a routerLink="/admin/employees" *ngIf="showAdminLinks()">Empleados</a>
+    <a routerLink="/reports" *ngIf="showAdminLinks()">Informes</a>
+  </div>
+  <button type="button" class="logout" (click)="logout()">Salir</button>
 </nav>
 
-<main>
+<ng-template #guestNav>
+  <nav class="app-nav app-nav--guest">
+    <a routerLink="/auth/login">Login</a>
+    <a routerLink="/auth/register">Registrar organización</a>
+  </nav>
+</ng-template>
+
+<main class="app-main">
   <router-outlet />
 </main>

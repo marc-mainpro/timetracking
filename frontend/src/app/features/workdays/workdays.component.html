@@ -1,1 +1,49 @@
-<p>workdays works!</p>
+<section class="history-shell">
+  <header class="history-header">
+    <div>
+      <p class="eyebrow">Historial</p>
+      <h1>Tus jornadas recientes</h1>
+    </div>
+  </header>
+
+  <form [formGroup]="filters" (ngSubmit)="submitFilters()" class="filters-card">
+    <label>
+      <span>Desde</span>
+      <input type="datetime-local" formControlName="from" />
+    </label>
+    <label>
+      <span>Hasta</span>
+      <input type="datetime-local" formControlName="to" />
+    </label>
+    <button type="submit" [disabled]="loading()">Aplicar filtros</button>
+  </form>
+
+  <p class="error" *ngIf="errorMessage() as message">{{ message }}</p>
+
+  <section class="history-card" *ngIf="result() as result">
+    <div class="history-row" *ngFor="let workday of result.content">
+      <div>
+        <strong>{{ workday.startedAt | date: 'shortDate' }}</strong>
+        <span>{{ workday.status }}</span>
+      </div>
+      <div>
+        <strong>{{ workday.startedAt | date: 'shortTime' }}</strong>
+        <span>{{ workday.endedAt ? (workday.endedAt | date: 'shortTime') : 'En curso' }}</span>
+      </div>
+      <div>
+        <strong>Pausas</strong>
+        <span>{{ workday.breaks.length }}</span>
+      </div>
+      <div>
+        <strong>Duración</strong>
+        <span>{{ workday.workedDuration }}</span>
+      </div>
+    </div>
+
+    <footer class="pager">
+      <button type="button" (click)="previousPage()" [disabled]="page() === 0 || loading()">Anterior</button>
+      <span>Página {{ result.page + 1 }} de {{ result.totalPages || 1 }}</span>
+      <button type="button" (click)="nextPage()" [disabled]="result.page + 1 >= result.totalPages || loading()">Siguiente</button>
+    </footer>
+  </section>
+</section>

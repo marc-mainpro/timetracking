@@ -1,0 +1,20 @@
+@use './login.component.scss';
+
+.auth-panel--wide {
+  width: min(100%, 46rem);
+}
+
+.auth-form--grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.auth-form--grid .error,
+.auth-form--grid button {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .auth-form--grid {
+    grid-template-columns: 1fr;
+  }
+}

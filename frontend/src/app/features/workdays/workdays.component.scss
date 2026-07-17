@@ -1,0 +1,95 @@
+.history-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #67e8f9;
+  font-size: 0.72rem;
+}
+
+.history-header,
+.filters-card,
+.history-card {
+  padding: 1.25rem;
+  border-radius: 1.25rem;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  color: #ecf4ff;
+}
+
+.filters-card {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+
+label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+input {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 0.9rem;
+  background: rgba(8, 15, 30, 0.7);
+  padding: 0.85rem 0.95rem;
+  color: #f8fbff;
+}
+
+.history-card {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.history-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(8, 15, 30, 0.58);
+}
+
+.history-row div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.85rem 1.1rem;
+  font-weight: 700;
+  color: #082032;
+  background: linear-gradient(135deg, #67e8f9 0%, #22d3ee 100%);
+}
+
+.error {
+  margin: 0;
+  color: #fecaca;
+}
+
+@media (max-width: 720px) {
+  .filters-card,
+  .history-row {
+    grid-template-columns: 1fr;
+  }
+
+  .pager {
+    flex-direction: column;
+  }
+}

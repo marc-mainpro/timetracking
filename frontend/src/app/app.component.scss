@@ -1,0 +1,41 @@
+.app-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #08111f;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.app-nav__links {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.app-nav a {
+  color: #d7f6ff;
+  text-decoration: none;
+}
+
+.app-main {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+.logout {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.65rem 0.95rem;
+  color: #082032;
+  background: linear-gradient(135deg, #67e8f9 0%, #22d3ee 100%);
+}
+
+@media (max-width: 720px) {
+  .app-nav {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

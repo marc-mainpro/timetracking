@@ -1,1 +1,53 @@
-<p>employee-dashboard works!</p>
+<section class="dashboard-shell">
+  <header class="hero-card">
+    <div>
+      <p class="eyebrow">Mi jornada</p>
+      <h1>Hoy trabajas con el reloj a la vista.</h1>
+      <p class="lede">Controla el inicio, las pausas y el cierre sin salir del panel principal.</p>
+    </div>
+    <a routerLink="/workdays" class="history-link">Ver historial</a>
+  </header>
+
+  <section class="workday-card" *ngIf="!loading(); else loadingState">
+    <ng-container *ngIf="currentWorkday() as workday; else emptyState">
+      <div class="status-row">
+        <span class="status-pill" [class.status-pill--break]="workday.status === 'ON_BREAK'">{{ workday.status }}</span>
+        <span class="duration">{{ workedDuration() }}</span>
+      </div>
+
+      <div class="timeline">
+        <div>
+          <strong>Inicio</strong>
+          <span>{{ workday.startedAt | date: 'shortTime' }}</span>
+        </div>
+        <div>
+          <strong>Pausas</strong>
+          <span>{{ workday.breaks.length }}</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" (click)="startBreak()" [disabled]="!canStartBreak() || actionLoading()">Iniciar pausa</button>
+        <button type="button" (click)="endBreak()" [disabled]="!isOnBreak() || actionLoading()">Finalizar pausa</button>
+        <button type="button" (click)="endWorkday()" [disabled]="actionLoading()">Finalizar jornada</button>
+      </div>
+    </ng-container>
+  </section>
+
+  <p class="info" *ngIf="infoMessage() as message">{{ message }}</p>
+
+  <ng-template #emptyState>
+    <section class="empty-card">
+      <p class="eyebrow">Sin jornada activa</p>
+      <h2>Todo listo para empezar.</h2>
+      <p>Cuando inicies la jornada, verás aquí el tiempo trabajado y las pausas abiertas.</p>
+      <button type="button" (click)="startWorkday()" [disabled]="actionLoading()">Iniciar jornada</button>
+    </section>
+  </ng-template>
+
+  <ng-template #loadingState>
+    <section class="empty-card">
+      <p>Cargando tu jornada actual...</p>
+    </section>
+  </ng-template>
+</section>

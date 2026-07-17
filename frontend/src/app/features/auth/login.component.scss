@@ -1,0 +1,87 @@
+.auth-shell {
+  min-height: calc(100vh - 3rem);
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background:
+    radial-gradient(circle at top left, rgba(0, 173, 181, 0.16), transparent 28%),
+    linear-gradient(180deg, #08111f 0%, #0f172a 55%, #111827 100%);
+}
+
+.auth-panel {
+  width: min(100%, 28rem);
+  padding: 2rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 1.5rem;
+  background: rgba(15, 23, 42, 0.78);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+  color: #e5eef8;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  color: #67e8f9;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  line-height: 1.05;
+}
+
+.lede {
+  margin: 0.9rem 0 1.5rem;
+  color: #b8c4d5;
+}
+
+.auth-form {
+  display: grid;
+  gap: 1rem;
+}
+
+label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+span {
+  font-size: 0.92rem;
+  color: #cdd7e5;
+}
+
+input {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0.95rem;
+  background: rgba(15, 23, 42, 0.92);
+  padding: 0.95rem 1rem;
+  color: #f8fbff;
+}
+
+button {
+  margin-top: 0.4rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.95rem 1.2rem;
+  font-weight: 700;
+  color: #082032;
+  background: linear-gradient(135deg, #67e8f9 0%, #22d3ee 100%);
+}
+
+button:disabled {
+  opacity: 0.6;
+}
+
+.error {
+  margin: 0;
+  color: #fca5a5;
+}
+
+.secondary-link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: #9ae6ff;
+}

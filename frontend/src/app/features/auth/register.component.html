@@ -1,0 +1,40 @@
+<section class="auth-shell">
+  <div class="auth-panel auth-panel--wide">
+    <p class="eyebrow">Alta inicial</p>
+    <h1>Crea la organización y su primer administrador.</h1>
+    <p class="lede">Deja preparada la empresa, el tenant y la cuenta admin en un solo paso.</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form auth-form--grid">
+      <label>
+        <span>Organización</span>
+        <input type="text" formControlName="tenantName" placeholder="Acme Corp" />
+      </label>
+      <label>
+        <span>Zona horaria</span>
+        <input type="text" formControlName="timezone" placeholder="Europe/Madrid" />
+      </label>
+      <label>
+        <span>Correo admin</span>
+        <input type="email" formControlName="adminEmail" placeholder="admin@acme.test" />
+      </label>
+      <label>
+        <span>Contraseña inicial</span>
+        <input type="password" formControlName="adminPassword" placeholder="Mínimo 10 caracteres" />
+      </label>
+      <label>
+        <span>Nombre</span>
+        <input type="text" formControlName="firstName" placeholder="Ana" />
+      </label>
+      <label>
+        <span>Apellidos</span>
+        <input type="text" formControlName="lastName" placeholder="López" />
+      </label>
+
+      <p class="error" *ngIf="errorMessage() as message">{{ message }}</p>
+
+      <button type="submit" [disabled]="loading()">{{ loading() ? 'Registrando...' : 'Crear organización' }}</button>
+    </form>
+
+    <a routerLink="/auth/login" class="secondary-link">Volver al login</a>
+  </div>
+</section>
