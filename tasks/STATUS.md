@@ -8,7 +8,7 @@
 | T104 | CI | hecha | validada: YAML ok, comandos = validados localmente; pendiente 1ª ejecución real al crear remote |
 | T105 | Docs, ADR, AGENTS, skills | hecha | validada: AGENTS literal, 8 skills completas, ADR 1-6 |
 | T106 | ArchUnit | hecha | validada: 14 tests verdes, detección de violaciones probada |
-| T201 | Migración identidad | pendiente | |
+| T201 | Migración identidad | hecha | validada: mvn verify verde, unique (tenant_id,email) probada |
 | T202 | Dominio Tenant/User | pendiente | |
 | T203 | RegisterTenant | pendiente | |
 | T204 | Autenticación JWT | pendiente | |
