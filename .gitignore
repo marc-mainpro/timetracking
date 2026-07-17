@@ -1,0 +1,27 @@
+# Java / Maven
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+coverage/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Entorno
+.env
+*.local.env
+
+# SO
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
