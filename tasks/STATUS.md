@@ -6,7 +6,7 @@
 | T102 | Scaffolding frontend | pendiente | |
 | T103 | Docker Compose + Flyway | pendiente | |
 | T104 | CI | pendiente | |
-| T105 | Docs, ADR, AGENTS, skills | pendiente | |
+| T105 | Docs, ADR, AGENTS, skills | hecha | validada: AGENTS literal, 8 skills completas, ADR 1-6 |
 | T106 | ArchUnit | pendiente | |
 | T201 | Migración identidad | pendiente | |
 | T202 | Dominio Tenant/User | pendiente | |
