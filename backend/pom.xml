@@ -162,6 +162,7 @@
                                 <rule>
                                     <element>PACKAGE</element>
                                     <includes>
+                                        <include>*.domain</include>
                                         <include>*.domain.*</include>
                                     </includes>
                                     <limits>
@@ -186,6 +187,7 @@
                                 <rule>
                                     <element>PACKAGE</element>
                                     <includes>
+                                        <include>*.application</include>
                                         <include>*.application.*</include>
                                     </includes>
                                     <limits>

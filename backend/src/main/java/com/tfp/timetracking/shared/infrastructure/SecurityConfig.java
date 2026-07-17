@@ -7,12 +7,16 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Configuracion minima de seguridad para el scaffolding (T101).
+ * Configuracion minima de seguridad (T101, ampliada en T203).
  *
- * <p>Solo se expone {@code /actuator/health}; el resto de endpoints queda
- * cerrado por defecto. La autenticacion JWT (oauth2-resource-server, roles
- * TENANT_ADMIN/EMPLOYEE, etc.) es responsabilidad del modulo {@code identity}
- * y queda fuera de alcance de esta tarea.
+ * <p>Se expone {@code /actuator/health} y los endpoints publicos de
+ * autenticacion listados en CONTEXT-API §2
+ * ({@code /api/v1/auth/register}, {@code /login}, {@code /refresh},
+ * {@code /logout} - estos tres ultimos se habilitaran en T204/T205 cuando
+ * existan); el resto de endpoints queda cerrado por defecto. La
+ * autenticacion JWT (oauth2-resource-server, roles TENANT_ADMIN/EMPLOYEE,
+ * etc.) es responsabilidad del modulo {@code identity} y queda fuera de
+ * alcance de esta tarea.
  */
 @Configuration
 public class SecurityConfig {
@@ -26,6 +30,7 @@ public class SecurityConfig {
                 .formLogin(form -> form.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        .requestMatchers("/api/v1/auth/register").permitAll()
                         .anyRequest().denyAll());
         return http.build();
     }

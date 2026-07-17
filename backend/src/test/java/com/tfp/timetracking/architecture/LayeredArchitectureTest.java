@@ -2,6 +2,8 @@ package com.tfp.timetracking.architecture;
 
 import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
+import com.tfp.timetracking.shared.domain.DomainException;
+import com.tfp.timetracking.shared.interfaces.rest.GlobalExceptionHandler;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
@@ -18,6 +20,17 @@ import com.tngtech.archunit.lang.ArchRule;
  * <p>{@code allowEmptyShould(true)}: sobre el esqueleto actual varios modulos
  * solo tienen {@code package-info.java} en cada capa, sin dependencias entre
  * clases; la regla debe pasar en verde igualmente.
+ *
+ * <p>Excepcion puntual (T203, CONTEXT-GLOBAL §7 / ADR-0006): el
+ * {@code @RestControllerAdvice} que traduce excepciones a Problem Details
+ * ({@link GlobalExceptionHandler}, en {@code shared.interfaces.rest})
+ * necesita capturar {@link DomainException} (en {@code shared.domain}) para
+ * leer su {@code errorCode} y su mensaje. Esta es la unica forma de que
+ * {@code interfaces} conozca un tipo de {@code domain}: no es logica de
+ * negocio, es traduccion de errores en el borde de la API, y el propio
+ * {@code DomainException} sigue sin depender de Spring/JPA (ver
+ * {@code DomainPurityTest}). Se permite explicitamente esta unica
+ * dependencia en vez de relajar la regla en general.
  */
 @AnalyzeClasses(packages = "com.tfp.timetracking", importOptions = ImportOption.DoNotIncludeTests.class)
 class LayeredArchitectureTest {
@@ -33,5 +46,6 @@ class LayeredArchitectureTest {
             .whereLayer("Application").mayOnlyBeAccessedByLayers("Interfaces", "Infrastructure")
             .whereLayer("Domain").mayOnlyBeAccessedByLayers("Application", "Infrastructure")
             .whereLayer("Infrastructure").mayNotBeAccessedByAnyLayer()
+            .ignoreDependency(GlobalExceptionHandler.class, DomainException.class)
             .allowEmptyShould(true);
 }

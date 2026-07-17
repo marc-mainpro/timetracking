@@ -1,9 +1,22 @@
 # API
 
 La especificación OpenAPI se genera a partir del código (springdoc-openapi)
-en las tareas que implementan endpoints (a partir de la iteración 2). Este
-documento se actualizará con el enlace/export de la especificación cuando
-exista.
+en las tareas que implementan endpoints (a partir de la iteración 2). Se
+publica en `/v3/api-docs` y `/swagger-ui.html` cuando la aplicación está en
+marcha. Este documento se actualizará con el enlace/export de la
+especificación cuando exista un pipeline que lo publique.
+
+## Endpoints implementados
+
+| Método | Ruta | Auth | Tarea |
+|---|---|---|---|
+| POST | `/api/v1/auth/register` | público | T203 |
+
+`POST /api/v1/auth/register`: crea un tenant y su primer usuario
+`TENANT_ADMIN` de forma transaccional. Body: `tenantName`, `timezone`,
+`adminEmail`, `adminPassword` (≥10 caracteres), `firstName`, `lastName`.
+Responde `201` con `{tenantId, adminUserId}` (sin datos sensibles) y
+`Location` apuntando al recurso tenant creado.
 
 ## Formato de error
 
