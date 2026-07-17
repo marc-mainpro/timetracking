@@ -18,6 +18,10 @@ export class AppComponent {
     return this.authService.isAuthenticated();
   }
 
+  showEmployeeLinks(): boolean {
+    return this.authService.hasRole('EMPLOYEE');
+  }
+
   showAdminLinks(): boolean {
     return this.authService.hasRole('TENANT_ADMIN');
   }

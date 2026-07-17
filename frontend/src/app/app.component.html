@@ -1,9 +1,10 @@
 <nav class="app-nav" *ngIf="isAuthenticated(); else guestNav">
   <div class="app-nav__links">
-    <a routerLink="/employee-dashboard">Mi jornada</a>
-    <a routerLink="/workdays">Historial</a>
-    <a routerLink="/corrections">Correcciones</a>
+    <a routerLink="/employee-dashboard" *ngIf="showEmployeeLinks()">Mi jornada</a>
+    <a routerLink="/workdays" *ngIf="showEmployeeLinks()">Historial</a>
+    <a routerLink="/corrections" *ngIf="showEmployeeLinks()">Correcciones</a>
     <a routerLink="/admin/employees" *ngIf="showAdminLinks()">Empleados</a>
+    <a routerLink="/admin/corrections" *ngIf="showAdminLinks()">Revisiones</a>
     <a routerLink="/reports" *ngIf="showAdminLinks()">Informes</a>
   </div>
   <button type="button" class="logout" (click)="logout()">Salir</button>

@@ -1,0 +1,93 @@
+<section class="admin-shell">
+  <header class="admin-header">
+    <div>
+      <p class="eyebrow">Revisión</p>
+      <h1>Cola de correcciones del tenant</h1>
+      <p>Filtra, compara y resuelve con trazabilidad completa antes de tocar una jornada.</p>
+    </div>
+  </header>
+
+  <p class="message message--success" *ngIf="actionMessage() as message">{{ message }}</p>
+  <p class="message message--error" *ngIf="decisionError() as error">{{ error }}</p>
+
+  <div class="admin-layout">
+    <aside class="queue-card">
+      <div class="filter-row">
+        <button type="button" [class.active]="selectedStatus() === 'PENDING'" (click)="applyStatus('PENDING')">Pendientes</button>
+        <button type="button" [class.active]="selectedStatus() === 'APPROVED'" (click)="applyStatus('APPROVED')">Aprobadas</button>
+        <button type="button" [class.active]="selectedStatus() === 'REJECTED'" (click)="applyStatus('REJECTED')">Rechazadas</button>
+        <button type="button" [class.active]="selectedStatus() === ''" (click)="applyStatus('')">Todas</button>
+      </div>
+
+      <button type="button" class="queue-row" *ngFor="let correction of result()?.content ?? []" (click)="selectCorrection(correction)">
+        <div>
+          <strong>{{ correction.reason }}</strong>
+          <span>{{ correction.createdAt | date: 'short' }}</span>
+        </div>
+        <span class="pill" [class.pill--approved]="correction.status === 'APPROVED'" [class.pill--rejected]="correction.status === 'REJECTED'">
+          {{ correction.status }}
+        </span>
+      </button>
+    </aside>
+
+    <section class="detail-card" *ngIf="selectedCorrection() as correction; else emptyDetail">
+      <div class="detail-head">
+        <div>
+          <p class="eyebrow">Solicitud</p>
+          <h2>{{ correction.reason }}</h2>
+        </div>
+        <span class="pill" [class.pill--approved]="correction.status === 'APPROVED'" [class.pill--rejected]="correction.status === 'REJECTED'">{{ correction.status }}</span>
+      </div>
+
+      <div class="diff-grid" *ngIf="currentWorkday() as workday">
+        <article>
+          <span class="eyebrow">Jornada actual</span>
+          <strong>{{ workday.startedAt | date: 'shortTime' }} - {{ workday.endedAt ? (workday.endedAt | date: 'shortTime') : 'Sin cierre' }}</strong>
+          <ul>
+            <li *ngFor="let breakEntry of workday.breaks">{{ breakEntry.startedAt | date: 'shortTime' }} - {{ breakEntry.endedAt ? (breakEntry.endedAt | date: 'shortTime') : 'Abierta' }}</li>
+          </ul>
+        </article>
+
+        <article class="proposal">
+          <span class="eyebrow">Propuesta</span>
+          <strong>{{ correction.proposedChanges.startedAt | date: 'shortTime' }} - {{ correction.proposedChanges.endedAt | date: 'shortTime' }}</strong>
+          <ul>
+            <li *ngFor="let breakEntry of correction.proposedChanges.breaks">{{ breakEntry.startedAt | date: 'shortTime' }} - {{ breakEntry.endedAt | date: 'shortTime' }}</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="decision-grid" *ngIf="correction.status === 'PENDING'">
+        <form [formGroup]="approveForm" (ngSubmit)="approve()">
+          <label>
+            <span>Comentario de aprobación (opcional)</span>
+            <textarea rows="3" formControlName="resolutionComment"></textarea>
+          </label>
+          <button type="submit" [disabled]="decisionLoading()">Aprobar</button>
+        </form>
+
+        <form [formGroup]="rejectForm" (ngSubmit)="reject()">
+          <label>
+            <span>Comentario de rechazo</span>
+            <textarea rows="3" formControlName="resolutionComment"></textarea>
+          </label>
+          <div class="validation" *ngIf="rejectForm.controls.resolutionComment.invalid && rejectForm.controls.resolutionComment.touched">
+            El comentario es obligatorio para rechazar.
+          </div>
+          <button type="submit" class="danger" [disabled]="decisionLoading()">Rechazar</button>
+        </form>
+      </div>
+
+      <p *ngIf="correction.status !== 'PENDING' && correction.resolutionComment" class="resolution-note">
+        {{ correction.resolutionComment }}
+      </p>
+    </section>
+
+    <ng-template #emptyDetail>
+      <section class="detail-card detail-card--empty">
+        <p class="eyebrow">Sin selección</p>
+        <h2>Elige una corrección para comparar la propuesta con la jornada actual.</h2>
+      </section>
+    </ng-template>
+  </div>
+</section>

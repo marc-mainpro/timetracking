@@ -1,13 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import { PagedWorkdays, WorkdaysService } from './workdays.service';
 
 @Component({
   selector: 'app-workdays',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './workdays.component.html',
   styleUrl: './workdays.component.scss'
 })

@@ -26,7 +26,7 @@
 | T602 | API correcciones | hecha | validada: `mvn -B verify` verde (173 tests), request/approve/reject/list/get de correcciones + suite cross-tenant ampliada |
 | T603 | Auditoría | hecha | validada: `mvn -B verify` verde (175 tests), auditoría append-only tenant-aware + `GET /api/v1/admin/audit-events` |
 | T604 | Concurrencia | hecha | validada: `mvn -B verify` verde (179 tests), carreras estables sin sleeps + `CorrectionRequest.version` + estrategia documentada |
-| T605 | Frontend correcciones | pendiente | |
+| T605 | Frontend correcciones | hecha | validada: `npm test -- --watch=false --browsers=ChromeHeadless` y `npm run build` verdes; flujo empleado/admin implementado, verificación manual local pendiente |
 | T701 | Migración outbox | pendiente | |
 | T702 | Eventos integración + atomicidad | pendiente | |
 | T703 | Publicador outbox | pendiente | |

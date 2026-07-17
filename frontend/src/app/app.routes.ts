@@ -28,8 +28,7 @@ export const routes: Routes = [
   },
   {
     path: 'corrections',
-    // TODO T204/T404: proteger con authGuard real (autenticación)
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard(['EMPLOYEE'])],
     loadChildren: () =>
       import('./features/corrections/corrections.routes').then((m) => m.CORRECTIONS_ROUTES)
   },
@@ -39,6 +38,14 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./features/admin-employees/admin-employees.routes').then(
         (m) => m.ADMIN_EMPLOYEES_ROUTES
+      )
+  },
+  {
+    path: 'admin/corrections',
+    canActivate: [authGuard, roleGuard(['TENANT_ADMIN'])],
+    loadChildren: () =>
+      import('./features/corrections/corrections.routes').then(
+        (m) => m.ADMIN_CORRECTIONS_ROUTES
       )
   },
   {

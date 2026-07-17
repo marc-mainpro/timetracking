@@ -38,6 +38,9 @@
         <strong>Duración</strong>
         <span>{{ workday.workedDuration }}</span>
       </div>
+      <div *ngIf="workday.status === 'CLOSED'">
+        <a [routerLink]="['/corrections']" [queryParams]="{ workdayId: workday.id }">Solicitar corrección</a>
+      </div>
     </div>
 
     <footer class="pager">

@@ -1,1 +1,103 @@
-<p>corrections works!</p>
+<section class="corrections-shell">
+  <header class="corrections-header">
+    <div>
+      <p class="eyebrow">Correcciones</p>
+      <h1>Solicita cambios con contexto completo</h1>
+      <p>Prepara una propuesta clara desde una jornada cerrada y sigue su estado sin salir del flujo.</p>
+    </div>
+    <a routerLink="/workdays" class="history-link">Elegir otra jornada</a>
+  </header>
+
+  <p class="message message--success" *ngIf="actionMessage() as message">{{ message }}</p>
+  <p class="message message--error" *ngIf="formError() as error">{{ error }}</p>
+
+  <div class="corrections-layout">
+    <section class="editor-card">
+      <ng-container *ngIf="selectedWorkday() as workday; else emptySelection">
+        <div class="editor-summary">
+          <div>
+            <span class="eyebrow">Jornada base</span>
+            <strong>{{ workday.startedAt | date: 'shortDate' }}</strong>
+          </div>
+          <div>
+            <span>Original</span>
+            <strong>{{ workday.startedAt | date: 'shortTime' }} - {{ workday.endedAt ? (workday.endedAt | date: 'shortTime') : 'Sin cierre' }}</strong>
+          </div>
+          <div>
+            <span>Estado</span>
+            <strong>{{ workday.status }}</strong>
+          </div>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="submit()" class="correction-form">
+          <label>
+            <span>Motivo</span>
+            <textarea formControlName="reason" rows="3" placeholder="Explica qué ocurrió y por qué propones el ajuste"></textarea>
+          </label>
+
+          <div class="time-grid">
+            <label>
+              <span>Nuevo inicio</span>
+              <input type="datetime-local" formControlName="startedAt" />
+            </label>
+            <label>
+              <span>Nuevo cierre</span>
+              <input type="datetime-local" formControlName="endedAt" />
+            </label>
+          </div>
+
+          <div class="validation" *ngIf="form.errors?.['invalidRange']">La hora de fin debe ser posterior al inicio.</div>
+          <div class="validation" *ngIf="form.errors?.['invalidBreakRange']">Cada pausa debe tener un rango horario válido.</div>
+          <div class="validation" *ngIf="form.errors?.['breakOutsideWorkday']">Las pausas deben quedar dentro del nuevo rango propuesto.</div>
+          <div class="validation" *ngIf="form.errors?.['overlappingBreaks']">Las pausas no pueden solaparse.</div>
+
+          <div class="breaks-card">
+            <div class="breaks-header">
+              <div>
+                <span class="eyebrow">Pausas propuestas</span>
+                <strong>{{ breaks.length }} registradas</strong>
+              </div>
+              <button type="button" (click)="addBreak()">Añadir pausa</button>
+            </div>
+
+            <div class="break-row" *ngFor="let breakGroup of breaks.controls; let i = index" [formGroup]="$any(breakGroup)">
+              <input type="datetime-local" formControlName="startedAt" />
+              <input type="datetime-local" formControlName="endedAt" />
+              <button type="button" class="ghost" (click)="removeBreak(i)">Quitar</button>
+            </div>
+          </div>
+
+          <button type="submit" [disabled]="saving()">{{ saving() ? 'Enviando...' : 'Solicitar corrección' }}</button>
+        </form>
+      </ng-container>
+
+      <ng-template #emptySelection>
+        <div class="empty-state">
+          <span class="eyebrow">Paso 1</span>
+          <h2>Empieza desde el historial</h2>
+          <p>Usa el botón “Solicitar corrección” en una jornada cerrada para abrir aquí el formulario ya precargado.</p>
+        </div>
+      </ng-template>
+    </section>
+
+    <section class="requests-card">
+      <div class="requests-header">
+        <span class="eyebrow">Tus solicitudes</span>
+        <strong>{{ result()?.totalElements ?? 0 }} en total</strong>
+      </div>
+
+      <div class="request-row" *ngFor="let correction of result()?.content ?? []">
+        <div>
+          <strong>{{ correction.createdAt | date: 'short' }}</strong>
+          <p>{{ correction.reason }}</p>
+        </div>
+        <div>
+          <span class="pill" [class.pill--approved]="correction.status === 'APPROVED'" [class.pill--rejected]="correction.status === 'REJECTED'">
+            {{ correction.status }}
+          </span>
+          <small *ngIf="correction.resolutionComment">{{ correction.resolutionComment }}</small>
+        </div>
+      </div>
+    </section>
+  </div>
+</section>

@@ -20,6 +20,9 @@ export class ErrorMessagesService {
     ['RATE_LIMIT_EXCEEDED', 'Has realizado demasiados intentos. Espera un momento e inténtalo otra vez.'],
     ['LAST_ADMIN', 'La organización debe mantener al menos un administrador activo.'],
     ['EMAIL_ALREADY_IN_USE', 'Ese correo ya está en uso.'],
+    ['CORRECTION_ALREADY_PENDING', 'Ya existe una corrección pendiente para esa jornada.'],
+    ['CORRECTION_ALREADY_RESOLVED', 'La corrección ya fue resuelta por otro administrador.'],
+    ['CONCURRENT_MODIFICATION', 'Otra persona modificó este recurso al mismo tiempo. Recargamos el estado más reciente.'],
     ['RESOURCE_NOT_FOUND', 'No se encontró el recurso solicitado.'],
     ['UNAUTHORIZED', 'Necesitas iniciar sesión para continuar.']
   ]);
