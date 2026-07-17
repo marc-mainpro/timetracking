@@ -58,7 +58,7 @@ public class RegisterTenantUseCase {
         Tenant tenant = Tenant.register(command.tenantName(), command.timezone(), clock, idGenerator);
 
         Email adminEmail = Email.of(command.adminEmail());
-        if (userRepository.existsByTenantIdAndEmail(tenant.id(), adminEmail)) {
+        if (userRepository.existsByEmail(adminEmail)) {
             throw new EmailAlreadyInUseException(adminEmail.value());
         }
 

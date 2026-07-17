@@ -18,8 +18,8 @@ import java.util.stream.Collectors;
  * anotaciones de Spring ni de JPA (persistencia en
  * {@code identity.infrastructure.persistence.UserJpaEntity}).
  *
- * <p>Reglas: email unico dentro del tenant (comprobado por el caso de uso via
- * {@link UserRepository#existsByTenantIdAndEmail}, no aqui); usuario inactivo
+ * <p>Reglas: email unico globalmente (comprobado por el caso de uso via
+ * {@link UserRepository#existsByEmail}, no aqui); usuario inactivo
  * no se autentica; un usuario pertenece a un unico tenant.
  */
 public final class User {
@@ -64,8 +64,8 @@ public final class User {
      * Factoria: crea un nuevo usuario activo dentro de un tenant. Valida que
      * el email tenga formato correcto (normalizado a minusculas por
      * {@link Email#of(String)}) y que se asigne al menos un rol. La unicidad
-     * de email dentro del tenant es responsabilidad del caso de uso
-     * (consulta previa al puerto {@link UserRepository}), no de la factoria.
+     * de email global es responsabilidad del caso de uso (consulta previa al
+     * puerto {@link UserRepository}), no de la factoria.
      */
     public static User create(
             UUID tenantId,

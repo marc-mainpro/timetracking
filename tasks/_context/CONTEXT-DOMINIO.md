@@ -10,7 +10,7 @@ Reglas: nombre obligatorio; timezone IANA válida; un tenant inactivo no puede o
 
 ### User
 Campos: `id`, `tenantId`, `email`, `passwordHash`, `firstName`, `lastName`, `status` (ACTIVE|INACTIVE), `roles`, `createdAt`, `updatedAt`.
-Reglas: email único **dentro del tenant**; usuario inactivo no se autentica; un usuario pertenece a un único tenant.
+Reglas: email único **globalmente** (ADR-0008); usuario inactivo no se autentica; un usuario pertenece a un único tenant.
 
 ### Workday (agregado raíz; contiene BreakEntry)
 Campos: `id`, `tenantId`, `employeeId`, `status`, `startedAt`, `endedAt`, `version` (optimistic locking), `createdAt`, `updatedAt`.
@@ -39,7 +39,7 @@ Reglas: solo una solicitud PENDING por jornada y usuario; una solicitud resuelta
 ## 2. Excepciones de dominio → errorCode
 
 Definir jerarquía `DomainException` (sin Spring). Códigos estables mínimos:
-`TENANT_INACTIVE`, `USER_INACTIVE`, `EMAIL_ALREADY_IN_USE`, `WORKDAY_ALREADY_OPEN`, `WORKDAY_NOT_OPEN`, `WORKDAY_OPEN_BREAK`, `WORKDAY_ALREADY_CLOSED`, `BREAK_ALREADY_OPEN`, `BREAK_NOT_OPEN`, `CORRECTION_ALREADY_PENDING`, `CORRECTION_ALREADY_RESOLVED`, `CONCURRENT_MODIFICATION`.
+`TENANT_INACTIVE`, `USER_INACTIVE`, `EMAIL_ALREADY_IN_USE`, `INVALID_CREDENTIALS`, `INVALID_REFRESH_TOKEN`, `REFRESH_TOKEN_REUSED`, `WORKDAY_ALREADY_OPEN`, `WORKDAY_NOT_OPEN`, `WORKDAY_OPEN_BREAK`, `WORKDAY_ALREADY_CLOSED`, `BREAK_ALREADY_OPEN`, `BREAK_NOT_OPEN`, `CORRECTION_ALREADY_PENDING`, `CORRECTION_ALREADY_RESOLVED`, `CONCURRENT_MODIFICATION`.
 
 ## 3. Eventos de dominio
 

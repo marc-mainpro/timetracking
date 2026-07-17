@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 /** Repositorio Spring Data para {@link UserJpaEntity}. Uso interno del adaptador. */
 interface UserJpaRepository extends JpaRepository<UserJpaEntity, UUID> {
 
-    Optional<UserJpaEntity> findByTenantIdAndEmail(UUID tenantId, String email);
+    Optional<UserJpaEntity> findByEmail(String email);
 
-    boolean existsByTenantIdAndEmail(UUID tenantId, String email);
+    boolean existsByEmail(String email);
 }

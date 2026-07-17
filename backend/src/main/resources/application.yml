@@ -23,3 +23,16 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+auth:
+  jwt:
+    secret: ${JWT_SECRET}
+    access-token-ttl: PT15M
+  refresh-token:
+    ttl: P14D
+    cookie-name: refresh_token
+    cookie-path: /api/v1/auth
+
+security:
+  cors:
+    allowed-origin: ${FRONTEND_ORIGIN:http://localhost:4200}

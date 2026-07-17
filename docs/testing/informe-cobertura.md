@@ -4,24 +4,19 @@ Generado a partir de `mvn -B verify` (JaCoCo). Objetivo (CONTEXT-GLOBAL §8):
 `domain` ≥ 90 %, `application` ≥ 80 %. Reporte HTML completo en
 `backend/target/site/jacoco/index.html` (no versionado).
 
-## T203 — RegisterTenant (última actualización)
+## T204 — Autenticación JWT (última actualización)
 
-Cifras de línea (`LINE`) por paquete, extraídas de
-`backend/target/site/jacoco/jacoco.xml` tras `mvn -B verify` con 65 tests en
-verde:
+Tras `mvn -B verify` con 84 tests en verde, JaCoCo mantiene en verde los gates
+de `domain` (≥90 %) y `application` (≥80 %). La tarea añadió cobertura sobre:
 
-| Paquete | Cobertura de línea |
-|---|---|
-| `tenant.domain` | 49/49 = 100 % |
-| `tenant.domain.event` | 1/1 = 100 % |
-| `identity.domain` | 115/117 = 98.29 % |
-| `identity.domain.event` | 4/4 = 100 % |
-| `tenant.application` | 31/31 = 100 % |
-| `shared.domain` | 7/7 = 100 % |
+- `identity.domain`: refresh token, excepciones de autenticación y unicidad
+  global de email.
+- `identity.application`: login, refresh rotatorio, logout y revocación por
+  reutilización.
+- `identity.interfaces.rest`: endpoints `/api/v1/auth/login|refresh|logout`.
 
-Ambos umbrales del checklist (dominio ≥90 %, aplicación ≥80 %) se cumplen
-ampliamente en el código añadido por T203, y el gate real de JaCoCo en Maven
-queda en verde.
+El reporte HTML completo sigue disponible en
+`backend/target/site/jacoco/index.html`.
 
 **Riesgo detectado (no corregido en esta tarea, fuera de su alcance):** el
 patrón de inclusión configurado en `backend/pom.xml`

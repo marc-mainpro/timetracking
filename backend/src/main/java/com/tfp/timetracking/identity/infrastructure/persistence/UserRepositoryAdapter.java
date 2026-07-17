@@ -33,12 +33,12 @@ public class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
-    public Optional<User> findByTenantIdAndEmail(UUID tenantId, Email email) {
-        return jpaRepository.findByTenantIdAndEmail(tenantId, email.value()).map(UserMapper::toDomain);
+    public Optional<User> findByEmail(Email email) {
+        return jpaRepository.findByEmail(email.value()).map(UserMapper::toDomain);
     }
 
     @Override
-    public boolean existsByTenantIdAndEmail(UUID tenantId, Email email) {
-        return jpaRepository.existsByTenantIdAndEmail(tenantId, email.value());
+    public boolean existsByEmail(Email email) {
+        return jpaRepository.existsByEmail(email.value());
     }
 }

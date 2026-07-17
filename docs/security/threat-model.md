@@ -7,7 +7,7 @@ T902 (hardening OWASP).
 
 | Amenaza STRIDE | Riesgo | Mitigación |
 |---|---|---|
-| Spoofing | Suplantación de usuario con credenciales robadas | BCrypt para contraseñas, rate limiting de login (Bucket4j, 10 req/min/IP), JWT firmado HS256 |
+| Spoofing | Suplantación de usuario con credenciales robadas o login ambiguo entre tenants con el mismo email | BCrypt para contraseñas, rate limiting de login (Bucket4j, 10 req/min/IP), JWT firmado HS256, email globalmente único (ADR-0008) |
 | Tampering | Manipulación del token de acceso | Firma HS256 con secreto en variable de entorno; verificación en cada request vía Spring Security oauth2-resource-server |
 | Repudiation | Negar haber realizado una acción | Auditoría de operaciones sensibles (aprobación/rechazo de correcciones) |
 | Information disclosure | Fuga del refresh token | Cookie `HttpOnly; Secure; SameSite=Strict`, path `/api/v1/auth`; refresh token opaco y hasheado (SHA-256) en BD; nunca en `localStorage` |

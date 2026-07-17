@@ -7,7 +7,7 @@ un test unitario asociado.
 
 - Nombre de tenant obligatorio; timezone IANA válida.
 - Un tenant inactivo no puede operar (ninguna operación de negocio).
-- Email único **dentro del tenant**.
+- Email único **globalmente** (ADR-0008) para eliminar ambigüedad en el login.
 - Un usuario inactivo no se autentica.
 - Un usuario pertenece a un único tenant.
 
@@ -38,6 +38,7 @@ un test unitario asociado.
 ## Excepciones de dominio → `errorCode`
 
 `TENANT_INACTIVE`, `USER_INACTIVE`, `EMAIL_ALREADY_IN_USE`,
+`INVALID_CREDENTIALS`, `INVALID_REFRESH_TOKEN`, `REFRESH_TOKEN_REUSED`,
 `WORKDAY_ALREADY_OPEN`, `WORKDAY_NOT_OPEN`, `WORKDAY_OPEN_BREAK`,
 `WORKDAY_ALREADY_CLOSED`, `BREAK_ALREADY_OPEN`, `BREAK_NOT_OPEN`,
 `CORRECTION_ALREADY_PENDING`, `CORRECTION_ALREADY_RESOLVED`,

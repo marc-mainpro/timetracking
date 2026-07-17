@@ -88,12 +88,12 @@ class RegisterTenantUseCaseAtomicityIntegrationTest {
                 }
 
                 @Override
-                public Optional<User> findByTenantIdAndEmail(UUID tenantId, Email email) {
+                public Optional<User> findByEmail(Email email) {
                     return Optional.empty();
                 }
 
                 @Override
-                public boolean existsByTenantIdAndEmail(UUID tenantId, Email email) {
+                public boolean existsByEmail(Email email) {
                     return false;
                 }
             };

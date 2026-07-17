@@ -30,8 +30,8 @@ import org.mockito.ArgumentCaptor;
 
 /**
  * Pruebas unitarias (Mockito) del caso de uso {@link RegisterTenantUseCase}
- * (ficha T203): exito, timezone invalida, email de admin duplicado dentro
- * del tenant.
+ * (ficha T203/T204): exito, timezone invalida y email de admin duplicado
+ * globalmente.
  */
 class RegisterTenantUseCaseTest {
 
@@ -68,7 +68,7 @@ class RegisterTenantUseCaseTest {
 
     @Test
     void registersTenantAndAdminAndPublishesEvents() {
-        when(userRepository.existsByTenantIdAndEmail(any(), any())).thenReturn(false);
+        when(userRepository.existsByEmail(any())).thenReturn(false);
 
         RegisterTenantResult result = useCase.register(happyCommand());
 
@@ -106,8 +106,8 @@ class RegisterTenantUseCaseTest {
     }
 
     @Test
-    void rejectsDuplicateAdminEmailWithinTenant() {
-        when(userRepository.existsByTenantIdAndEmail(any(), any())).thenReturn(true);
+    void rejectsDuplicateAdminEmailGlobally() {
+        when(userRepository.existsByEmail(any())).thenReturn(true);
 
         assertThatThrownBy(() -> useCase.register(happyCommand()))
                 .isInstanceOf(EmailAlreadyInUseException.class)

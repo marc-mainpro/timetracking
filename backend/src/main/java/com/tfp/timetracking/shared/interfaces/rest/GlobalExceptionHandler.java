@@ -32,10 +32,21 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DomainException.class)
     public ProblemDetail handleDomainException(DomainException ex) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        HttpStatus status = authenticationErrorCode(ex.errorCode()) ? HttpStatus.UNAUTHORIZED : HttpStatus.CONFLICT;
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
         problem.setTitle("Business rule violation");
         enrich(problem, ex.errorCode());
         return problem;
+    }
+
+    private boolean authenticationErrorCode(String errorCode) {
+        return java.util.Set.of(
+                        "INVALID_CREDENTIALS",
+                        "INVALID_REFRESH_TOKEN",
+                        "REFRESH_TOKEN_REUSED",
+                        "USER_INACTIVE",
+                        "TENANT_INACTIVE")
+                .contains(errorCode);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

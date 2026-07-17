@@ -8,10 +8,10 @@
 | T104 | CI | hecha | validada: YAML ok, comandos = validados localmente; pendiente 1ª ejecución real al crear remote |
 | T105 | Docs, ADR, AGENTS, skills | hecha | validada: AGENTS literal, 8 skills completas, ADR 1-6 |
 | T106 | ArchUnit | hecha | validada: 14 tests verdes, detección de violaciones probada |
-| T201 | Migración identidad | hecha | validada: mvn verify verde, unique (tenant_id,email) probada |
+| T201 | Migración identidad | hecha | validada originalmente con identidad base; la unicidad final de `app_user.email` pasó a global en `T204` mediante `V3` |
 | T202 | Dominio Tenant/User | hecha | validada: 53 tests, dominio ~100 % cobertura; detectó gap de tests *IT |
-| T203 | RegisterTenant | pendiente | |
-| T204 | Autenticación JWT | pendiente | |
+| T203 | RegisterTenant | hecha | validada: `mvn -B verify` verde (65 tests), cobertura JaCoCo en verde, commit `1c909ed` |
+| T204 | Autenticación JWT | hecha | validada: `mvn -B verify` verde (84 tests), JWT+refresh rotatorio+logout, ADR-0008 email global único |
 | T205 | Rate limiting + tests seguridad | pendiente | |
 | T301 | TenantContext | pendiente | |
 | T302 | Repos tenant-aware | pendiente | |

@@ -27,8 +27,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * Prueba de integracion (Testcontainers PostgreSQL) del adaptador
  * {@link UserRepositoryAdapter}: persiste y recupera un User a traves del
  * puerto {@link UserRepository}, verificando el mapeo completo (incluidos los
- * roles en {@code user_role}) y el UNIQUE (tenant_id, email) de
- * V2__identity.sql (CONTEXT-GLOBAL §5, ficha T202).
+ * roles en {@code user_role}) y la unicidad global de email tras T204.
  */
 @Testcontainers
 @ActiveProfiles("test")
@@ -88,7 +87,7 @@ class UserRepositoryAdapterIntegrationTest {
     }
 
     @Test
-    void findByTenantIdAndEmailLocatesUserWithinTenant() {
+    void findByEmailLocatesUserGlobally() {
         UUID tenantId = insertTenant();
         User user = User.reconstitute(
                 UUID.randomUUID(),
@@ -103,21 +102,20 @@ class UserRepositoryAdapterIntegrationTest {
                 Instant.now());
         userRepository.save(user);
 
-        assertThat(userRepository.findByTenantIdAndEmail(tenantId, Email.of("lookup@example.com"))).isPresent();
-        assertThat(userRepository.existsByTenantIdAndEmail(tenantId, Email.of("lookup@example.com"))).isTrue();
-        assertThat(userRepository.findByTenantIdAndEmail(UUID.randomUUID(), Email.of("lookup@example.com")))
-                .isEmpty();
+        assertThat(userRepository.findByEmail(Email.of("lookup@example.com"))).isPresent();
+        assertThat(userRepository.existsByEmail(Email.of("lookup@example.com"))).isTrue();
+        assertThat(userRepository.findByEmail(Email.of("missing@example.com"))).isEmpty();
     }
 
     @Test
-    void allowsSameEmailAcrossDifferentTenants() {
+    void rejectsSameEmailAcrossDifferentTenants() {
         UUID tenantA = insertTenant();
         UUID tenantB = insertTenant();
 
         userRepository.save(newUser(tenantA, "shared@example.com"));
 
-        org.assertj.core.api.Assertions.assertThatCode(() -> userRepository.save(newUser(tenantB, "shared@example.com")))
-                .doesNotThrowAnyException();
+        assertThatThrownBy(() -> userRepository.save(newUser(tenantB, "shared@example.com")))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test

@@ -9,3 +9,16 @@ logging:
   level:
     org.springframework: INFO
     com.tfp.timetracking: DEBUG
+
+auth:
+  jwt:
+    secret: test-jwt-secret-key-with-at-least-32-bytes
+    access-token-ttl: PT15M
+  refresh-token:
+    ttl: P14D
+    cookie-name: refresh_token
+    cookie-path: /api/v1/auth
+
+security:
+  cors:
+    allowed-origin: http://localhost:4200

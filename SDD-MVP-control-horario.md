@@ -153,7 +153,9 @@ Reglas obligatorias:
 - El tenant se obtiene del usuario autenticado.
 - No se confiará en un tenant enviado por el frontend.
 - Toda consulta de negocio deberá estar filtrada por tenant.
-- Toda restricción única relevante deberá incluir `tenant_id`.
+- Toda restricción única relevante deberá incluir `tenant_id`, salvo que una
+  decisión de seguridad documentada exija unicidad global para eliminar
+  ambigüedad de autenticación.
 - Toda operación administrativa deberá comprobar rol y tenant.
 - Deben existir pruebas automáticas de acceso cruzado.
 
@@ -228,7 +230,8 @@ Campos mínimos:
 
 Reglas:
 
-- El email debe ser único dentro del tenant.
+- El email debe ser único globalmente para soportar login por `email + password`
+  sin ambigüedad entre tenants.
 - Un usuario inactivo no puede autenticarse.
 - Un usuario pertenece a un único tenant en el MVP.
 

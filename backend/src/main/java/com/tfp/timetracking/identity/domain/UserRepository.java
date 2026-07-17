@@ -7,8 +7,8 @@ import java.util.UUID;
  * Puerto de dominio para persistir y recuperar {@link User} (CONTEXT-GLOBAL
  * §4: puertos definidos en dominio, implementados en infraestructura).
  *
- * <p>Todas las consultas de negocio se acotan por {@code tenantId}
- * (CONTEXT-GLOBAL §5): el email es unico dentro de un tenant, no global.
+ * <p>El email del usuario es unico globalmente para evitar ambiguedad en la
+ * autenticacion por email+password (ADR-0008).
  */
 public interface UserRepository {
 
@@ -16,7 +16,7 @@ public interface UserRepository {
 
     Optional<User> findById(UUID id);
 
-    Optional<User> findByTenantIdAndEmail(UUID tenantId, Email email);
+    Optional<User> findByEmail(Email email);
 
-    boolean existsByTenantIdAndEmail(UUID tenantId, Email email);
+    boolean existsByEmail(Email email);
 }

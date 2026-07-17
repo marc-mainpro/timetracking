@@ -21,6 +21,7 @@ MVP SaaS **multitenant** de control horario: organizaciones (tenants) gestionan 
 | Módulos (paquetes) | `identity`, `tenant`, `timetracking`, `corrections`, `reporting`, `audit`, `outbox`, `shared` |
 | Capas por módulo | `domain` / `application` / `infrastructure` / `interfaces.rest` |
 | Auth | JWT firmado (HS256, secreto por env) vía Spring Security oauth2-resource-server; access token 15 min |
+| Login identifier | Email globalmente único (ADR-0008) para evitar ambigüedad de login entre tenants |
 | Refresh token | Opaco, hasheado (SHA-256) en tabla `refresh_token`, rotatorio con detección de reutilización; cookie `HttpOnly; Secure; SameSite=Strict`, path `/api/v1/auth` |
 | Passwords | BCrypt (`DelegatingPasswordEncoder` por defecto de Spring) |
 | Rate limiting login | Bucket4j en memoria (10 req/min por IP) |
@@ -41,7 +42,7 @@ MVP SaaS **multitenant** de control horario: organizaciones (tenants) gestionan 
 
 ## 5. Multitenancy (crítico)
 
-- `tenant_id` en toda tabla de negocio; toda unique relevante incluye `tenant_id` (p. ej. `UNIQUE (tenant_id, email)`).
+- `tenant_id` en toda tabla de negocio; toda unique relevante incluye `tenant_id`, salvo la excepción documentada de `app_user.email` globalmente único (ADR-0008) para login sin ambigüedad.
 - El tenant SIEMPRE se resuelve del usuario autenticado (`TenantContext`), NUNCA de un parámetro del cliente.
 - Toda query de negocio filtra por tenant. Toda operación admin comprueba rol Y tenant.
 - Toda tarea que toque datos añade/mantiene tests de acceso cruzado entre tenants.

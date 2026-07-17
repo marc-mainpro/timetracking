@@ -24,10 +24,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * T201: verifica que V2__identity.sql se aplica limpio desde una base de
- * datos vacia (via Flyway al arrancar el contexto de Spring) y que la
- * restriccion UNIQUE (tenant_id, email) de app_user respeta la
- * multitenancy: mismo email permitido en tenants distintos, rechazado
- * dentro del mismo tenant (CONTEXT-GLOBAL §5).
+ * datos vacia (via Flyway al arrancar el contexto de Spring) y que el esquema
+ * final deja el email de usuario como unico global (ADR-0008), requisito
+ * necesario para el login por {@code email + password} sin ambiguedad.
  */
 @Testcontainers
 @ActiveProfiles("test")
@@ -62,15 +61,15 @@ class FlywayIdentityMigrationIntegrationTest {
     }
 
     @Test
-    void allowsSameEmailAcrossDifferentTenants() {
+    void rejectsSameEmailAcrossDifferentTenants() {
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
         UUID tenantA = insertTenant(jdbc, "Tenant A");
         UUID tenantB = insertTenant(jdbc, "Tenant B");
 
         insertUser(jdbc, tenantA, "shared@example.com");
 
-        assertThatCode(() -> insertUser(jdbc, tenantB, "shared@example.com"))
-                .doesNotThrowAnyException();
+        assertThatThrownBy(() -> insertUser(jdbc, tenantB, "shared@example.com"))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test

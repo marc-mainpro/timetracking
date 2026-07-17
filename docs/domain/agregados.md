@@ -12,6 +12,9 @@ Campos: `id`, `name`, `status` (`ACTIVE`|`INACTIVE`), `timezone`, `createdAt`,
 Campos: `id`, `tenantId`, `email`, `passwordHash`, `firstName`, `lastName`,
 `status` (`ACTIVE`|`INACTIVE`), `roles`, `createdAt`, `updatedAt`.
 
+Regla clave: `email` es globalmente único (ADR-0008) para permitir
+autenticación por `email + password` sin ambigüedad entre tenants.
+
 ## Workday (agregado raíz; contiene BreakEntry)
 
 Campos: `id`, `tenantId`, `employeeId`, `status`, `startedAt`, `endedAt`,
