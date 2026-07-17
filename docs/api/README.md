@@ -35,6 +35,7 @@ especificación cuando exista un pipeline que lo publique.
 | GET | `/api/v1/corrections/{correctionId}` | `EMPLOYEE` / `TENANT_ADMIN` | T602 |
 | POST | `/api/v1/corrections/{correctionId}/approve` | `TENANT_ADMIN` | T602 |
 | POST | `/api/v1/corrections/{correctionId}/reject` | `TENANT_ADMIN` | T602 |
+| GET | `/api/v1/admin/audit-events` | `TENANT_ADMIN` | T603 |
 
 `POST /api/v1/auth/register`: crea un tenant y su primer usuario
 `TENANT_ADMIN` de forma transaccional. Body: `tenantName`, `timezone`,
@@ -121,6 +122,10 @@ transacción.
 
 `POST /api/v1/corrections/{correctionId}/reject`: rechaza la corrección. El
 comentario de rechazo es obligatorio.
+
+`GET /api/v1/admin/audit-events`: listado paginado de eventos de auditoría del
+tenant autenticado, con filtros opcionales `action`, `from` y `to`. Solo está
+disponible para `TENANT_ADMIN` y nunca expone registros de otros tenants.
 
 ## Formato de error
 

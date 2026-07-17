@@ -1,5 +1,6 @@
 package com.tfp.timetracking.identity.application;
 
+import com.tfp.timetracking.audit.application.AuditRecorder;
 import com.tfp.timetracking.identity.domain.User;
 import com.tfp.timetracking.identity.domain.UserRepository;
 import com.tfp.timetracking.shared.application.ResourceNotFoundException;
@@ -15,11 +16,13 @@ public class ActivateEmployeeUseCase {
     private final UserRepository userRepository;
     private final TenantContext tenantContext;
     private final Clock clock;
+    private final AuditRecorder auditRecorder;
 
-    public ActivateEmployeeUseCase(UserRepository userRepository, TenantContext tenantContext, Clock clock) {
+    public ActivateEmployeeUseCase(UserRepository userRepository, TenantContext tenantContext, Clock clock, AuditRecorder auditRecorder) {
         this.userRepository = userRepository;
         this.tenantContext = tenantContext;
         this.clock = clock;
+        this.auditRecorder = auditRecorder;
     }
 
     @Transactional
@@ -27,6 +30,8 @@ public class ActivateEmployeeUseCase {
         User user = userRepository.findById(tenantContext.currentTenantId(), employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado"));
         user.activate(clock);
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        auditRecorder.record("EMPLOYEE_ACTIVATED", "User", saved.id(), java.util.Map.of());
+        return saved;
     }
 }

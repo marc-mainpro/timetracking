@@ -37,3 +37,20 @@
 - Se mantienen las cabeceras de seguridad por defecto de Spring Security.
 - Los endpoints de autenticación devuelven además respuestas marcadas como
   no cacheables (`Cache-Control: no-store`, `Pragma: no-cache`).
+
+## Auditoría
+
+- La auditoría es append-only en `audit_event`; la aplicación no expone
+  endpoints de escritura, edición ni borrado.
+- Cada registro toma `tenantId`, `actorUserId` y `correlationId` del contexto
+  autenticado y de la request actual; no se aceptan desde el cliente.
+- `metadata` excluye secretos, credenciales, refresh tokens y access tokens.
+- Acciones auditadas en `T603`:
+  - creación de empleado (`EMPLOYEE_CREATED`)
+  - activación de empleado (`EMPLOYEE_ACTIVATED`)
+  - desactivación de empleado (`EMPLOYEE_DEACTIVATED`)
+  - cambio de roles (`EMPLOYEE_ROLES_UPDATED`)
+  - aprobación de corrección (`CORRECTION_APPROVED`)
+  - rechazo de corrección (`CORRECTION_REJECTED`)
+- La consulta `GET /api/v1/admin/audit-events` está restringida a
+  `TENANT_ADMIN` y devuelve únicamente eventos del tenant autenticado.

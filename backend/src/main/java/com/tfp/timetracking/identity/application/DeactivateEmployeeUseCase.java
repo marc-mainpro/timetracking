@@ -1,5 +1,6 @@
 package com.tfp.timetracking.identity.application;
 
+import com.tfp.timetracking.audit.application.AuditRecorder;
 import com.tfp.timetracking.identity.domain.LastAdminException;
 import com.tfp.timetracking.identity.domain.RefreshToken;
 import com.tfp.timetracking.identity.domain.RefreshTokenRepository;
@@ -24,6 +25,7 @@ public class DeactivateEmployeeUseCase {
     private final Clock clock;
     private final IdGenerator idGenerator;
     private final DomainEventPublisher domainEventPublisher;
+    private final AuditRecorder auditRecorder;
 
     public DeactivateEmployeeUseCase(
             UserRepository userRepository,
@@ -31,13 +33,15 @@ public class DeactivateEmployeeUseCase {
             TenantContext tenantContext,
             Clock clock,
             IdGenerator idGenerator,
-            DomainEventPublisher domainEventPublisher) {
+            DomainEventPublisher domainEventPublisher,
+            AuditRecorder auditRecorder) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.tenantContext = tenantContext;
         this.clock = clock;
         this.idGenerator = idGenerator;
         this.domainEventPublisher = domainEventPublisher;
+        this.auditRecorder = auditRecorder;
     }
 
     @Transactional
@@ -52,6 +56,7 @@ public class DeactivateEmployeeUseCase {
         revokeRefreshTokens(user.id());
         User saved = userRepository.save(user);
         domainEventPublisher.publish(user.pullDomainEvents());
+        auditRecorder.record("EMPLOYEE_DEACTIVATED", "User", saved.id(), java.util.Map.of());
         return saved;
     }
 

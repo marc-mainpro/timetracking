@@ -8,6 +8,7 @@ import com.tfp.timetracking.identity.domain.Role;
 import com.tfp.timetracking.identity.domain.User;
 import com.tfp.timetracking.identity.domain.UserRepository;
 import com.tfp.timetracking.identity.domain.UserStatus;
+import com.tfp.timetracking.audit.application.AuditRecorder;
 import com.tfp.timetracking.shared.application.TenantContext;
 import java.time.Instant;
 import java.util.Set;
@@ -20,7 +21,8 @@ class AssignRoleUseCaseTest {
     void rejectsRemovingRoleFromLastActiveAdmin() {
         UserRepository userRepository = org.mockito.Mockito.mock(UserRepository.class);
         TenantContext tenantContext = org.mockito.Mockito.mock(TenantContext.class);
-        AssignRoleUseCase useCase = new AssignRoleUseCase(userRepository, tenantContext, () -> Instant.now());
+        AssignRoleUseCase useCase = new AssignRoleUseCase(
+                userRepository, tenantContext, () -> Instant.now(), org.mockito.Mockito.mock(AuditRecorder.class));
         UUID tenantId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         User admin = User.reconstitute(

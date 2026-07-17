@@ -8,6 +8,7 @@ import com.tfp.timetracking.identity.domain.EmailAlreadyInUseException;
 import com.tfp.timetracking.identity.domain.PasswordHasher;
 import com.tfp.timetracking.identity.domain.User;
 import com.tfp.timetracking.identity.domain.UserRepository;
+import com.tfp.timetracking.audit.application.AuditRecorder;
 import com.tfp.timetracking.shared.application.TenantContext;
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.DomainEventPublisher;
@@ -25,8 +26,9 @@ class CreateEmployeeUseCaseTest {
         PasswordHasher passwordHasher = org.mockito.Mockito.mock(PasswordHasher.class);
         TenantContext tenantContext = org.mockito.Mockito.mock(TenantContext.class);
         DomainEventPublisher publisher = org.mockito.Mockito.mock(DomainEventPublisher.class);
+        AuditRecorder auditRecorder = org.mockito.Mockito.mock(AuditRecorder.class);
         CreateEmployeeUseCase useCase = new CreateEmployeeUseCase(
-                userRepository, passwordHasher, tenantContext, () -> Instant.now(), UUID::randomUUID, publisher);
+                userRepository, passwordHasher, tenantContext, () -> Instant.now(), UUID::randomUUID, publisher, auditRecorder);
         when(userRepository.existsByEmail(any())).thenReturn(true);
         when(tenantContext.currentTenantId()).thenReturn(UUID.randomUUID());
 

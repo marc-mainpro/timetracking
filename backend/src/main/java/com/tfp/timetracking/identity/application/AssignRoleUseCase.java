@@ -1,5 +1,6 @@
 package com.tfp.timetracking.identity.application;
 
+import com.tfp.timetracking.audit.application.AuditRecorder;
 import com.tfp.timetracking.identity.domain.LastAdminException;
 import com.tfp.timetracking.identity.domain.Role;
 import com.tfp.timetracking.identity.domain.User;
@@ -18,11 +19,13 @@ public class AssignRoleUseCase {
     private final UserRepository userRepository;
     private final TenantContext tenantContext;
     private final Clock clock;
+    private final AuditRecorder auditRecorder;
 
-    public AssignRoleUseCase(UserRepository userRepository, TenantContext tenantContext, Clock clock) {
+    public AssignRoleUseCase(UserRepository userRepository, TenantContext tenantContext, Clock clock, AuditRecorder auditRecorder) {
         this.userRepository = userRepository;
         this.tenantContext = tenantContext;
         this.clock = clock;
+        this.auditRecorder = auditRecorder;
     }
 
     @Transactional
@@ -35,6 +38,12 @@ public class AssignRoleUseCase {
             throw new LastAdminException();
         }
         user.assignRoles(roles, clock);
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        auditRecorder.record(
+                "EMPLOYEE_ROLES_UPDATED",
+                "User",
+                saved.id(),
+                java.util.Map.of("roles", saved.roles().stream().map(Enum::name).toList()));
+        return saved;
     }
 }

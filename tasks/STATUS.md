@@ -24,7 +24,7 @@
 | T502 | Frontend admin empleados | hecha | validada: `npm test -- --watch=false --browsers=ChromeHeadless` y `npm run build` verdes; listado admin, alta/edición y manejo de 409 |
 | T601 | Dominio correcciones | hecha | validada: `mvn -B verify` verde (164 tests), agregado CorrectionRequest + JSONB + ajuste de Workday |
 | T602 | API correcciones | hecha | validada: `mvn -B verify` verde (173 tests), request/approve/reject/list/get de correcciones + suite cross-tenant ampliada |
-| T603 | Auditoría | pendiente | |
+| T603 | Auditoría | hecha | validada: `mvn -B verify` verde (175 tests), auditoría append-only tenant-aware + `GET /api/v1/admin/audit-events` |
 | T604 | Concurrencia | pendiente | |
 | T605 | Frontend correcciones | pendiente | |
 | T701 | Migración outbox | pendiente | |

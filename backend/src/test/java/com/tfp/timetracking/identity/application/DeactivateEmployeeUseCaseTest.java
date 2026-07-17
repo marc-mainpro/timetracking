@@ -9,6 +9,7 @@ import com.tfp.timetracking.identity.domain.Role;
 import com.tfp.timetracking.identity.domain.User;
 import com.tfp.timetracking.identity.domain.UserRepository;
 import com.tfp.timetracking.identity.domain.UserStatus;
+import com.tfp.timetracking.audit.application.AuditRecorder;
 import com.tfp.timetracking.shared.application.TenantContext;
 import com.tfp.timetracking.shared.domain.DomainEventPublisher;
 import java.time.Instant;
@@ -29,7 +30,8 @@ class DeactivateEmployeeUseCaseTest {
                 tenantContext,
                 () -> Instant.now(),
                 UUID::randomUUID,
-                org.mockito.Mockito.mock(DomainEventPublisher.class));
+                org.mockito.Mockito.mock(DomainEventPublisher.class),
+                org.mockito.Mockito.mock(AuditRecorder.class));
         UUID tenantId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         User admin = User.reconstitute(

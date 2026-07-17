@@ -1,5 +1,6 @@
 package com.tfp.timetracking.identity.application;
 
+import com.tfp.timetracking.audit.application.AuditRecorder;
 import com.tfp.timetracking.identity.domain.Email;
 import com.tfp.timetracking.identity.domain.EmailAlreadyInUseException;
 import com.tfp.timetracking.identity.domain.PasswordHasher;
@@ -24,6 +25,7 @@ public class CreateEmployeeUseCase {
     private final Clock clock;
     private final IdGenerator idGenerator;
     private final DomainEventPublisher domainEventPublisher;
+    private final AuditRecorder auditRecorder;
 
     public CreateEmployeeUseCase(
             UserRepository userRepository,
@@ -31,13 +33,15 @@ public class CreateEmployeeUseCase {
             TenantContext tenantContext,
             Clock clock,
             IdGenerator idGenerator,
-            DomainEventPublisher domainEventPublisher) {
+            DomainEventPublisher domainEventPublisher,
+            AuditRecorder auditRecorder) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
         this.tenantContext = tenantContext;
         this.clock = clock;
         this.idGenerator = idGenerator;
         this.domainEventPublisher = domainEventPublisher;
+        this.auditRecorder = auditRecorder;
     }
 
     @Transactional
@@ -57,6 +61,11 @@ public class CreateEmployeeUseCase {
                 idGenerator);
         User saved = userRepository.save(user);
         domainEventPublisher.publish(user.pullDomainEvents());
+        auditRecorder.record(
+                "EMPLOYEE_CREATED",
+                "User",
+                saved.id(),
+                java.util.Map.of("email", saved.email().value(), "roles", saved.roles().stream().map(Enum::name).toList()));
         return saved;
     }
 }

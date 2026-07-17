@@ -15,6 +15,8 @@ import com.tfp.timetracking.corrections.domain.CorrectionRequest;
 import com.tfp.timetracking.corrections.domain.CorrectionRequestStatus;
 import com.tfp.timetracking.corrections.domain.ProposedChanges;
 import com.tfp.timetracking.corrections.domain.ProposedChanges.ProposedBreak;
+import com.tfp.timetracking.audit.interfaces.rest.AuditEventRestMapper;
+import com.tfp.timetracking.audit.domain.AuditEvent;
 import com.tfp.timetracking.timetracking.interfaces.rest.WorkdayRestMapper;
 import com.tfp.timetracking.timetracking.domain.Workday;
 import com.tfp.timetracking.timetracking.domain.BreakEntry;
@@ -75,6 +77,8 @@ class LayeredArchitectureTest {
             .ignoreDependency(CorrectionRestMapper.class, ProposedBreak.class)
             .ignoreDependency(CorrectionRestMapper.class, PagedResult.class)
             .ignoreDependency(CorrectionController.class, CorrectionRequestStatus.class)
+            .ignoreDependency(AuditEventRestMapper.class, AuditEvent.class)
+            .ignoreDependency(AuditEventRestMapper.class, PagedResult.class)
             .ignoreDependency(WorkdayRestMapper.class, Workday.class)
             .ignoreDependency(WorkdayRestMapper.class, BreakEntry.class)
             .ignoreDependency(WorkdayRestMapper.class, WorkdayStatus.class)
