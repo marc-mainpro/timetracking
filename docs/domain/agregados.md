@@ -20,6 +20,9 @@ autenticación por `email + password` sin ambigüedad entre tenants.
 Campos: `id`, `tenantId`, `employeeId`, `status`, `startedAt`, `endedAt`,
 `version` (optimistic locking), `createdAt`, `updatedAt`.
 
+`Workday` contiene la colección de `BreakEntry` y genera los eventos de
+dominio `WorkdayStarted`, `BreakStarted`, `BreakEnded` y `WorkdayClosed`.
+
 Estados: `OPEN`, `ON_BREAK`, `CLOSED`, `ADJUSTED`.
 
 Transiciones válidas:
@@ -34,6 +37,8 @@ Cualquier otra transición lanza una excepción de dominio (HTTP 409).
 ## BreakEntry (dentro de Workday)
 
 Campos: `id`, `workdayId`, `startedAt`, `endedAt`.
+
+Regla clave: `endedAt` no puede ser anterior a `startedAt`.
 
 ## CorrectionRequest
 

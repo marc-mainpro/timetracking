@@ -16,7 +16,7 @@
 | T301 | TenantContext | hecha | validada: `mvn -B verify` verde (99 tests), tenant/user/roles desde JWT, correlationId por request y revocación por inactividad en cada request autenticada |
 | T302 | Repos tenant-aware | hecha | validada: `mvn -B verify` verde (105 tests), `UserRepository.findById(tenantId,id)` y convención verificada por test |
 | T303 | Suite cross-tenant | hecha | validada: `mvn -B verify` verde (105 tests), fixture reusable + 404/403/401 cross-tenant; caso de mismo email sustituido por ADR-0008 |
-| T401 | Dominio Workday | pendiente | |
+| T401 | Dominio Workday | hecha | validada: `mvn -B verify` verde (124 tests), agregado Workday + BreakEntry + eventos de dominio |
 | T402 | Persistencia Workday | pendiente | |
 | T403 | API fichaje | pendiente | |
 | T404 | Frontend empleado | pendiente | |

@@ -21,6 +21,8 @@ un test unitario asociado.
 6. Hora de fichaje = hora del servidor (nunca del cliente).
 7. Cambios históricos SOLO vía corrección aprobada (estado pasa a
    `ADJUSTED`).
+8. La unicidad de jornada abierta por empleado se valida fuera del agregado
+   (`WorkdayRepository.findActiveByEmployee(...)` + constraint de BD).
 
 ## BreakEntry
 
