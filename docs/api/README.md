@@ -24,7 +24,9 @@ Responde `201` con `{tenantId, adminUserId}` (sin datos sensibles) y
 `POST /api/v1/auth/login`: autentica por `email + password`, verifica que el
 usuario y su tenant estén activos, y devuelve `{accessToken, expiresAt}`.
 Además emite una cookie `refresh_token` con `HttpOnly; Secure;
-SameSite=Strict; Path=/api/v1/auth`.
+SameSite=Strict; Path=/api/v1/auth`. El endpoint está limitado por IP
+(`10 req/min` en configuración normal). Si se supera, responde `429` con
+`errorCode = RATE_LIMIT_EXCEEDED`.
 
 `POST /api/v1/auth/refresh`: recibe la cookie `refresh_token`, la rota, emite
 un nuevo access token y devuelve una nueva cookie refresh. La reutilización de
@@ -33,6 +35,10 @@ e invalida la cadena activa del usuario.
 
 `POST /api/v1/auth/logout`: requiere Bearer JWT, revoca el refresh token de la
 cookie actual si existe y devuelve `204` limpiando la cookie.
+
+`POST /api/v1/auth/register`: también está limitado por IP (`10 req/min` en
+configuración normal) y responde `429` con `RATE_LIMIT_EXCEEDED` cuando se
+supera la ventana.
 
 ## Formato de error
 
@@ -58,6 +64,9 @@ responden HTTP 409.
 Errores de autenticación/sesión (`INVALID_CREDENTIALS`,
 `INVALID_REFRESH_TOKEN`, `REFRESH_TOKEN_REUSED`, `USER_INACTIVE`,
 `TENANT_INACTIVE`) responden HTTP 401.
+
+Exceso de rate limit en endpoints públicos de autenticación responde HTTP 429
+con `errorCode = RATE_LIMIT_EXCEEDED`.
 
 ## Roles
 

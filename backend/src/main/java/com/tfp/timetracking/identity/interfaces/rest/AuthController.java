@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.Duration;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -76,6 +77,8 @@ public class AuthController {
 
     private ResponseEntity<AuthTokenResponse> sessionResponse(AuthenticatedSession session) {
         return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .header(HttpHeaders.PRAGMA, "no-cache")
                 .header(HttpHeaders.SET_COOKIE, createRefreshCookie(session.refreshToken()).toString())
                 .body(new AuthTokenResponse(session.accessToken(), session.accessTokenExpiresAt()));
     }

@@ -14,6 +14,9 @@ auth:
   jwt:
     secret: test-jwt-secret-key-with-at-least-32-bytes
     access-token-ttl: PT15M
+  rate-limit:
+    capacity: 10
+    window: PT1M
   refresh-token:
     ttl: P14D
     cookie-name: refresh_token

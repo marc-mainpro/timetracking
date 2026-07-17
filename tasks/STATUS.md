@@ -12,7 +12,7 @@
 | T202 | Dominio Tenant/User | hecha | validada: 53 tests, dominio ~100 % cobertura; detectó gap de tests *IT |
 | T203 | RegisterTenant | hecha | validada: `mvn -B verify` verde (65 tests), cobertura JaCoCo en verde, commit `1c909ed` |
 | T204 | Autenticación JWT | hecha | validada: `mvn -B verify` verde (84 tests), JWT+refresh rotatorio+logout, ADR-0008 email global único |
-| T205 | Rate limiting + tests seguridad | pendiente | |
+| T205 | Rate limiting + tests seguridad | hecha | validada: `mvn -B verify` verde (91 tests), Bucket4j en login/register, 429 y cabeceras de auth cubiertas |
 | T301 | TenantContext | pendiente | |
 | T302 | Repos tenant-aware | pendiente | |
 | T303 | Suite cross-tenant | pendiente | |

@@ -5,6 +5,8 @@ import com.tfp.timetracking.tenant.application.RegisterTenantResult;
 import com.tfp.timetracking.tenant.application.RegisterTenantUseCase;
 import jakarta.validation.Valid;
 import java.net.URI;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -39,6 +41,9 @@ public class AuthRegisterController {
 
         RegisterTenantResponse body = new RegisterTenantResponse(result.tenantId(), result.adminUserId());
         URI location = URI.create("/api/v1/tenants/" + result.tenantId());
-        return ResponseEntity.created(location).body(body);
+        return ResponseEntity.created(location)
+                .cacheControl(CacheControl.noStore())
+                .header(HttpHeaders.PRAGMA, "no-cache")
+                .body(body);
     }
 }
