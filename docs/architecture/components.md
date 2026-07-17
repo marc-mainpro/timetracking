@@ -33,5 +33,10 @@ Cada módulo se organiza en capas, de dentro hacia fuera:
 - `infrastructure` implementa puertos definidos en `domain`/`application`.
 - El tenant operativo se resuelve desde el principal autenticado, nunca desde
   DTOs o parámetros del cliente.
+- Convención tenant-aware: los métodos públicos de puertos de repositorio de
+  negocio reciben `tenantId` como primer parámetro. Excepciones documentadas:
+  `TenantRepository` (su clave es el propio tenant) y métodos globales de
+  autenticación/registro estrictamente necesarios mientras existan flujos sin
+  `TenantContext` previo (`UserRepository.findByEmail/existsByEmail/findById(id)`).
 - Sin ciclos de dependencia entre módulos.
 - Entidades JPA separadas del modelo de dominio y de los DTO de API.

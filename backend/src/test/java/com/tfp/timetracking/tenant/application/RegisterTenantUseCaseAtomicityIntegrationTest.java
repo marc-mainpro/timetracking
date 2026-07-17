@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.tfp.timetracking.identity.domain.Email;
 import com.tfp.timetracking.identity.domain.User;
 import com.tfp.timetracking.identity.domain.UserRepository;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -88,6 +89,11 @@ class RegisterTenantUseCaseAtomicityIntegrationTest {
                 }
 
                 @Override
+                public Optional<User> findById(UUID tenantId, UUID id) {
+                    return Optional.empty();
+                }
+
+                @Override
                 public Optional<User> findByEmail(Email email) {
                     return Optional.empty();
                 }
@@ -95,6 +101,11 @@ class RegisterTenantUseCaseAtomicityIntegrationTest {
                 @Override
                 public boolean existsByEmail(Email email) {
                     return false;
+                }
+
+                @Override
+                public List<User> findAllByTenantId(UUID tenantId) {
+                    return List.of();
                 }
             };
         }

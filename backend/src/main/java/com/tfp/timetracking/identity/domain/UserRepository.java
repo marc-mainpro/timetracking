@@ -1,6 +1,7 @@
 package com.tfp.timetracking.identity.domain;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -14,9 +15,21 @@ public interface UserRepository {
 
     User save(User user);
 
+    /**
+     * Via tenant-aware por defecto para consultas de negocio. Si el usuario no
+     * pertenece al tenant indicado, debe devolver vacio aunque el id exista.
+     */
+    Optional<User> findById(UUID tenantId, UUID id);
+
+    /**
+     * Excepcion temporal documentada para flujos de autenticacion no ligados a
+     * un TenantContext previo (p. ej. refresh token).
+     */
     Optional<User> findById(UUID id);
 
     Optional<User> findByEmail(Email email);
 
     boolean existsByEmail(Email email);
+
+    List<User> findAllByTenantId(UUID tenantId);
 }

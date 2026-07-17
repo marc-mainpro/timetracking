@@ -18,6 +18,9 @@ respeta el aislamiento entre tenants antes de darlo por finalizado.
 2. Revisar cada repositorio/consulta tocado: toda query de negocio debe
    incluir el filtro `tenant_id = :tenantId` (o equivalente vía
    especificación/JPQL).
+   La convención del proyecto es explícita: el puerto `*Repository` recibe
+   `tenantId` como primer parámetro, salvo excepciones documentadas de
+   autenticación/plataforma.
 3. Revisar cada tabla nueva o modificada: debe tener `tenant_id` y, si
    aplica, restricciones `UNIQUE` compuestas con `tenant_id`.
 4. Revisar cada endpoint administrativo: debe comprobar rol Y tenant (un
@@ -41,6 +44,8 @@ respeta el aislamiento entre tenants antes de darlo por finalizado.
   datos del tenant B (esperando 403/404, nunca 200 con datos ajenos).
 - Test que verifique que un intento de forzar `tenant_id` distinto en el
   payload/JWT manipulado es ignorado o rechazado.
+- Toda tarea futura que añada endpoints de negocio debe ampliar la suite
+  cross-tenant reutilizable del proyecto con sus nuevos casos de aislamiento.
 
 ## Criterios de finalización
 

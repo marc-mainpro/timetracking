@@ -3,6 +3,7 @@ package com.tfp.timetracking.identity.infrastructure.persistence;
 import com.tfp.timetracking.identity.domain.Email;
 import com.tfp.timetracking.identity.domain.User;
 import com.tfp.timetracking.identity.domain.UserRepository;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
@@ -28,6 +29,11 @@ public class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
+    public Optional<User> findById(UUID tenantId, UUID id) {
+        return jpaRepository.findByTenantIdAndId(tenantId, id).map(UserMapper::toDomain);
+    }
+
+    @Override
     public Optional<User> findById(UUID id) {
         return jpaRepository.findById(id).map(UserMapper::toDomain);
     }
@@ -40,5 +46,10 @@ public class UserRepositoryAdapter implements UserRepository {
     @Override
     public boolean existsByEmail(Email email) {
         return jpaRepository.existsByEmail(email.value());
+    }
+
+    @Override
+    public List<User> findAllByTenantId(UUID tenantId) {
+        return jpaRepository.findAllByTenantId(tenantId).stream().map(UserMapper::toDomain).toList();
     }
 }

@@ -73,7 +73,7 @@ class UserRepositoryAdapterIntegrationTest {
 
         userRepository.save(user);
 
-        User recovered = userRepository.findById(userId).orElseThrow();
+        User recovered = userRepository.findById(tenantId, userId).orElseThrow();
         assertThat(recovered.id()).isEqualTo(userId);
         assertThat(recovered.tenantId()).isEqualTo(tenantId);
         assertThat(recovered.email()).isEqualTo(Email.of("jane.doe@example.com"));
@@ -108,6 +108,17 @@ class UserRepositoryAdapterIntegrationTest {
     }
 
     @Test
+    void tenantAwareFindByIdReturnsEmptyForWrongTenant() {
+        UUID tenantA = insertTenant();
+        UUID tenantB = insertTenant();
+        User user = newUser(tenantA, "tenant-aware@example.com");
+        userRepository.save(user);
+
+        assertThat(userRepository.findById(tenantA, user.id())).isPresent();
+        assertThat(userRepository.findById(tenantB, user.id())).isEmpty();
+    }
+
+    @Test
     void rejectsSameEmailAcrossDifferentTenants() {
         UUID tenantA = insertTenant();
         UUID tenantB = insertTenant();
@@ -129,6 +140,7 @@ class UserRepositoryAdapterIntegrationTest {
 
     @Test
     void findByIdReturnsEmptyWhenUserDoesNotExist() {
+        assertThat(userRepository.findById(UUID.randomUUID(), UUID.randomUUID())).isEmpty();
         assertThat(userRepository.findById(UUID.randomUUID())).isEmpty();
     }
 

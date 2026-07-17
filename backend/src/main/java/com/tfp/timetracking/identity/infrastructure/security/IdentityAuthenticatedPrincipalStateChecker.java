@@ -23,10 +23,7 @@ public class IdentityAuthenticatedPrincipalStateChecker implements Authenticated
 
     @Override
     public void ensureActivePrincipal(UUID tenantId, UUID userId) {
-        User user = userRepository.findById(userId).orElseThrow(InvalidCredentialsException::new);
-        if (!user.tenantId().equals(tenantId)) {
-            throw new InvalidCredentialsException();
-        }
+        User user = userRepository.findById(tenantId, userId).orElseThrow(InvalidCredentialsException::new);
         if (!user.isActive()) {
             throw new UserInactiveException();
         }
