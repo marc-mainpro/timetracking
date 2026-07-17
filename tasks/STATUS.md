@@ -2,7 +2,7 @@
 
 | Tarea | Título | Estado | Notas |
 |---|---|---|---|
-| T101 | Scaffolding backend | pendiente | |
+| T101 | Scaffolding backend | hecha | validada: mvn verify verde, Spring Boot 3.5.9 |
 | T102 | Scaffolding frontend | pendiente | |
 | T103 | Docker Compose + Flyway | pendiente | |
 | T104 | CI | pendiente | |

@@ -1,0 +1,3 @@
+-- Baseline vacio. Las migraciones de negocio (tablas de identity, tenant,
+-- timetracking, corrections, reporting, audit, outbox) se añaden en tareas
+-- posteriores; quedan fuera de alcance de T101 (scaffolding).
