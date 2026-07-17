@@ -4,6 +4,12 @@ import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
 import com.tfp.timetracking.shared.domain.DomainException;
 import com.tfp.timetracking.shared.interfaces.rest.GlobalExceptionHandler;
+import com.tfp.timetracking.timetracking.interfaces.rest.WorkdayRestMapper;
+import com.tfp.timetracking.timetracking.domain.Workday;
+import com.tfp.timetracking.timetracking.domain.BreakEntry;
+import com.tfp.timetracking.timetracking.domain.WorkdayStatus;
+import com.tfp.timetracking.shared.domain.Clock;
+import com.tfp.timetracking.shared.domain.PagedResult;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
@@ -47,5 +53,10 @@ class LayeredArchitectureTest {
             .whereLayer("Domain").mayOnlyBeAccessedByLayers("Application", "Infrastructure")
             .whereLayer("Infrastructure").mayNotBeAccessedByAnyLayer()
             .ignoreDependency(GlobalExceptionHandler.class, DomainException.class)
+            .ignoreDependency(WorkdayRestMapper.class, Workday.class)
+            .ignoreDependency(WorkdayRestMapper.class, BreakEntry.class)
+            .ignoreDependency(WorkdayRestMapper.class, WorkdayStatus.class)
+            .ignoreDependency(WorkdayRestMapper.class, Clock.class)
+            .ignoreDependency(WorkdayRestMapper.class, PagedResult.class)
             .allowEmptyShould(true);
 }

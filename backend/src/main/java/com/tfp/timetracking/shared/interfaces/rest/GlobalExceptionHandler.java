@@ -1,5 +1,6 @@
 package com.tfp.timetracking.shared.interfaces.rest;
 
+import com.tfp.timetracking.shared.application.ResourceNotFoundException;
 import com.tfp.timetracking.shared.domain.DomainException;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -9,6 +10,7 @@ import java.util.UUID;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -68,6 +70,22 @@ public class GlobalExceptionHandler {
                 .toList();
         problem.setProperty("errors", errors);
         enrich(problem, "VALIDATION_ERROR");
+        return problem;
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ProblemDetail handleNotFound(ResourceNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Resource not found");
+        enrich(problem, "RESOURCE_NOT_FOUND");
+        return problem;
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ProblemDetail handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Conflicto de concurrencia");
+        problem.setTitle("Concurrent modification");
+        enrich(problem, "CONCURRENT_MODIFICATION");
         return problem;
     }
 

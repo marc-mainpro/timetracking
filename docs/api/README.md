@@ -14,6 +14,15 @@ especificación cuando exista un pipeline que lo publique.
 | POST | `/api/v1/auth/login` | público | T204 |
 | POST | `/api/v1/auth/refresh` | público | T204 |
 | POST | `/api/v1/auth/logout` | Bearer JWT | T204 |
+| GET | `/api/v1/workdays/current` | `EMPLOYEE` | T403 |
+| POST | `/api/v1/workdays/start` | `EMPLOYEE` | T403 |
+| POST | `/api/v1/workdays/current/breaks/start` | `EMPLOYEE` | T403 |
+| POST | `/api/v1/workdays/current/breaks/end` | `EMPLOYEE` | T403 |
+| POST | `/api/v1/workdays/current/end` | `EMPLOYEE` | T403 |
+| GET | `/api/v1/workdays` | `EMPLOYEE` | T403 |
+| GET | `/api/v1/workdays/{workdayId}` | `EMPLOYEE` | T403 |
+| GET | `/api/v1/admin/workdays` | `TENANT_ADMIN` | T403 |
+| GET | `/api/v1/admin/workdays/{workdayId}` | `TENANT_ADMIN` | T403 |
 
 `POST /api/v1/auth/register`: crea un tenant y su primer usuario
 `TENANT_ADMIN` de forma transaccional. Body: `tenantName`, `timezone`,
@@ -39,6 +48,30 @@ cookie actual si existe y devuelve `204` limpiando la cookie.
 `POST /api/v1/auth/register`: también está limitado por IP (`10 req/min` en
 configuración normal) y responde `429` con `RATE_LIMIT_EXCEEDED` cuando se
 supera la ventana.
+
+`GET /api/v1/workdays/current`: devuelve la jornada activa del empleado
+autenticado o `404` si no existe.
+
+`POST /api/v1/workdays/start`: abre una nueva jornada para el empleado
+autenticado usando la hora del servidor. Responde `201` con la jornada creada.
+
+`POST /api/v1/workdays/current/breaks/start` y
+`POST /api/v1/workdays/current/breaks/end`: inician/finalizan la pausa abierta
+de la jornada actual. Las transiciones inválidas responden `409` con el
+`errorCode` de dominio correspondiente.
+
+`POST /api/v1/workdays/current/end`: cierra la jornada actual. Si existe una
+pausa abierta responde `409` con `WORKDAY_OPEN_BREAK`.
+
+`GET /api/v1/workdays`: historial propio paginado (`page`, `size`, `from`,
+`to`).
+
+`GET /api/v1/workdays/{workdayId}`: devuelve la jornada solo si pertenece al
+empleado autenticado; si no, `404`.
+
+`GET /api/v1/admin/workdays` y `GET /api/v1/admin/workdays/{workdayId}`:
+listado y detalle para `TENANT_ADMIN`, siempre acotados al tenant del
+principal autenticado. Recursos de otro tenant responden `404`.
 
 ## Formato de error
 

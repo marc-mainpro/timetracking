@@ -18,7 +18,7 @@
 | T303 | Suite cross-tenant | hecha | validada: `mvn -B verify` verde (105 tests), fixture reusable + 404/403/401 cross-tenant; caso de mismo email sustituido por ADR-0008 |
 | T401 | Dominio Workday | hecha | validada: `mvn -B verify` verde (124 tests), agregado Workday + BreakEntry + eventos de dominio |
 | T402 | Persistencia Workday | hecha | validada: `mvn -B verify` verde (131 tests), V4 aplicada, repositorio JPA tenant-aware y optimistic locking |
-| T403 | API fichaje | pendiente | |
+| T403 | API fichaje | hecha | validada: `mvn -B verify` verde (142 tests), flujo completo de fichaje + admin workdays + suite cross-tenant ampliada |
 | T404 | Frontend empleado | pendiente | |
 | T501 | API gestión empleados | pendiente | |
 | T502 | Frontend admin empleados | pendiente | |

@@ -132,6 +132,32 @@ class CrossTenantSecurityIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void adminOfTenantACannotReadWorkdayOfTenantB() throws Exception {
+        TestTenantFactory.TenantActors tenantA = testTenantFactory.createTenantActors("A-workday");
+        TestTenantFactory.TenantActors tenantB = testTenantFactory.createTenantActors("B-workday");
+
+        String workdayId = startWorkday(tenantB.employee().token());
+
+        mockMvc.perform(get("/api/v1/admin/workdays/{workdayId}", workdayId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenantA.admin().token()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void adminOfTenantAListsOnlyOwnTenantWorkdays() throws Exception {
+        TestTenantFactory.TenantActors tenantA = testTenantFactory.createTenantActors("A-admin-list");
+        TestTenantFactory.TenantActors tenantB = testTenantFactory.createTenantActors("B-admin-list");
+        String workdayA = startWorkday(tenantA.employee().token());
+        String workdayB = startWorkday(tenantB.employee().token());
+
+        mockMvc.perform(get("/api/v1/admin/workdays")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenantA.admin().token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(workdayA));
+    }
+
     @TestConfiguration
     static class CrossTenantTestConfiguration {
 
@@ -199,5 +225,16 @@ class CrossTenantSecurityIntegrationTest {
                 .claim("roles", roles)
                 .build();
         return jwtEncoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims)).getTokenValue();
+    }
+
+    private String startWorkday(String token) throws Exception {
+        return new com.fasterxml.jackson.databind.ObjectMapper()
+                .readTree(mockMvc.perform(post("/api/v1/workdays/start").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                        .andExpect(status().isCreated())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString())
+                .get("id")
+                .asText();
     }
 }

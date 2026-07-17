@@ -47,6 +47,7 @@ public class TestTenantFactory {
 
     public TenantActors createTenantActors(String seed) throws Exception {
         long suffix = Instant.now().toEpochMilli() + Math.abs(seed.hashCode());
+        String clientIp = "198.51.100." + (Math.abs(seed.hashCode() % 200) + 20);
         String adminEmail = "admin+" + seed + "+" + suffix + "@acme.test";
         String adminPassword = "supersecretpwd";
         RegisterTenantRequest request = new RegisterTenantRequest(
@@ -57,6 +58,7 @@ public class TestTenantFactory {
                 "Admin",
                 seed);
         String responseBody = mockMvc.perform(post("/api/v1/auth/register")
+                        .header("X-Forwarded-For", clientIp)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -79,8 +81,8 @@ public class TestTenantFactory {
         userRepository.save(employee);
         employee.pullDomainEvents();
 
-        String adminToken = login(adminEmail, adminPassword);
-        String employeeToken = login(employeeEmail, employeePassword);
+        String adminToken = login(adminEmail, adminPassword, clientIp + "-admin");
+        String employeeToken = login(employeeEmail, employeePassword, clientIp + "-employee");
 
         return new TenantActors(
                 response.tenantId(),
@@ -88,8 +90,9 @@ public class TestTenantFactory {
                 new Actor(employee.id(), employeeEmail, employeePassword, employeeToken, Set.of(Role.EMPLOYEE)));
     }
 
-    private String login(String email, String password) throws Exception {
+    private String login(String email, String password, String clientIp) throws Exception {
         String response = mockMvc.perform(post("/api/v1/auth/login")
+                        .header("X-Forwarded-For", clientIp)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new AuthLoginRequest(email, password))))
                 .andExpect(status().isOk())
