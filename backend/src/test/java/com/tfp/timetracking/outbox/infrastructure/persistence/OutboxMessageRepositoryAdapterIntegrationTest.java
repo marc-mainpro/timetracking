@@ -133,7 +133,7 @@ class OutboxMessageRepositoryAdapterIntegrationTest {
         OutboxMessage saved = outboxMessageRepository.save(newPendingMessage());
         outboxMessageRepository.claimBatch(10, Instant.now(), Instant.now().plusSeconds(30));
 
-        outboxMessageRepository.markFailed(saved.id(), "unrecoverable");
+        outboxMessageRepository.markFailed(saved.id(), 5, "unrecoverable");
 
         String status = jdbcTemplate.queryForObject(
                 "select status from outbox_message where id = ?::uuid", String.class, saved.id().toString());
@@ -147,7 +147,7 @@ class OutboxMessageRepositoryAdapterIntegrationTest {
     @Test
     void archivePublishedBeforeDeletesOnlyOldPublishedMessages() {
         OutboxMessage recent = outboxMessageRepository.save(newPendingMessage());
-        outboxMessageRepository.markFailed(recent.id(), "n/a");
+        outboxMessageRepository.markFailed(recent.id(), 1, "n/a");
         OutboxMessage toArchive = outboxMessageRepository.save(newPendingMessage());
         outboxMessageRepository.markPublished(toArchive.id(), Instant.now().minus(60, ChronoUnit.DAYS));
 

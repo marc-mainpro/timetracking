@@ -13,10 +13,19 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,metrics
   endpoint:
     health:
       show-details: never
+
+outbox:
+  poll-interval: PT5S
+  batch-size: 50
+  max-attempts: 8
+  claim-timeout: PT5M
+  archive-retention: P30D
+  archive-cron: "0 0 3 * * *"
+  scheduler-enabled: true
 
 springdoc:
   api-docs:

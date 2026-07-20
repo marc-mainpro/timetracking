@@ -10,6 +10,16 @@ logging:
     org.springframework: INFO
     com.tfp.timetracking: DEBUG
 
+# T703: el publicador/archivador en segundo plano se desactiva en el perfil
+# de test para que las suites de otras funcionalidades no compitan con un
+# @Scheduled real sobre filas de outbox_message que no les conciernen. Los
+# tests propios del publicador invocan PublishPendingOutboxMessages /
+# ArchivePublishedOutboxMessages directamente (sin depender del cron) y
+# reactivan este flag puntualmente via @DynamicPropertySource cuando
+# necesitan probar el job programado en si.
+outbox:
+  scheduler-enabled: false
+
 auth:
   jwt:
     secret: test-jwt-secret-key-with-at-least-32-bytes

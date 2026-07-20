@@ -24,8 +24,8 @@ Nota de implementación (T702): internamente, `IntegrationEvent`
 (`shared.domain.IntegrationEvent`) añade un campo `aggregateType` (p.ej.
 `"Workday"`, `"Tenant"`, `"Employee"`, `"CorrectionRequest"`) que no forma
 parte del envelope público de arriba; alimenta la columna
-`aggregate_type` de `outbox_message`, usada por el futuro publicador (T703)
-para logging/routing, no por los consumidores externos.
+`aggregate_type` de `outbox_message`, usada por el publicador (T703) para
+logging/routing, no por los consumidores externos.
 
 ## Tipos previstos
 
@@ -53,4 +53,8 @@ tipo de esta lista los necesita. Ver
   (`outbox.infrastructure`) lo persiste vía el puerto `OutboxWriter` dentro
   de la misma transacción `@Transactional` del caso de uso.
 - Nunca se publican entidades JPA ni modelos internos.
-- Entrega at-least-once; los consumidores deben ser idempotentes.
+- Entrega **at-least-once real** (no solo documentada): el publicador
+  (T703, `docs/integration/outbox-publisher.md`) reclama los mensajes
+  `outbox_message` por polling, reintenta con backoff exponencial ante
+  fallos y solo marca `PUBLISHED` tras una entrega exitosa; los
+  consumidores deben ser idempotentes (deduplicar por `eventId`).

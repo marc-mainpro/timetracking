@@ -2,6 +2,7 @@ package com.tfp.timetracking.outbox.domain;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -14,6 +15,9 @@ import java.util.UUID;
 public interface OutboxMessageRepository {
 
     OutboxMessage save(OutboxMessage message);
+
+    /** Usado por operaciones manuales (T703, {@code RetryFailedOutboxMessage}). */
+    Optional<OutboxMessage> findById(UUID id);
 
     /**
      * Reclama hasta {@code limit} mensajes listos para publicarse: los
@@ -30,8 +34,21 @@ public interface OutboxMessageRepository {
 
     void markRetry(UUID id, int attempts, Instant nextAttemptAt, String lastError);
 
-    void markFailed(UUID id, String lastError);
+    /**
+     * Marca el mensaje {@code FAILED} definitivamente (T703: intentos
+     * agotados). Recibe {@code attempts} para dejar constancia del numero
+     * final de intentos realizados (no solo el ultimo error), util para
+     * observabilidad/soporte.
+     */
+    void markFailed(UUID id, int attempts, String lastError);
 
     /** Purga los mensajes ya publicados antes de {@code before}. Devuelve cuantos se eliminaron. */
     int archivePublishedBefore(Instant before);
+
+    /**
+     * Cuenta los mensajes todavia no publicados ni fallidos definitivamente
+     * ({@code PENDING} + {@code PROCESSING}), usado como gauge de backlog
+     * (T703, metricas Micrometer).
+     */
+    long countPending();
 }

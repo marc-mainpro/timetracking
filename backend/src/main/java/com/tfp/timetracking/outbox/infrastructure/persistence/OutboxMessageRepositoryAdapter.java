@@ -5,6 +5,7 @@ import com.tfp.timetracking.outbox.domain.OutboxMessage;
 import com.tfp.timetracking.outbox.domain.OutboxMessageRepository;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,11 @@ public class OutboxMessageRepositoryAdapter implements OutboxMessageRepository {
     public OutboxMessage save(OutboxMessage message) {
         return OutboxMessageMapper.toDomain(
                 jpaRepository.save(OutboxMessageMapper.toJpaEntity(message, objectMapper)), objectMapper);
+    }
+
+    @Override
+    public Optional<OutboxMessage> findById(UUID id) {
+        return jpaRepository.findById(id).map(entity -> OutboxMessageMapper.toDomain(entity, objectMapper));
     }
 
     @Override
@@ -48,13 +54,18 @@ public class OutboxMessageRepositoryAdapter implements OutboxMessageRepository {
 
     @Override
     @Transactional
-    public void markFailed(UUID id, String lastError) {
-        jpaRepository.markFailed(id, lastError);
+    public void markFailed(UUID id, int attempts, String lastError) {
+        jpaRepository.markFailed(id, attempts, lastError);
     }
 
     @Override
     @Transactional
     public int archivePublishedBefore(Instant before) {
         return jpaRepository.archivePublishedBefore(before);
+    }
+
+    @Override
+    public long countPending() {
+        return jpaRepository.countPending();
     }
 }

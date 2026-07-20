@@ -29,7 +29,7 @@
 | T605 | Frontend correcciones | hecha | validada: `npm test -- --watch=false --browsers=ChromeHeadless` y `npm run build` verdes; flujo empleado/admin implementado, verificación manual local pendiente |
 | T701 | Migración outbox | hecha | validada: `mvn -B verify` verde (190 tests), `V8__outbox.sql` (número real tras V7), `OutboxMessageRepository`/`OutboxWriter` + reclamación `FOR UPDATE SKIP LOCKED` con test de concurrencia real (dos workers, sin sleeps) |
 | T702 | Eventos integración + atomicidad | hecha | validada: `mvn -B verify` verde (209 tests), `IntegrationEvent` (`shared.domain`) + mapper por módulo + `OutboxDomainEventPublisher` sustituye a `LoggingDomainEventPublisher` (eliminada), tests de atomicidad commit⇒PENDING y rollback⇒0 filas |
-| T703 | Publicador outbox | pendiente | |
+| T703 | Publicador outbox | hecha | validada: `mvn -B verify` verde (266 tests), `OutboxPublisherJob`/`OutboxArchiverJob` (`@Scheduled`, `outbox.*` properties) + `PublishPendingOutboxMessages`/`RetryFailedOutboxMessage`/`ArchivePublishedOutboxMessages` + backoff exponencial con jitter + métricas Micrometer + recuperación de `PROCESSING` huérfanos + tests sin sleeps (reloj mutable inyectado) incl. concurrencia de dos publicadores |
 | T704 | Idempotencia + catálogo | pendiente | |
 | T801 | API informes + CSV | hecha | validada: `mvn -B verify` verde (219 tests), resumen diario/tenant con zona horaria del tenant + tests DST (23h/25h Madrid) + export CSV + suite cross-tenant ampliada |
 | T802 | Frontend informes | hecha | validada: `npm test -- --watch=false --browsers=ChromeHeadless` (34 tests) y `npm run build` verdes; `/admin/reports` (rango+tabla+CSV) y `/reports` propio de empleado |

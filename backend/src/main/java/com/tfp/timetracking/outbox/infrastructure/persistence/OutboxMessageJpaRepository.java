@@ -61,10 +61,16 @@ interface OutboxMessageJpaRepository extends JpaRepository<OutboxMessageJpaEntit
             @Param("lastError") String lastError);
 
     @Modifying
-    @Query(value = "UPDATE outbox_message SET status = 'FAILED', last_error = :lastError WHERE id = :id", nativeQuery = true)
-    int markFailed(@Param("id") UUID id, @Param("lastError") String lastError);
+    @Query(
+            value =
+                    "UPDATE outbox_message SET status = 'FAILED', attempts = :attempts, last_error = :lastError WHERE id = :id",
+            nativeQuery = true)
+    int markFailed(@Param("id") UUID id, @Param("attempts") int attempts, @Param("lastError") String lastError);
 
     @Modifying
     @Query(value = "DELETE FROM outbox_message WHERE status = 'PUBLISHED' AND published_at < :before", nativeQuery = true)
     int archivePublishedBefore(@Param("before") Instant before);
+
+    @Query("SELECT COUNT(m) FROM OutboxMessageJpaEntity m WHERE m.status IN ('PENDING', 'PROCESSING')")
+    long countPending();
 }
