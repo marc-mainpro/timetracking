@@ -1,7 +1,9 @@
 package com.tfp.timetracking.outbox.infrastructure;
 
+import com.tfp.timetracking.outbox.application.IntegrationEventListener;
 import com.tfp.timetracking.outbox.application.IntegrationEventPublisher;
 import com.tfp.timetracking.shared.domain.IntegrationEvent;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -18,11 +20,25 @@ import org.springframework.stereotype.Component;
  * sustituye por una que si pueda fallar (HTTP a un consumidor real, por
  * ejemplo), debe propagar la excepcion para que {@code
  * PublishPendingOutboxMessages} programe el reintento correspondiente.
+ *
+ * <p><strong>T704:</strong> tras loguear, notifica a los {@link
+ * IntegrationEventListener} registrados en el contexto (en el MVP, solo el
+ * consumidor de demostracion idempotente, ver
+ * {@code outbox.infrastructure.demo.DemoIdempotentEventConsumer}). Un fallo
+ * en un listener se registra pero nunca se propaga: la publicacion
+ * (log + marcar {@code PUBLISHED}) no depende de que la demostracion tenga
+ * exito.
  */
 @Component
 public class LoggingIntegrationEventPublisher implements IntegrationEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(LoggingIntegrationEventPublisher.class);
+
+    private final List<IntegrationEventListener> listeners;
+
+    public LoggingIntegrationEventPublisher(List<IntegrationEventListener> listeners) {
+        this.listeners = listeners;
+    }
 
     @Override
     public void publish(IntegrationEvent event) {
@@ -36,5 +52,20 @@ public class LoggingIntegrationEventPublisher implements IntegrationEventPublish
                 event.aggregateType(),
                 event.aggregateId(),
                 event.occurredAt());
+        notifyListeners(event);
+    }
+
+    private void notifyListeners(IntegrationEvent event) {
+        for (IntegrationEventListener listener : listeners) {
+            try {
+                listener.onEvent(event);
+            } catch (RuntimeException ex) {
+                log.warn(
+                        "outbox.integration-event.listener-failed listener={} eventId={}",
+                        listener.getClass().getName(),
+                        event.eventId(),
+                        ex);
+            }
+        }
     }
 }
