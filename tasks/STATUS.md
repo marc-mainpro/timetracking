@@ -27,7 +27,7 @@
 | T603 | Auditoría | hecha | validada: `mvn -B verify` verde (175 tests), auditoría append-only tenant-aware + `GET /api/v1/admin/audit-events` |
 | T604 | Concurrencia | hecha | validada: `mvn -B verify` verde (179 tests), carreras estables sin sleeps + `CorrectionRequest.version` + estrategia documentada |
 | T605 | Frontend correcciones | hecha | validada: `npm test -- --watch=false --browsers=ChromeHeadless` y `npm run build` verdes; flujo empleado/admin implementado, verificación manual local pendiente |
-| T701 | Migración outbox | pendiente | |
+| T701 | Migración outbox | hecha | validada: `mvn -B verify` verde (190 tests), `V8__outbox.sql` (número real tras V7), `OutboxMessageRepository`/`OutboxWriter` + reclamación `FOR UPDATE SKIP LOCKED` con test de concurrencia real (dos workers, sin sleeps) |
 | T702 | Eventos integración + atomicidad | pendiente | |
 | T703 | Publicador outbox | pendiente | |
 | T704 | Idempotencia + catálogo | pendiente | |
