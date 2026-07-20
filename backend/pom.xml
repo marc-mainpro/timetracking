@@ -132,6 +132,24 @@
             </plugin>
 
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/*IT.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
@@ -173,6 +191,7 @@
                                     <includes>
                                         <include>*.domain</include>
                                         <include>*.domain.*</include>
+                                        <include>*.domain.*.*</include>
                                     </includes>
                                     <limits>
                                         <limit>
@@ -198,6 +217,7 @@
                                     <includes>
                                         <include>*.application</include>
                                         <include>*.application.*</include>
+                                        <include>*.application.*.*</include>
                                     </includes>
                                     <limits>
                                         <limit>

@@ -44,7 +44,12 @@ auth:
     ttl: P14D
     cookie-name: refresh_token
     cookie-path: /api/v1/auth
+    cookie-secure: ${AUTH_REFRESH_COOKIE_SECURE:true}
 
 security:
   cors:
     allowed-origin: ${FRONTEND_ORIGIN:http://localhost:4200}
+
+app:
+  request:
+    max-payload-bytes: ${APP_REQUEST_MAX_PAYLOAD_BYTES:65536}

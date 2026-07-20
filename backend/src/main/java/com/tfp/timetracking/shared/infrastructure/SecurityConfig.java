@@ -2,6 +2,7 @@ package com.tfp.timetracking.shared.infrastructure;
 
 import com.tfp.timetracking.shared.infrastructure.security.RateLimitFilter;
 import com.tfp.timetracking.shared.infrastructure.security.CorrelationIdFilter;
+import com.tfp.timetracking.shared.infrastructure.security.RequestSizeLimitFilter;
 import com.tfp.timetracking.shared.infrastructure.security.UserStatusFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +17,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.header.HeaderWriterFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 /**
@@ -41,6 +43,7 @@ public class SecurityConfig {
             AuthenticationEntryPoint authenticationEntryPoint,
             AccessDeniedHandler accessDeniedHandler,
             RateLimitFilter rateLimitFilter,
+            RequestSizeLimitFilter requestSizeLimitFilter,
             CorrelationIdFilter correlationIdFilter,
             UserStatusFilter userStatusFilter)
             throws Exception {
@@ -50,7 +53,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable())
+                .headers(headers -> headers
+                        .frameOptions(frameOptions -> frameOptions.sameOrigin())
+                        .referrerPolicy(referrerPolicy -> referrerPolicy.policy(ReferrerPolicy.NO_REFERRER)))
                 .addFilterBefore(correlationIdFilter, HeaderWriterFilter.class)
+                .addFilterAfter(requestSizeLimitFilter, CorrelationIdFilter.class)
                 .addFilterAfter(rateLimitFilter, HeaderWriterFilter.class)
                 .addFilterAfter(userStatusFilter, AnonymousAuthenticationFilter.class)
                 .exceptionHandling(exceptions -> exceptions
@@ -64,6 +71,8 @@ public class SecurityConfig {
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter)))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")
+                        .permitAll()
                         .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh")
                         .permitAll()
                         .anyRequest().authenticated());

@@ -33,6 +33,7 @@ public class AuthController {
     private final String cookieName;
     private final String cookiePath;
     private final Duration refreshTokenTtl;
+    private final boolean cookieSecure;
 
     public AuthController(
             AuthenticateUserUseCase authenticateUserUseCase,
@@ -40,13 +41,15 @@ public class AuthController {
             LogoutUserUseCase logoutUserUseCase,
             @Value("${auth.refresh-token.cookie-name:refresh_token}") String cookieName,
             @Value("${auth.refresh-token.cookie-path:/api/v1/auth}") String cookiePath,
-            @Value("${auth.refresh-token.ttl:P14D}") Duration refreshTokenTtl) {
+            @Value("${auth.refresh-token.ttl:P14D}") Duration refreshTokenTtl,
+            @Value("${auth.refresh-token.cookie-secure:true}") boolean cookieSecure) {
         this.authenticateUserUseCase = authenticateUserUseCase;
         this.refreshSessionUseCase = refreshSessionUseCase;
         this.logoutUserUseCase = logoutUserUseCase;
         this.cookieName = cookieName;
         this.cookiePath = cookiePath;
         this.refreshTokenTtl = refreshTokenTtl;
+        this.cookieSecure = cookieSecure;
     }
 
     @PostMapping("/login")
@@ -86,7 +89,7 @@ public class AuthController {
     private ResponseCookie createRefreshCookie(String token) {
         return ResponseCookie.from(cookieName, token)
                 .httpOnly(true)
-                .secure(true)
+                .secure(cookieSecure)
                 .sameSite("Strict")
                 .path(cookiePath)
                 .maxAge(refreshTokenTtl)
@@ -96,7 +99,7 @@ public class AuthController {
     private ResponseCookie clearRefreshCookie() {
         return ResponseCookie.from(cookieName, "")
                 .httpOnly(true)
-                .secure(true)
+                .secure(cookieSecure)
                 .sameSite("Strict")
                 .path(cookiePath)
                 .maxAge(Duration.ZERO)

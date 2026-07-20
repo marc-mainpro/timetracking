@@ -2,6 +2,8 @@ package com.tfp.timetracking.identity.interfaces.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -192,14 +194,75 @@ class AuthSecurityIntegrationTest {
                         .content(objectMapper.writeValueAsString(new AuthLoginRequest(admin.email(), admin.password()))))
                 .andExpect(status().isOk())
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("X-Frame-Options", "SAMEORIGIN"))
+                .andExpect(header().string("Referrer-Policy", "no-referrer"))
                 .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("no-store")))
                 .andExpect(header().string(HttpHeaders.PRAGMA, "no-cache"));
 
         register(ip("headers-register-public"), 4).result()
                 .andExpect(status().isCreated())
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("X-Frame-Options", "SAMEORIGIN"))
+                .andExpect(header().string("Referrer-Policy", "no-referrer"))
                 .andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("no-store")))
                 .andExpect(header().string(HttpHeaders.PRAGMA, "no-cache"));
+    }
+
+    @Test
+    void corsOnlyAllowsConfiguredOrigin() throws Exception {
+        mockMvc.perform(options("/api/v1/auth/login")
+                        .header(HttpHeaders.ORIGIN, "http://localhost:4200")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:4200"))
+                .andExpect(header().string(HttpHeaders.VARY, containsString("Origin")));
+
+        mockMvc.perform(options("/api/v1/auth/login")
+                        .header(HttpHeaders.ORIGIN, "https://evil.example")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST"))
+                .andExpect(status().isForbidden())
+                .andExpect(header().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+    }
+
+    @Test
+    void registerDoesNotRevealWhetherEmailAlreadyExists() throws Exception {
+        String clientIp = ip("register-enum");
+        RegisterAttempt first = register(clientIp, 10);
+        first.result().andExpect(status().isCreated());
+
+        RegisterTenantRequest duplicateRequest = new RegisterTenantRequest(
+                "Acme Duplicate",
+                "Europe/Madrid",
+                first.email(),
+                "supersecretpwd",
+                "Jane",
+                "Doe");
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .header("X-Forwarded-For", ip("register-enum-2"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(duplicateRequest)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.errorCode").value("EMAIL_ALREADY_IN_USE"))
+                .andExpect(jsonPath("$.detail", not(containsString(first.email()))));
+    }
+
+    @Test
+    void oversizedPayloadIsRejected() throws Exception {
+        String hugeTenantName = "A".repeat(70_000);
+        RegisterTenantRequest request = new RegisterTenantRequest(
+                hugeTenantName,
+                "Europe/Madrid",
+                "oversized@acme.test",
+                "supersecretpwd",
+                "Jane",
+                "Doe");
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isPayloadTooLarge())
+                .andExpect(jsonPath("$.errorCode").value("PAYLOAD_TOO_LARGE"));
     }
 
     @Test

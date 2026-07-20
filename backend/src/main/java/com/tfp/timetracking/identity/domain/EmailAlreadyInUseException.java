@@ -9,7 +9,7 @@ import com.tfp.timetracking.shared.domain.DomainException;
  */
 public final class EmailAlreadyInUseException extends DomainException {
 
-    public EmailAlreadyInUseException(String email) {
-        super("EMAIL_ALREADY_IN_USE", "El email " + email + " ya esta en uso");
+    public EmailAlreadyInUseException(String ignoredEmail) {
+        super("EMAIL_ALREADY_IN_USE", "No se ha podido completar la operacion con los datos proporcionados");
     }
 }

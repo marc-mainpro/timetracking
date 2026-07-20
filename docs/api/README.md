@@ -1,10 +1,8 @@
 # API
 
-La especificación OpenAPI se genera a partir del código (springdoc-openapi)
-en las tareas que implementan endpoints (a partir de la iteración 2). Se
-publica en `/v3/api-docs` y `/swagger-ui.html` cuando la aplicación está en
-marcha. Este documento se actualizará con el enlace/export de la
-especificación cuando exista un pipeline que lo publique.
+La especificación OpenAPI se genera a partir del código (springdoc-openapi),
+se expone en runtime en `/v3/api-docs` y `/v3/api-docs.yaml`, y se exporta al
+repositorio como `docs/api/openapi.yaml`.
 
 ## Endpoints implementados
 
@@ -48,8 +46,10 @@ Responde `201` con `{tenantId, adminUserId}` (sin datos sensibles) y
 
 `POST /api/v1/auth/login`: autentica por `email + password`, verifica que el
 usuario y su tenant estén activos, y devuelve `{accessToken, expiresAt}`.
-Además emite una cookie `refresh_token` con `HttpOnly; Secure;
-SameSite=Strict; Path=/api/v1/auth`. El endpoint está limitado por IP
+Además emite una cookie `refresh_token` con `HttpOnly; SameSite=Strict;
+Path=/api/v1/auth`; el flag `Secure` se activa en despliegues HTTPS y se puede
+desactivar en entorno local para demo (`AUTH_REFRESH_COOKIE_SECURE=false`). El
+endpoint está limitado por IP
 (`10 req/min` en configuración normal). Si se supera, responde `429` con
 `errorCode = RATE_LIMIT_EXCEEDED`.
 
@@ -63,7 +63,8 @@ cookie actual si existe y devuelve `204` limpiando la cookie.
 
 `POST /api/v1/auth/register`: también está limitado por IP (`10 req/min` en
 configuración normal) y responde `429` con `RATE_LIMIT_EXCEEDED` cuando se
-supera la ventana.
+supera la ventana. Si el email ya existe, el backend responde `409` sin
+reflejar el correo original en el mensaje de error.
 
 `GET /api/v1/workdays/current`: devuelve la jornada activa del empleado
 autenticado o `404` si no existe.

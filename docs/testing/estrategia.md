@@ -10,6 +10,10 @@ Fuente de verdad: `tasks/_context/CONTEXT-GLOBAL.md` §8.
 - **Integración**: Testcontainers con PostgreSQL real. Cubre repositorios,
   migraciones Flyway, seguridad (autenticación/autorización), multitenancy
   (incluye tests de acceso cruzado entre tenants) y controladores REST.
+- **E2E de API**: `EndToEndFlowIT` ejecuta el flujo MVP completo contra el
+  backend real (registro, autenticación, empleados, jornada, corrección,
+  auditoría y outbox). El E2E de navegador queda fuera del MVP y se documenta
+  explícitamente como trabajo posterior.
 - **Arquitectura**: ArchUnit, verificando las reglas de Clean Architecture
   de `tasks/_context/CONTEXT-GLOBAL.md` §4 (dependencias de `domain`,
   controladores sin lógica de negocio, sin ciclos, separación de entidades
@@ -27,6 +31,7 @@ Fuente de verdad: `tasks/_context/CONTEXT-GLOBAL.md` §8.
 
 ## Informe de cobertura
 
-El informe de cobertura (JaCoCo) se genera en el build (`mvn verify`) y se
-referenciará desde este documento a partir de la primera iteración que
-incluya lógica de dominio (iteración 2 en adelante).
+- Backend: `docs/testing/coverage-report.md` + HTML generado en
+  `backend/target/site/jacoco/index.html` y publicado como artefacto en CI.
+- Frontend: `npm run test:coverage` genera `frontend/coverage/`, también
+  publicado como artefacto en CI.

@@ -1,0 +1,7 @@
+services:
+  backend:
+    environment:
+      AUTH_REFRESH_COOKIE_SECURE: "true"
+  frontend:
+    ports:
+      - "80:8080"

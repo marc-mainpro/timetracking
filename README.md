@@ -4,7 +4,27 @@
 
 > El badge usa el placeholder `OWNER/REPO`: sustitúyelo por el owner/repo reales en cuanto se cree el remote de GitHub.
 
-MVP SaaS multitenant de control horario (fichajes, correcciones, informes, auditoría y eventos vía Transactional Outbox). Monolito modular. Ver `SDD-MVP-control-horario.md` para el diseño completo.
+MVP SaaS multitenant de control horario con Spring Boot, Angular y PostgreSQL.
+Incluye registro de tenant, autenticación JWT con refresh token, gestión de
+empleados, fichajes, correcciones, informes, auditoría y Transactional Outbox.
+
+## Arquitectura
+
+- Monolito modular con separación dominio/aplicación/infraestructura.
+- Backend: Spring Boot 3.5, Java 21, PostgreSQL, Flyway, Spring Security.
+- Frontend: Angular 19 servido por nginx.
+- Multitenancy por `tenantId` derivado del principal autenticado.
+- Eventos de integración persistidos en outbox transaccional.
+
+Documentación principal:
+
+- Arquitectura: `docs/architecture/`
+- Dominio: `docs/domain/`
+- API: `docs/api/`
+- Seguridad: `docs/security/`
+- Testing: `docs/testing/`
+- Integración/eventos: `docs/integration/`
+- Manuales/demo: `docs/manuals/`, `docs/demo/`
 
 ## Arranque local con Docker Compose
 
@@ -18,36 +38,52 @@ Requisitos: Docker y Docker Compose.
 
    Editar `.env` si se quieren credenciales distintas de las de ejemplo (nunca commitear `.env`).
 
-2. Levantar los servicios (Postgres + backend):
+2. Levantar los servicios (Postgres + backend + frontend):
 
    ```bash
    docker compose up -d --build
    ```
 
-   El servicio `postgres` expone el puerto `5432` y tiene un healthcheck (`pg_isready`). El servicio `backend` espera a que `postgres` esté healthy antes de arrancar, construye la imagen desde `backend/Dockerfile` (multi-stage: Maven → JRE 21) y ejecuta las migraciones Flyway (`backend/src/main/resources/db/migration`) al iniciar.
+   `postgres` queda en la red interna, `backend` publica `8080` y `frontend`
+   publica `4200`. Ambos servicios HTTP tienen healthcheck.
 
-3. Comprobar que el backend está arriba:
+3. Comprobar que backend y frontend están arriba:
 
    ```bash
-   curl http://localhost:8080/actuator/health
+    curl http://localhost:8080/actuator/health
+    curl http://localhost:4200/
    ```
 
-   Debe responder `{"status":"UP"}`.
+    El backend debe responder `{"status":"UP"}` y el frontend debe servir
+    `index.html`.
 
 4. URLs disponibles:
+   - Frontend: http://localhost:4200
    - API: http://localhost:8080
    - Health: http://localhost:8080/actuator/health
    - OpenAPI JSON: http://localhost:8080/v3/api-docs
+   - OpenAPI YAML: http://localhost:8080/v3/api-docs.yaml
    - Swagger UI: http://localhost:8080/swagger-ui.html
-   - Postgres: `localhost:5432` (credenciales según `.env`)
 
-5. Ver logs de arranque y de Flyway:
+5. Smoke test automático:
+
+   ```bash
+   ./scripts/smoke.sh
+   ```
+
+6. Datos de demo:
+
+   ```bash
+   ./scripts/seed-demo.sh
+   ```
+
+7. Ver logs de arranque y de Flyway:
 
    ```bash
    docker compose logs backend
    ```
 
-6. Parar y limpiar (incluye el volumen de datos de Postgres):
+8. Parar y limpiar (incluye el volumen de datos de Postgres):
 
    ```bash
    docker compose down -v
@@ -55,18 +91,22 @@ Requisitos: Docker y Docker Compose.
 
 ## Estructura del repo
 
-- `backend/` — API Spring Boot (Java 21, Maven). Ver `backend/.env.example` para variables usadas fuera de Docker (perfil `local` directo con `mvn spring-boot:run`).
-- `frontend/` — Aplicación Angular (aún no incluida en `docker-compose.yml`; llega en una iteración posterior).
-- `docs/` — Documentación adicional.
+- `backend/` — API Spring Boot.
+- `frontend/` — SPA Angular + Dockerfile/nginx.
+- `docs/` — Arquitectura, dominio, seguridad, testing, manuales y demo.
+- `scripts/` — Smoke test y seed de demo.
 - `tasks/` — Fichas de tareas y contexto de ejecución.
 
 ## CI
 
 `.github/workflows/ci.yml` ejecuta en cada `push` a `main` y en cada `pull_request`:
 
-- **backend**: JDK 21, `mvn -B verify` (tests, ArchUnit, umbrales de cobertura JaCoCo con Testcontainers PostgreSQL) y publica el informe JaCoCo como artefacto.
-- **frontend**: Node 20, `npm ci`, `ng lint`, `ng test --watch=false --browsers=ChromeHeadless`, `ng build`.
+- **backend**: `mvn -B verify`, tests de integración, E2E de API y JaCoCo.
+- **frontend**: lint, tests con cobertura y build.
+- **docker**: build de las imágenes de backend y frontend.
 
-## Fuera de alcance de este compose
+## Demo y operación
 
-- Servicio `frontend` (se añadirá en una tarea posterior).
+- Guion de demo: `docs/demo/demo-script.md`
+- Manual de usuario: `docs/manuals/user-guide.md`
+- Manual de operación: `docs/manuals/operations.md`

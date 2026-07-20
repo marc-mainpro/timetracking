@@ -33,8 +33,8 @@
 | T704 | Idempotencia + catálogo | hecha | validada: `mvn -B verify` verde (278 tests), `V9__processed_event.sql` + `DemoIdempotentEventConsumer` (consumidor de ejemplo, `outbox.infrastructure.demo`) enganchado vía `IntegrationEventListener` a `LoggingIntegrationEventPublisher` + `OutboxGuaranteesIntegrationTest` (negocio→outbox→publicador→consumidor, redelivery sin duplicados) + catálogo completo de los 8 eventos + política de versionado + ADR-0009 |
 | T801 | API informes + CSV | hecha | validada: `mvn -B verify` verde (219 tests), resumen diario/tenant con zona horaria del tenant + tests DST (23h/25h Madrid) + export CSV + suite cross-tenant ampliada |
 | T802 | Frontend informes | hecha | validada: `npm test -- --watch=false --browsers=ChromeHeadless` (34 tests) y `npm run build` verdes; `/admin/reports` (rango+tabla+CSV) y `/reports` propio de empleado |
-| T901 | E2E | pendiente | |
-| T902 | Hardening OWASP | pendiente | |
-| T903 | Cobertura + docs finales | pendiente | |
-| T1001 | Dockerización final | pendiente | |
-| T1002 | Manuales + demo | pendiente | |
+| T901 | E2E | hecha | validada: `mvn -B verify` verde con `EndToEndFlowIT` vía Failsafe; flujo completo y segundo tenant aislado |
+| T902 | Hardening OWASP | hecha | validada: `mvn -B verify` verde; CORS restringido, cabeceras, 500 genérico, no enumeración en register, payload limits, revisión OWASP documentada |
+| T903 | Cobertura + docs finales | hecha | validada: backend `mvn -B verify`, frontend `npm run test:coverage`; `docs/acceptance-checklist.md`, `docs/testing/coverage-report.md`, OpenAPI exportada y README/docs sincronizados |
+| T1001 | Dockerización final | hecha | validada: `docker-compose.yml` completo con frontend+backend+postgres, `frontend/Dockerfile`+nginx, CI con build de imágenes y `scripts/smoke.sh` |
+| T1002 | Manuales + demo | hecha | validada: manuales, guion de demo, `scripts/seed-demo.sh` y README final actualizados |

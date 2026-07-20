@@ -57,8 +57,29 @@ jobs:
 
       - name: Unit tests (ChromeHeadless)
         working-directory: frontend
-        run: npx ng test --watch=false --browsers=ChromeHeadless
+        run: npx ng test --watch=false --browsers=ChromeHeadless --code-coverage
 
       - name: Build
         working-directory: frontend
         run: npx ng build
+
+      - name: Upload frontend coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          if-no-files-found: warn
+
+  docker:
+    name: Docker images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build -t timetracking-backend:ci ./backend
+
+      - name: Build frontend image
+        run: docker build -t timetracking-frontend:ci ./frontend
