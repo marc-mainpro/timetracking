@@ -32,7 +32,7 @@
 | T703 | Publicador outbox | pendiente | |
 | T704 | Idempotencia + catálogo | pendiente | |
 | T801 | API informes + CSV | hecha | validada: `mvn -B verify` verde (219 tests), resumen diario/tenant con zona horaria del tenant + tests DST (23h/25h Madrid) + export CSV + suite cross-tenant ampliada |
-| T802 | Frontend informes | pendiente | |
+| T802 | Frontend informes | hecha | validada: `npm test -- --watch=false --browsers=ChromeHeadless` (34 tests) y `npm run build` verdes; `/admin/reports` (rango+tabla+CSV) y `/reports` propio de empleado |
 | T901 | E2E | pendiente | |
 | T902 | Hardening OWASP | pendiente | |
 | T903 | Cobertura + docs finales | pendiente | |

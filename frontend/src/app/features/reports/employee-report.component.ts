@@ -2,24 +2,25 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 
+import { AuthService } from '../../core/services/auth.service';
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import { formatIsoDuration } from './duration.util';
-import { ReportsService, TenantEmployeeSummary } from './reports.service';
+import { EmployeeDaySummary, ReportsService } from './reports.service';
 
 @Component({
-  selector: 'app-reports',
+  selector: 'app-employee-report',
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './reports.component.html',
-  styleUrl: './reports.component.scss'
+  templateUrl: './employee-report.component.html',
+  styleUrl: './employee-report.component.scss'
 })
-export class ReportsComponent {
+export class EmployeeReportComponent {
   private readonly reportsService = inject(ReportsService);
   private readonly errorMessagesService = inject(ErrorMessagesService);
+  private readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(false);
-  readonly exporting = signal(false);
-  readonly results = signal<TenantEmployeeSummary[] | null>(null);
+  readonly results = signal<EmployeeDaySummary[] | null>(null);
   readonly formError = signal<string | null>(null);
 
   readonly form = this.fb.nonNullable.group(
@@ -45,10 +46,16 @@ export class ReportsComponent {
       return;
     }
 
+    const employeeId = this.authService.currentUserId();
+    if (!employeeId) {
+      this.formError.set('No se pudo identificar tu usuario. Vuelve a iniciar sesión.');
+      return;
+    }
+
     this.loading.set(true);
     this.formError.set(null);
     const { from, to } = this.isoRange();
-    this.reportsService.tenantSummary(from, to).subscribe({
+    this.reportsService.employeeSummary(employeeId, from, to).subscribe({
       next: (results) => {
         this.results.set(results);
         this.loading.set(false);
@@ -61,39 +68,9 @@ export class ReportsComponent {
     });
   }
 
-  exportCsv(): void {
-    if (this.form.invalid || this.exporting()) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    this.exporting.set(true);
-    this.formError.set(null);
-    const { from, to } = this.isoRange();
-    this.reportsService.exportTenantCsv(from, to).subscribe({
-      next: (blob) => {
-        this.exporting.set(false);
-        this.triggerDownload(blob, 'tenant-summary.csv');
-      },
-      error: (error) => {
-        this.exporting.set(false);
-        this.formError.set(this.errorMessagesService.fromProblem(error.error));
-      }
-    });
-  }
-
   private isoRange(): { from: string; to: string } {
     const { from, to } = this.form.getRawValue();
     return { from: `${from}T00:00:00Z`, to: `${to}T23:59:59Z` };
-  }
-
-  private triggerDownload(blob: Blob, filename: string): void {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
   }
 }
 

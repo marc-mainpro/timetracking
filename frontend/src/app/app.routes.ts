@@ -33,6 +33,12 @@ export const routes: Routes = [
       import('./features/corrections/corrections.routes').then((m) => m.CORRECTIONS_ROUTES)
   },
   {
+    path: 'reports',
+    canActivate: [authGuard, roleGuard(['EMPLOYEE'])],
+    loadChildren: () =>
+      import('./features/reports/employee-report.routes').then((m) => m.EMPLOYEE_REPORT_ROUTES)
+  },
+  {
     path: 'admin/employees',
     canActivate: [authGuard, roleGuard(['TENANT_ADMIN'])],
     loadChildren: () =>
@@ -49,7 +55,7 @@ export const routes: Routes = [
       )
   },
   {
-    path: 'reports',
+    path: 'admin/reports',
     canActivate: [authGuard, roleGuard(['TENANT_ADMIN'])],
     loadChildren: () => import('./features/reports/reports.routes').then((m) => m.REPORTS_ROUTES)
   },

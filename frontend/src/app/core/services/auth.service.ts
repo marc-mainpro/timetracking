@@ -84,6 +84,10 @@ export class AuthService {
     return this.claims()?.roles ?? [];
   }
 
+  currentUserId(): string | null {
+    return this.claims()?.sub ?? null;
+  }
+
   getAccessToken(): string | null {
     return this.accessToken();
   }

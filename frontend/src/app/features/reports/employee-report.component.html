@@ -1,8 +1,9 @@
-<section class="admin-shell">
-  <header class="admin-header">
+<section class="dashboard-shell">
+  <header class="hero-card">
     <div>
-      <p class="eyebrow">Administración</p>
-      <h1>Informes de tiempo trabajado</h1>
+      <p class="eyebrow">Mi resumen</p>
+      <h1>Tus horas trabajadas por día</h1>
+      <p class="lede">Elige un rango de fechas para ver el tiempo trabajado, las pausas y las jornadas de cada día.</p>
     </div>
   </header>
 
@@ -19,10 +20,7 @@
       </label>
 
       <div class="form-actions">
-        <button type="submit" [disabled]="loading()">{{ loading() ? 'Cargando...' : 'Generar informe' }}</button>
-        <button type="button" class="ghost" (click)="exportCsv()" [disabled]="exporting()">
-          {{ exporting() ? 'Exportando...' : 'Exportar CSV' }}
-        </button>
+        <button type="submit" [disabled]="loading()">{{ loading() ? 'Cargando...' : 'Consultar' }}</button>
       </div>
 
       <p class="error" *ngIf="form.errors?.['invalidRange'] && (form.controls.from.touched || form.controls.to.touched)">
@@ -33,7 +31,7 @@
   </section>
 
   <section class="results-card">
-    <p *ngIf="loading()">Cargando informe...</p>
+    <p *ngIf="loading()">Cargando tu resumen...</p>
 
     <ng-container *ngIf="!loading()">
       <p class="empty" *ngIf="results() && results()!.length === 0">Sin datos en el rango seleccionado.</p>
@@ -41,7 +39,7 @@
       <table *ngIf="results() && results()!.length > 0">
         <thead>
           <tr>
-            <th>Empleado</th>
+            <th>Día</th>
             <th>Trabajado</th>
             <th>Pausas</th>
             <th>Jornadas</th>
@@ -51,7 +49,7 @@
         </thead>
         <tbody>
           <tr *ngFor="let row of results()">
-            <td>{{ row.employeeId }}</td>
+            <td>{{ row.day }}</td>
             <td>{{ formatIsoDuration(row.worked) }}</td>
             <td>{{ formatIsoDuration(row.paused) }}</td>
             <td>{{ row.workdayCount }}</td>
