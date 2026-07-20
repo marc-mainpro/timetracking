@@ -21,9 +21,11 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
  * autoconfigurado implicitamente por Spring Boot) para que esta politica de
  * fechas quede documentada y bajo control de este modulo; al ser el unico
  * bean de tipo {@link ObjectMapper} del contexto, tambien es el que usa Spring
- * MVC para (de)serializar los DTOs de la API REST, cuyo comportamiento no
- * cambia respecto al autoconfigurado por defecto (mismos modulos: JSR-310,
- * JDK8, nombres de parametros).
+ * MVC para (de)serializar los DTOs de la API REST. Por eso {@code Duration}
+ * se serializa explicitamente como ISO-8601 ({@code WRITE_DURATIONS_AS_TIMESTAMPS}
+ * deshabilitado) y no como numero de segundos, igual que hacia el
+ * autoconfigurado por defecto de Spring Boot (contrato ya usado por
+ * {@code reporting.interfaces.rest}).
  */
 @Configuration
 public class JacksonConfig {
@@ -31,7 +33,9 @@ public class JacksonConfig {
     @Bean
     public ObjectMapper objectMapper() {
         return Jackson2ObjectMapperBuilder.json()
-                .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .featuresToDisable(
+                        SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
+                        SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
                 .modulesToInstall(new JavaTimeModule())
                 .build();
     }
