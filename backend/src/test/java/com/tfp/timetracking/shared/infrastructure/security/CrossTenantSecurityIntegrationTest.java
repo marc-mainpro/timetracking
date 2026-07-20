@@ -168,6 +168,36 @@ class CrossTenantSecurityIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void adminOfTenantACannotReadEmployeeSummaryOfTenantB() throws Exception {
+        TestTenantFactory.TenantActors tenantA = testTenantFactory.createTenantActors("A-report");
+        TestTenantFactory.TenantActors tenantB = testTenantFactory.createTenantActors("B-report");
+
+        mockMvc.perform(get("/api/v1/reports/employees/{employeeId}/summary", tenantB.employee().userId())
+                        .param("from", "2026-01-01T00:00:00Z")
+                        .param("to", "2026-01-31T00:00:00Z")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenantA.admin().token()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void tenantSummaryOnlyAggregatesWorkdaysOfTheCallersTenant() throws Exception {
+        TestTenantFactory.TenantActors tenantA = testTenantFactory.createTenantActors("A-report-summary");
+        TestTenantFactory.TenantActors tenantB = testTenantFactory.createTenantActors("B-report-summary");
+        startWorkday(tenantA.employee().token());
+        startWorkday(tenantB.employee().token());
+
+        String from = Instant.now().minusSeconds(3600).toString();
+        String to = Instant.now().plusSeconds(3600).toString();
+        mockMvc.perform(get("/api/v1/reports/tenant/summary")
+                        .param("from", from)
+                        .param("to", to)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenantA.admin().token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].employeeId").value(tenantA.employee().userId().toString()));
+    }
+
     @TestConfiguration
     static class CrossTenantTestConfiguration {
 

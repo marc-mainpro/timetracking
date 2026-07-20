@@ -21,6 +21,9 @@ import com.tfp.timetracking.timetracking.interfaces.rest.WorkdayRestMapper;
 import com.tfp.timetracking.timetracking.domain.Workday;
 import com.tfp.timetracking.timetracking.domain.BreakEntry;
 import com.tfp.timetracking.timetracking.domain.WorkdayStatus;
+import com.tfp.timetracking.reporting.interfaces.rest.ReportRestMapper;
+import com.tfp.timetracking.reporting.domain.EmployeeDaySummary;
+import com.tfp.timetracking.reporting.domain.TenantEmployeeSummary;
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.PagedResult;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -84,5 +87,7 @@ class LayeredArchitectureTest {
             .ignoreDependency(WorkdayRestMapper.class, WorkdayStatus.class)
             .ignoreDependency(WorkdayRestMapper.class, Clock.class)
             .ignoreDependency(WorkdayRestMapper.class, PagedResult.class)
+            .ignoreDependency(ReportRestMapper.class, EmployeeDaySummary.class)
+            .ignoreDependency(ReportRestMapper.class, TenantEmployeeSummary.class)
             .allowEmptyShould(true);
 }

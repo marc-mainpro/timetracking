@@ -36,6 +36,9 @@ especificación cuando exista un pipeline que lo publique.
 | POST | `/api/v1/corrections/{correctionId}/approve` | `TENANT_ADMIN` | T602 |
 | POST | `/api/v1/corrections/{correctionId}/reject` | `TENANT_ADMIN` | T602 |
 | GET | `/api/v1/admin/audit-events` | `TENANT_ADMIN` | T603 |
+| GET | `/api/v1/reports/employees/{employeeId}/summary` | `EMPLOYEE` / `TENANT_ADMIN` | T801 |
+| GET | `/api/v1/reports/tenant/summary` | `TENANT_ADMIN` | T801 |
+| GET | `/api/v1/reports/tenant/export.csv` | `TENANT_ADMIN` | T801 |
 
 `POST /api/v1/auth/register`: crea un tenant y su primer usuario
 `TENANT_ADMIN` de forma transaccional. Body: `tenantName`, `timezone`,
@@ -126,6 +129,28 @@ comentario de rechazo es obligatorio.
 `GET /api/v1/admin/audit-events`: listado paginado de eventos de auditoría del
 tenant autenticado, con filtros opcionales `action`, `from` y `to`. Solo está
 disponible para `TENANT_ADMIN` y nunca expone registros de otros tenants.
+
+`GET /api/v1/reports/employees/{employeeId}/summary`: resumen diario de
+tiempo trabajado (`from`/`to` obligatorios, ISO-8601, rango máximo 366 días).
+Los límites de día usan la zona horaria IANA del tenant (`Tenant.timezone`),
+no UTC: una jornada que cruza medianoche local, o un día de cambio de hora
+(23h/25h), se reparte entre los días que toca. Cada día devuelve `worked`
+(trabajado, jornada menos pausas), `paused`, `workdayCount`,
+`adjustedWorkdayCount` y `openWorkdays`. Las jornadas todavía abiertas se
+excluyen de `worked`/`paused` (no hay forma fiable de saber cuánto trabajará
+aún el empleado) pero se cuentan en `openWorkdays`. Un `EMPLOYEE` solo puede
+pedir el suyo; un `TENANT_ADMIN` puede pedir el de cualquier empleado de su
+tenant. Un `employeeId` de otro empleado (sin ser admin) o de otro tenant
+responde `404`.
+
+`GET /api/v1/reports/tenant/summary`: agregado por empleado en todo el rango
+(mismos parámetros `from`/`to`/366 días), sin desglose diario. Solo
+`TENANT_ADMIN`.
+
+`GET /api/v1/reports/tenant/export.csv`: mismo dato que `tenant/summary` en
+`text/csv` (UTF-8 sin BOM, cabecera `employeeId,workedSeconds,pausedSeconds,
+workdayCount,adjustedWorkdayCount,openWorkdays`, campos escapados según RFC
+4180). Solo `TENANT_ADMIN`.
 
 ## Formato de error
 

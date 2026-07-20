@@ -31,7 +31,7 @@
 | T702 | Eventos integración + atomicidad | pendiente | |
 | T703 | Publicador outbox | pendiente | |
 | T704 | Idempotencia + catálogo | pendiente | |
-| T801 | API informes + CSV | pendiente | |
+| T801 | API informes + CSV | hecha | validada: `mvn -B verify` verde (219 tests), resumen diario/tenant con zona horaria del tenant + tests DST (23h/25h Madrid) + export CSV + suite cross-tenant ampliada |
 | T802 | Frontend informes | pendiente | |
 | T901 | E2E | pendiente | |
 | T902 | Hardening OWASP | pendiente | |
