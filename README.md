@@ -11,10 +11,15 @@ empleados, fichajes, correcciones, informes, auditoría y Transactional Outbox.
 ## Arquitectura
 
 - Monolito modular con separación dominio/aplicación/infraestructura.
-- Backend: Spring Boot 3.5, Java 21, PostgreSQL, Flyway, Spring Security.
-- Frontend: Angular 19 servido por nginx.
+- Backend: Spring Boot 3.5.9, Java 21, PostgreSQL, Flyway, Spring Security (JWT).
+- Frontend: Angular 19 (mobile-first) servido por nginx con CSP estricta.
 - Multitenancy por `tenantId` derivado del principal autenticado.
 - Eventos de integración persistidos en outbox transaccional.
+
+READMEs de cada subproyecto (stack, estructura y comandos de desarrollo):
+
+- Backend: [`backend/README.md`](backend/README.md)
+- Frontend: [`frontend/README.md`](frontend/README.md)
 
 Documentación principal:
 
@@ -91,8 +96,8 @@ Requisitos: Docker y Docker Compose.
 
 ## Estructura del repo
 
-- `backend/` — API Spring Boot.
-- `frontend/` — SPA Angular + Dockerfile/nginx.
+- `backend/` — API Spring Boot ([README](backend/README.md)).
+- `frontend/` — SPA Angular + Dockerfile/nginx ([README](frontend/README.md)).
 - `docs/` — Arquitectura, dominio, seguridad, testing, manuales y demo.
 - `scripts/` — Smoke test y seed de demo.
 - `tasks/` — Fichas de tareas y contexto de ejecución.
