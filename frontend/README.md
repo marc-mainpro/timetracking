@@ -1,59 +1,110 @@
-# Frontend
+# Frontend — SPA de control horario
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.27.
+Aplicación web del MVP de control horario. **Angular 19** (standalone
+components + signals), servida en producción por **nginx** con una CSP
+estricta. Consume la API REST del backend bajo `/api/v1`.
 
-## Development server
+> Contexto general del producto y arranque de todo el stack: [`../README.md`](../README.md).
+> API: Swagger UI del backend en `http://localhost:8080/swagger-ui.html`.
 
-To start a local development server, run:
+## Stack
 
-```bash
-ng serve
+- Angular 19 (componentes standalone, señales, router con lazy loading).
+- TypeScript 5.7, RxJS 7.8.
+- Tipografías auto-hospedadas con `@fontsource` (Inter + IBM Plex Mono),
+  necesarias para cumplir la CSP `font-src 'self'` de nginx.
+- Karma + Jasmine (tests), ESLint (lint).
+
+## Diseño e interfaz
+
+- Lenguaje visual **minimalista y mobile-first**: paleta clara neutra,
+  tarjetas planas con hairline, Inter para UI e IBM Plex Mono con cifras
+  tabulares para el reloj y las duraciones. Los tokens compartidos viven en
+  `src/styles.scss`.
+- Todas las páginas se maquetan desde móvil hacia arriba (base en una columna,
+  rejillas que se abren con `min-width`).
+- Navegación con **menú lateral escondible** (off-canvas + hamburguesa) en
+  móvil y barra en línea en escritorio (`app.component.*`).
+
+## Estructura
+
+```
+src/app/
+  core/
+    guards/        authGuard, roleGuard (control de acceso por rol)
+    interceptors/  auth.interceptor (adjunta el token, reintenta con refresh)
+    pipes/         iso-duration.pipe (formatea duraciones ISO-8601 del backend)
+    services/      auth.service, error-messages.service
+  features/
+    auth/                login y registro de organización
+    employee-dashboard/  jornada actual del empleado (reloj en vivo)
+    workdays/            historial de jornadas
+    corrections/         correcciones (empleado) y cola de revisión (admin)
+    reports/             informes de empleado y de tenant (con export CSV)
+    admin-employees/     gestión de empleados (admin)
+  app.routes.ts        rutas con lazy loading y guards por rol
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+### Acceso por rol
 
-## Code scaffolding
+Tras el login, el usuario se enruta según su rol: `TENANT_ADMIN` a
+`/admin/employees` y `EMPLOYEE` a `/employee-dashboard`. `roleGuard` protege
+cada ruta y el `authGuard` exige sesión activa.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Duraciones
 
-```bash
-ng generate component component-name
+El backend serializa las duraciones como ISO-8601 (`java.time.Duration`, p. ej.
+`PT7.66S`). El pipe `isoDuration` las formatea en plantilla:
+
+```html
+{{ workday.workedDuration | isoDuration }}        <!-- 00:00:07 (HH:MM:SS) -->
+{{ row.worked | isoDuration: 'hm' }}              <!-- 08:30 (HH:MM) -->
+{{ row.worked | isoDuration: 'long' }}            <!-- 8h 30min -->
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Requisitos
+
+- Node.js 20+ y npm.
 
 ```bash
-ng generate --help
+npm install
 ```
 
-## Building
-
-To build the project run:
+## Desarrollo
 
 ```bash
-ng build
+npm start
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Sirve en `http://localhost:4200` con recarga en caliente. Las peticiones a
+`/api` se redirigen al backend `http://localhost:8080` mediante
+`proxy.conf.json`, así que necesitas el backend levantado (o el `docker
+compose` de la raíz).
 
-## Running unit tests
+## Scripts
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+| Comando | Descripción |
+| --- | --- |
+| `npm start` | Servidor de desarrollo (`ng serve`). |
+| `npm run build` | Build de producción en `dist/`. |
+| `npm test` | Tests unitarios (Karma + Jasmine). |
+| `npm run test:coverage` | Tests headless con cobertura. |
+| `npm run lint` | ESLint. |
 
-```bash
-ng test
-```
+## Build y CSP
 
-## Running end-to-end tests
+`npm run build` genera un build de producción optimizado. Dos ajustes son
+necesarios para la CSP estricta servida por nginx (`nginx.conf`):
 
-For end-to-end (e2e) testing, run:
+- **Fuentes auto-hospedadas** (`@fontsource`): se empaquetan como assets
+  propios (`./media/*.woff2`), servidos desde `self`. No se usa Google Fonts,
+  que la CSP bloquea.
+- **`optimization.styles.inlineCritical: false`** en `angular.json` (config
+  `production`): evita el `<link ... onload="…">` inline que violaría
+  `script-src 'self'`.
 
-```bash
-ng e2e
-```
+## Imagen Docker
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+`Dockerfile` multi-stage (build de Angular + nginx). Se construye desde la raíz
+con `docker compose build frontend`. En producción, nginx sirve el SPA y hace
+proxy de `/api/` hacia el backend.
