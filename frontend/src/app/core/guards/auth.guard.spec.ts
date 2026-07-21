@@ -48,6 +48,15 @@ describe('authGuard and roleGuard', () => {
     const result = TestBed.runInInjectionContext(() => roleGuard(['TENANT_ADMIN'])({} as never, {} as never));
     expect(result).toEqual(router.createUrlTree(['/employee-dashboard']));
   });
+
+  // Regresión: un TENANT_ADMIN que aterriza en una ruta de EMPLOYEE debe ir a
+  // su panel de admin, no de vuelta a /employee-dashboard (que reevaluaría el
+  // mismo guard y provocaría el bucle de redirección infinito).
+  it('redirects a TENANT_ADMIN hitting an employee route to the admin area', () => {
+    authService['accessToken'].set(sampleToken(['TENANT_ADMIN']));
+    const result = TestBed.runInInjectionContext(() => roleGuard(['EMPLOYEE'])({} as never, {} as never));
+    expect(result).toEqual(router.createUrlTree(['/admin/employees']));
+  });
 });
 
 function sampleToken(roles: string[]): string {
