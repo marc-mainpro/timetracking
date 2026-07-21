@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 
-type ProblemDetail = {
+interface ProblemDetail {
   detail?: string;
   errorCode?: string;
-  errors?: Array<{ field: string; message: string }>;
-};
+  errors?: { field: string; message: string }[];
+}
 
 @Injectable({ providedIn: 'root' })
 export class ErrorMessagesService {

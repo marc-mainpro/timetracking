@@ -2,23 +2,23 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-export type EmployeeDaySummary = {
+export interface EmployeeDaySummary {
   day: string;
   worked: string;
   paused: string;
   workdayCount: number;
   adjustedWorkdayCount: number;
   openWorkdays: number;
-};
+}
 
-export type TenantEmployeeSummary = {
+export interface TenantEmployeeSummary {
   employeeId: string;
   worked: string;
   paused: string;
   workdayCount: number;
   adjustedWorkdayCount: number;
   openWorkdays: number;
-};
+}
 
 @Injectable({ providedIn: 'root' })
 export class ReportsService {

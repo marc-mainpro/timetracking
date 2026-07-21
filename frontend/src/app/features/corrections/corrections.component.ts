@@ -5,7 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import { Workday } from '../workdays/workdays.service';
-import { Correction, CorrectionsService, PagedCorrections } from './corrections.service';
+import { CorrectionsService, PagedCorrections } from './corrections.service';
 
 @Component({
   selector: 'app-corrections',
@@ -87,7 +87,7 @@ export class CorrectionsComponent {
     this.formError.set(null);
     this.actionMessage.set(null);
     const value = this.form.getRawValue();
-    const breaks = value.breaks as Array<{ startedAt: string; endedAt: string }>;
+    const breaks = value.breaks as { startedAt: string; endedAt: string }[];
     this.correctionsService.request(workday.id, {
       reason: value.reason,
       proposedChanges: {
@@ -154,7 +154,7 @@ export class CorrectionsComponent {
 function proposalValidator(control: AbstractControl): ValidationErrors | null {
   const startedAt = control.get('startedAt')?.value as string;
   const endedAt = control.get('endedAt')?.value as string;
-  const breaks = (control.get('breaks')?.value as Array<{ startedAt: string; endedAt: string }>) ?? [];
+  const breaks = (control.get('breaks')?.value as { startedAt: string; endedAt: string }[]) ?? [];
 
   if (!startedAt || !endedAt) {
     return null;

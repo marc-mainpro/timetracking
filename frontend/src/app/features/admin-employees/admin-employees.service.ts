@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-export type Employee = {
+export interface Employee {
   id: string;
   email: string;
   firstName: string;
@@ -11,28 +11,28 @@ export type Employee = {
   roles: string[];
   createdAt: string;
   updatedAt: string;
-};
+}
 
-export type PagedEmployees = {
+export interface PagedEmployees {
   content: Employee[];
   page: number;
   size: number;
   totalElements: number;
   totalPages: number;
-};
+}
 
-export type CreateEmployeePayload = {
+export interface CreateEmployeePayload {
   email: string;
   password: string;
   firstName: string;
   lastName: string;
   roles: string[];
-};
+}
 
-export type UpdateEmployeePayload = {
+export interface UpdateEmployeePayload {
   firstName: string;
   lastName: string;
-};
+}
 
 @Injectable({ providedIn: 'root' })
 export class AdminEmployeesService {

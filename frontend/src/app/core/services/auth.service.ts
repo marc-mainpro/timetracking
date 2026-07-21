@@ -2,31 +2,31 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, finalize, map, shareReplay, tap } from 'rxjs';
 
-type AuthTokenResponse = {
+interface AuthTokenResponse {
   accessToken: string;
   expiresAt: string;
-};
+}
 
-type LoginRequest = {
+interface LoginRequest {
   email: string;
   password: string;
-};
+}
 
-type RegisterRequest = {
+interface RegisterRequest {
   tenantName: string;
   timezone: string;
   adminEmail: string;
   adminPassword: string;
   firstName: string;
   lastName: string;
-};
+}
 
-type JwtPayload = {
+interface JwtPayload {
   sub: string;
   tenantId: string;
   roles: string[];
   exp: number;
-};
+}
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

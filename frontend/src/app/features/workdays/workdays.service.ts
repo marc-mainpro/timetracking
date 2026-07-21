@@ -2,28 +2,28 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-export type BreakEntry = {
+export interface BreakEntry {
   id: string;
   startedAt: string;
   endedAt: string | null;
-};
+}
 
-export type Workday = {
+export interface Workday {
   id: string;
   status: 'OPEN' | 'ON_BREAK' | 'CLOSED' | 'ADJUSTED';
   startedAt: string;
   endedAt: string | null;
   breaks: BreakEntry[];
   workedDuration: string;
-};
+}
 
-export type PagedWorkdays = {
+export interface PagedWorkdays {
   content: Workday[];
   page: number;
   size: number;
   totalElements: number;
   totalPages: number;
-};
+}
 
 @Injectable({ providedIn: 'root' })
 export class WorkdaysService {

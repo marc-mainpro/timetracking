@@ -6,18 +6,18 @@ import { Workday } from '../workdays/workdays.service';
 
 export type CorrectionStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
-export type ProposedBreak = {
+export interface ProposedBreak {
   startedAt: string;
   endedAt: string;
-};
+}
 
-export type ProposedChanges = {
+export interface ProposedChanges {
   startedAt: string;
   endedAt: string;
   breaks: ProposedBreak[];
-};
+}
 
-export type Correction = {
+export interface Correction {
   id: string;
   workdayId: string;
   requestedBy: string;
@@ -28,20 +28,20 @@ export type Correction = {
   resolvedAt: string | null;
   resolutionComment: string | null;
   createdAt: string;
-};
+}
 
-export type PagedCorrections = {
+export interface PagedCorrections {
   content: Correction[];
   page: number;
   size: number;
   totalElements: number;
   totalPages: number;
-};
+}
 
-export type RequestCorrectionPayload = {
+export interface RequestCorrectionPayload {
   reason: string;
   proposedChanges: ProposedChanges;
-};
+}
 
 @Injectable({ providedIn: 'root' })
 export class CorrectionsService {
