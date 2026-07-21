@@ -1,12 +1,12 @@
 <section class="history-shell">
-  <header class="history-header">
+  <header class="card history-header">
     <div>
       <p class="eyebrow">Historial</p>
       <h1>Tus jornadas recientes</h1>
     </div>
   </header>
 
-  <form [formGroup]="filters" (ngSubmit)="submitFilters()" class="filters-card">
+  <form [formGroup]="filters" (ngSubmit)="submitFilters()" class="card filters-card">
     <label>
       <span>Desde</span>
       <input type="datetime-local" formControlName="from" />
@@ -20,7 +20,7 @@
 
   <p class="error" *ngIf="errorMessage() as message">{{ message }}</p>
 
-  <section class="history-card" *ngIf="result() as result">
+  <section class="card history-card" *ngIf="result() as result">
     <div class="history-row" *ngFor="let workday of result.content">
       <div>
         <strong>{{ workday.startedAt | date: 'shortDate' }}</strong>
@@ -36,7 +36,7 @@
       </div>
       <div>
         <strong>Duración</strong>
-        <span>{{ workday.workedDuration }}</span>
+        <span>{{ workday.workedDuration | isoDuration }}</span>
       </div>
       <div *ngIf="workday.status === 'CLOSED'">
         <a [routerLink]="['/corrections']" [queryParams]="{ workdayId: workday.id }">Solicitar corrección</a>

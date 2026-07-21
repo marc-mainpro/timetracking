@@ -1,5 +1,5 @@
 <section class="admin-shell">
-  <header class="admin-header">
+  <header class="card admin-header">
     <div>
       <p class="eyebrow">Revisión</p>
       <h1>Cola de correcciones del tenant</h1>
@@ -11,7 +11,7 @@
   <p class="message message--error" *ngIf="decisionError() as error">{{ error }}</p>
 
   <div class="admin-layout">
-    <aside class="queue-card">
+    <aside class="card queue-card">
       <div class="filter-row">
         <button type="button" [class.active]="selectedStatus() === 'PENDING'" (click)="applyStatus('PENDING')">Pendientes</button>
         <button type="button" [class.active]="selectedStatus() === 'APPROVED'" (click)="applyStatus('APPROVED')">Aprobadas</button>
@@ -30,7 +30,7 @@
       </button>
     </aside>
 
-    <section class="detail-card" *ngIf="selectedCorrection() as correction; else emptyDetail">
+    <section class="card detail-card" *ngIf="selectedCorrection() as correction; else emptyDetail">
       <div class="detail-head">
         <div>
           <p class="eyebrow">Solicitud</p>
@@ -84,7 +84,7 @@
     </section>
 
     <ng-template #emptyDetail>
-      <section class="detail-card detail-card--empty">
+      <section class="card detail-card detail-card--empty">
         <p class="eyebrow">Sin selección</p>
         <h2>Elige una corrección para comparar la propuesta con la jornada actual.</h2>
       </section>

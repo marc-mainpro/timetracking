@@ -1,20 +1,41 @@
-<nav class="app-nav" *ngIf="isAuthenticated(); else guestNav">
-  <div class="app-nav__links">
-    <a routerLink="/employee-dashboard" *ngIf="showEmployeeLinks()">Mi jornada</a>
-    <a routerLink="/workdays" *ngIf="showEmployeeLinks()">Historial</a>
-    <a routerLink="/corrections" *ngIf="showEmployeeLinks()">Correcciones</a>
-    <a routerLink="/reports" *ngIf="showEmployeeLinks()">Mis informes</a>
-    <a routerLink="/admin/employees" *ngIf="showAdminLinks()">Empleados</a>
-    <a routerLink="/admin/corrections" *ngIf="showAdminLinks()">Revisiones</a>
-    <a routerLink="/admin/reports" *ngIf="showAdminLinks()">Informes</a>
-  </div>
-  <button type="button" class="logout" (click)="logout()">Salir</button>
-</nav>
+<ng-container *ngIf="isAuthenticated(); else guestNav">
+  <header class="app-bar">
+    <button
+      type="button"
+      class="nav-toggle"
+      (click)="toggleMenu()"
+      [attr.aria-expanded]="menuOpen()"
+      aria-controls="app-drawer"
+      aria-label="Abrir menú de navegación"
+    >
+      <span class="nav-toggle__bars" aria-hidden="true"></span>
+    </button>
+
+    <span class="app-bar__brand">Control horario</span>
+
+    <nav id="app-drawer" class="app-nav" [class.app-nav--open]="menuOpen()">
+      <p class="app-nav__title">Navegación</p>
+      <div class="app-nav__links">
+        <a routerLink="/employee-dashboard" routerLinkActive="active" (click)="closeMenu()" *ngIf="showEmployeeLinks()">Mi jornada</a>
+        <a routerLink="/workdays" routerLinkActive="active" (click)="closeMenu()" *ngIf="showEmployeeLinks()">Historial</a>
+        <a routerLink="/corrections" routerLinkActive="active" (click)="closeMenu()" *ngIf="showEmployeeLinks()">Correcciones</a>
+        <a routerLink="/reports" routerLinkActive="active" (click)="closeMenu()" *ngIf="showEmployeeLinks()">Mis informes</a>
+        <a routerLink="/admin/employees" routerLinkActive="active" (click)="closeMenu()" *ngIf="showAdminLinks()">Empleados</a>
+        <a routerLink="/admin/corrections" routerLinkActive="active" (click)="closeMenu()" *ngIf="showAdminLinks()">Revisiones</a>
+        <a routerLink="/admin/reports" routerLinkActive="active" (click)="closeMenu()" *ngIf="showAdminLinks()">Informes</a>
+      </div>
+    </nav>
+
+    <button type="button" class="logout ghost" (click)="logout()">Salir</button>
+  </header>
+
+  <div class="drawer-backdrop" *ngIf="menuOpen()" (click)="closeMenu()" aria-hidden="true"></div>
+</ng-container>
 
 <ng-template #guestNav>
   <nav class="app-nav app-nav--guest">
-    <a routerLink="/auth/login">Login</a>
-    <a routerLink="/auth/register">Registrar organización</a>
+    <a routerLink="/auth/login" routerLinkActive="active">Login</a>
+    <a routerLink="/auth/register" routerLinkActive="active">Registrar organización</a>
   </nav>
 </ng-template>
 

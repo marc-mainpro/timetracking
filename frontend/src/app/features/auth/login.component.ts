@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { interval } from 'rxjs';
 
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -17,13 +18,20 @@ export class LoginComponent {
   private readonly authService = inject(AuthService);
   private readonly errorMessagesService = inject(ErrorMessagesService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  readonly now = signal(Date.now());
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]]
   });
+
+  constructor() {
+    const subscription = interval(1000).subscribe(() => this.now.set(Date.now()));
+    this.destroyRef.onDestroy(() => subscription.unsubscribe());
+  }
 
   submit(): void {
     if (this.form.invalid || this.loading()) {

@@ -1,5 +1,5 @@
 <section class="corrections-shell">
-  <header class="corrections-header">
+  <header class="card corrections-header">
     <div>
       <p class="eyebrow">Correcciones</p>
       <h1>Solicita cambios con contexto completo</h1>
@@ -12,7 +12,7 @@
   <p class="message message--error" *ngIf="formError() as error">{{ error }}</p>
 
   <div class="corrections-layout">
-    <section class="editor-card">
+    <section class="card editor-card">
       <ng-container *ngIf="selectedWorkday() as workday; else emptySelection">
         <div class="editor-summary">
           <div>
@@ -80,7 +80,7 @@
       </ng-template>
     </section>
 
-    <section class="requests-card">
+    <section class="card requests-card">
       <div class="requests-header">
         <span class="eyebrow">Tus solicitudes</span>
         <strong>{{ result()?.totalElements ?? 0 }} en total</strong>

@@ -3,12 +3,12 @@ import { Component, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
-import { formatIsoDuration } from './duration.util';
+import { IsoDurationPipe } from '../../core/pipes/iso-duration.pipe';
 import { ReportsService, TenantEmployeeSummary } from './reports.service';
 
 @Component({
   selector: 'app-reports',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, IsoDurationPipe],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.scss'
 })
@@ -32,10 +32,6 @@ export class ReportsComponent {
 
   constructor() {
     this.load();
-  }
-
-  get formatIsoDuration(): (value: string) => string {
-    return formatIsoDuration;
   }
 
   load(): void {

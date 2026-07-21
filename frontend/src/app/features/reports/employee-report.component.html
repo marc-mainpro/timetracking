@@ -1,5 +1,5 @@
 <section class="dashboard-shell">
-  <header class="hero-card">
+  <header class="card hero-card">
     <div>
       <p class="eyebrow">Mi resumen</p>
       <h1>Tus horas trabajadas por día</h1>
@@ -7,7 +7,7 @@
     </div>
   </header>
 
-  <section class="filters-card">
+  <section class="card filters-card">
     <form [formGroup]="form" (ngSubmit)="load()" class="range-form">
       <label>
         <span>Desde</span>
@@ -30,13 +30,14 @@
     </form>
   </section>
 
-  <section class="results-card">
+  <section class="card results-card">
     <p *ngIf="loading()">Cargando tu resumen...</p>
 
     <ng-container *ngIf="!loading()">
       <p class="empty" *ngIf="results() && results()!.length === 0">Sin datos en el rango seleccionado.</p>
 
-      <table *ngIf="results() && results()!.length > 0">
+      <div class="table-scroll" *ngIf="results() && results()!.length > 0">
+      <table>
         <thead>
           <tr>
             <th>Día</th>
@@ -50,14 +51,15 @@
         <tbody>
           <tr *ngFor="let row of results()">
             <td>{{ row.day }}</td>
-            <td>{{ formatIsoDuration(row.worked) }}</td>
-            <td>{{ formatIsoDuration(row.paused) }}</td>
+            <td>{{ row.worked | isoDuration: 'hm' }}</td>
+            <td>{{ row.paused | isoDuration: 'hm' }}</td>
             <td>{{ row.workdayCount }}</td>
             <td>{{ row.adjustedWorkdayCount }}</td>
             <td>{{ row.openWorkdays }}</td>
           </tr>
         </tbody>
       </table>
+      </div>
     </ng-container>
   </section>
 </section>

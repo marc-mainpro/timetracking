@@ -4,12 +4,12 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Va
 
 import { AuthService } from '../../core/services/auth.service';
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
-import { formatIsoDuration } from './duration.util';
+import { IsoDurationPipe } from '../../core/pipes/iso-duration.pipe';
 import { EmployeeDaySummary, ReportsService } from './reports.service';
 
 @Component({
   selector: 'app-employee-report',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, IsoDurationPipe],
   templateUrl: './employee-report.component.html',
   styleUrl: './employee-report.component.scss'
 })
@@ -33,10 +33,6 @@ export class EmployeeReportComponent {
 
   constructor() {
     this.load();
-  }
-
-  get formatIsoDuration(): (value: string) => string {
-    return formatIsoDuration;
   }
 
   load(): void {

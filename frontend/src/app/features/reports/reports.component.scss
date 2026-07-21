@@ -1,91 +1,59 @@
 .admin-shell {
   display: grid;
-  gap: 1rem;
-}
-
-.eyebrow {
-  margin: 0 0 0.35rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: #67e8f9;
-  font-size: 0.72rem;
+  gap: 1.25rem;
 }
 
 .admin-header,
 .filters-card,
 .results-card {
-  padding: 1.25rem;
-  border-radius: 1.25rem;
-  background: rgba(15, 23, 42, 0.92);
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  color: #eef6ff;
+  padding: 1.5rem;
 }
 
 .range-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: flex-end;
-}
-
-.range-form label {
   display: grid;
-  gap: 0.35rem;
-}
-
-.range-form input {
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: 0.9rem;
-  background: rgba(8, 15, 30, 0.7);
-  padding: 0.7rem 0.85rem;
-  color: #f8fbff;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  align-items: end;
 }
 
 .form-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
 }
 
-button {
-  border: 0;
-  border-radius: 999px;
-  padding: 0.8rem 1rem;
-  font-weight: 700;
-  color: #082032;
-  background: linear-gradient(135deg, #67e8f9 0%, #22d3ee 100%);
-}
-
-.ghost {
-  color: #d4ebff;
-  background: rgba(148, 163, 184, 0.16);
+.form-actions button {
+  flex: 1 1 auto;
 }
 
 .error {
-  margin: 0.75rem 0 0;
-  color: #fecaca;
-  flex-basis: 100%;
+  grid-column: 1 / -1;
+  margin: 0;
 }
 
 .empty {
-  color: #fde68a;
+  color: var(--text-muted);
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th,
 td {
-  text-align: left;
-  padding: 0.6rem 0.75rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 720px) {
+td:first-child {
+  font-family: inherit;
+}
+
+@media (min-width: 640px) {
   .range-form {
-    flex-direction: column;
-    align-items: stretch;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  }
+
+  .form-actions {
+    grid-column: auto;
+  }
+
+  .form-actions button {
+    flex: 0 0 auto;
   }
 }

@@ -1,1 +1,252 @@
-/* You can add global styles to this file, and also import other style files */
+/* Fuentes auto-hospedadas (@fontsource): se empaquetan como assets propios
+   y las sirve nginx desde 'self', compatible con la CSP estricta (font-src
+   'self'). No dependemos de Google Fonts, que la CSP bloquea. */
+@use '@fontsource/inter/400.css' as inter400;
+@use '@fontsource/inter/500.css' as inter500;
+@use '@fontsource/inter/600.css' as inter600;
+@use '@fontsource/ibm-plex-mono/500.css' as plexmono500;
+
+/* Sistema de diseño compartido: minimalismo "instrumento de tiempo".
+   Superficie clara, jerarquía por espaciado y una hairline. La firma es
+   tipográfica: reloj, horas y duraciones en mono con cifras tabulares.
+   Los componentes solo añaden lo estructural (grids); color y tipografía
+   viven aquí para que toda la app comparta un único lenguaje visual.
+   Todo está escrito mobile-first: la base es una columna y los breakpoints
+   ensanchan con min-width. */
+
+:root {
+  --bg: #f7f7f8;
+  --surface: #ffffff;
+  --border: #e7e7ea;
+  --text: #17171a;
+  --text-muted: #6b7280;
+  --primary: #17171a;
+  --accent: #4f46e5;
+  --ok: #15803d;
+  --ok-bg: #e8f3ec;
+  --warn: #b45309;
+  --warn-bg: #f6ecd9;
+  --danger: #b91c1c;
+  --danger-bg: #f6e4e4;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.eyebrow {
+  margin: 0 0 0.4rem;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+label {
+  display: block;
+}
+
+label > span:first-child {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  min-height: 2.75rem;
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.8rem;
+}
+
+textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  width: auto;
+  min-height: auto;
+  accent-color: var(--accent);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+button {
+  min-height: 2.75rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--surface);
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 1.1rem;
+  cursor: pointer;
+  transition:
+    opacity 0.12s ease,
+    background 0.12s ease;
+}
+
+button:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button.ghost {
+  color: var(--text);
+  background: transparent;
+  border-color: var(--border);
+}
+
+button.ghost:hover:not(:disabled) {
+  background: var(--bg);
+  opacity: 1;
+}
+
+button.danger {
+  color: var(--surface);
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.pill {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.pill--approved,
+.pill--active {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.pill--rejected,
+.pill--inactive {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+}
+
+.info {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.mono {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}

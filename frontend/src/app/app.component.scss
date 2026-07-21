@@ -1,22 +1,149 @@
-.app-nav {
+/* Barra superior (mobile-first): hamburguesa + marca + salir.
+   Los enlaces viven en un cajón lateral (off-canvas) que se abre con el
+   botón hamburguesa. En escritorio (>=720px) la barra desaparece y los
+   enlaces se muestran en línea. */
+
+.app-bar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-bar__brand {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.app-bar .logout {
+  margin-left: auto;
+  min-height: 2.4rem;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.88rem;
+}
+
+/* Botón hamburguesa */
+.nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.nav-toggle__bars,
+.nav-toggle__bars::before,
+.nav-toggle__bars::after {
+  content: '';
+  display: block;
+  width: 1.05rem;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+}
+
+.nav-toggle__bars {
+  position: relative;
+}
+
+.nav-toggle__bars::before {
+  position: absolute;
+  top: -6px;
+}
+
+.nav-toggle__bars::after {
+  position: absolute;
+  top: 6px;
+}
+
+/* Backdrop del cajón */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 30;
+}
+
+/* Cajón lateral (mobile) */
+.app-nav {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  width: min(80vw, 17rem);
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
-  padding: 1rem 1.25rem;
-  background: #08111f;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  padding: 1.25rem;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+}
+
+.app-nav--open {
+  transform: translateX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-nav {
+    transition: none;
+  }
+}
+
+.app-nav__title {
+  margin: 0;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 .app-nav__links {
   display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 .app-nav a {
-  color: #d7f6ff;
+  padding: 0.7rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  color: var(--text-muted);
   text-decoration: none;
+}
+
+.app-nav a:hover {
+  color: var(--text);
+  background: var(--bg);
+  text-decoration: none;
+}
+
+.app-nav a.active {
+  color: var(--text);
+  font-weight: 500;
+  background: var(--bg);
+}
+
+/* Nav de invitado (login/registro): barra simple sin cajón */
+.app-nav--guest {
+  position: static;
+  transform: none;
+  flex-direction: row;
+  width: auto;
+  gap: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-right: 0;
+  border-bottom: 1px solid var(--border);
 }
 
 .app-main {
@@ -25,17 +152,57 @@
   padding: 1.25rem;
 }
 
-.logout {
-  border: 0;
-  border-radius: 999px;
-  padding: 0.65rem 0.95rem;
-  color: #082032;
-  background: linear-gradient(135deg, #67e8f9 0%, #22d3ee 100%);
-}
+/* Escritorio: sin barra ni cajón, enlaces en línea */
+@media (min-width: 720px) {
+  .app-bar {
+    justify-content: flex-start;
+    padding: 0.85rem 1.75rem;
+  }
 
-@media (max-width: 720px) {
+  .nav-toggle,
+  .drawer-backdrop {
+    display: none;
+  }
+
+  .app-bar__brand {
+    margin-right: 1.5rem;
+  }
+
   .app-nav {
-    flex-direction: column;
-    align-items: flex-start;
+    position: static;
+    z-index: auto;
+    transform: none;
+    flex-direction: row;
+    align-items: center;
+    width: auto;
+    gap: 0.35rem 1.15rem;
+    padding: 0;
+    background: transparent;
+    border-right: 0;
+  }
+
+  .app-nav__title {
+    display: none;
+  }
+
+  .app-nav__links {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.15rem;
+  }
+
+  .app-nav a {
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .app-nav a:hover,
+  .app-nav a.active {
+    background: transparent;
+  }
+
+  .app-main {
+    padding: 2rem 1.75rem;
   }
 }

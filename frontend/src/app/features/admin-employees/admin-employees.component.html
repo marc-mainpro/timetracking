@@ -1,5 +1,5 @@
 <section class="admin-shell">
-  <header class="admin-header">
+  <header class="card admin-header">
     <div>
       <p class="eyebrow">Administración</p>
       <h1>Gestión de empleados</h1>
@@ -13,7 +13,7 @@
   </header>
 
   <section class="layout">
-    <article class="list-card">
+    <article class="card list-card">
       <div class="toolbar">
         <button type="button" (click)="applyStatus('')">Todos</button>
         <button type="button" (click)="applyStatus('ACTIVE')">Activos</button>
@@ -46,7 +46,7 @@
       </footer>
     </article>
 
-    <aside class="form-card">
+    <aside class="card form-card">
       <p class="eyebrow">{{ editingEmployee() ? 'Editar' : 'Alta' }}</p>
       <h2>{{ editingEmployee() ? 'Actualiza un empleado' : 'Nuevo empleado' }}</h2>
 

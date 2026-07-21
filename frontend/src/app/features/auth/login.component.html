@@ -1,5 +1,10 @@
 <section class="auth-shell">
-  <div class="auth-panel">
+  <div class="card auth-card">
+    <div class="clock-strip">
+      <span class="clock" aria-hidden="true">{{ now() | date: 'HH:mm:ss' }}</span>
+      <span class="clock-status"><span class="clock-dot" aria-hidden="true"></span>en vivo</span>
+    </div>
+
     <p class="eyebrow">Control horario</p>
     <h1>Entra y reanuda tu jornada.</h1>
     <p class="lede">Accede con tu correo corporativo y continúa el fichaje del día sin perder el contexto.</p>
@@ -17,7 +22,7 @@
 
       <p class="error" *ngIf="errorMessage() as message">{{ message }}</p>
 
-      <button type="submit" [disabled]="loading()">{{ loading() ? 'Entrando...' : 'Entrar' }}</button>
+      <button type="submit" [disabled]="loading()">{{ loading() ? 'Entrando…' : 'Entrar' }}</button>
     </form>
 
     <a routerLink="/auth/register" class="secondary-link">Registrar una nueva organización</a>

@@ -4,11 +4,12 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
+import { IsoDurationPipe } from '../../core/pipes/iso-duration.pipe';
 import { PagedWorkdays, WorkdaysService } from './workdays.service';
 
 @Component({
   selector: 'app-workdays',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, IsoDurationPipe],
   templateUrl: './workdays.component.html',
   styleUrl: './workdays.component.scss'
 })
