@@ -8,7 +8,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-timetracking} -d ${POSTGRES_DB:-timetracking}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-timetracking} -d ${POSTGRES_DB:-timetracking}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -25,7 +29,7 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-timetracking}
       DB_USER: ${POSTGRES_USER:-timetracking}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET es obligatorio (minimo 32 bytes); definelo en .env}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:4200}
       AUTH_REFRESH_COOKIE_SECURE: ${AUTH_REFRESH_COOKIE_SECURE:-false}
     ports:
