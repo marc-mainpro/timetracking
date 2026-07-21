@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -8,7 +7,7 @@ import { ErrorMessagesService } from '../../core/services/error-messages.service
 
 @Component({
   selector: 'app-register',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss'
 })

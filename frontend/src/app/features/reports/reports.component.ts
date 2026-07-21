@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 
@@ -8,7 +7,7 @@ import { ReportsService, TenantEmployeeSummary } from './reports.service';
 
 @Component({
   selector: 'app-reports',
-  imports: [CommonModule, ReactiveFormsModule, IsoDurationPipe],
+  imports: [ReactiveFormsModule, IsoDurationPipe],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.scss'
 })

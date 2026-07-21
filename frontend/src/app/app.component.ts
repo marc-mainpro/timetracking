@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, HostListener, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
@@ -7,7 +6,7 @@ import { AuthService } from './core/services/auth.service';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })

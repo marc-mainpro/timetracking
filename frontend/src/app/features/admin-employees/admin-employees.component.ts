@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -7,7 +6,7 @@ import { AdminEmployeesService, Employee, PagedEmployees } from './admin-employe
 
 @Component({
   selector: 'app-admin-employees',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './admin-employees.component.html',
   styleUrl: './admin-employees.component.scss'
 })

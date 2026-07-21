@@ -23,43 +23,54 @@
         <button type="submit" [disabled]="loading()">{{ loading() ? 'Cargando...' : 'Consultar' }}</button>
       </div>
 
-      <p class="error" *ngIf="form.errors?.['invalidRange'] && (form.controls.from.touched || form.controls.to.touched)">
-        La fecha "desde" debe ser anterior o igual a la fecha "hasta".
-      </p>
-      <p class="error" *ngIf="formError() as message">{{ message }}</p>
+      @if (form.errors?.['invalidRange'] && (form.controls.from.touched || form.controls.to.touched)) {
+        <p class="error">
+          La fecha "desde" debe ser anterior o igual a la fecha "hasta".
+        </p>
+      }
+      @if (formError(); as message) {
+        <p class="error">{{ message }}</p>
+      }
     </form>
   </section>
 
   <section class="card results-card">
-    <p *ngIf="loading()">Cargando tu resumen...</p>
+    @if (loading()) {
+      <p>Cargando tu resumen...</p>
+    }
 
-    <ng-container *ngIf="!loading()">
-      <p class="empty" *ngIf="results() && results()!.length === 0">Sin datos en el rango seleccionado.</p>
-
-      <div class="table-scroll" *ngIf="results() && results()!.length > 0">
-      <table>
-        <thead>
-          <tr>
-            <th>Día</th>
-            <th>Trabajado</th>
-            <th>Pausas</th>
-            <th>Jornadas</th>
-            <th>Ajustadas</th>
-            <th>Abiertas</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let row of results()">
-            <td>{{ row.day }}</td>
-            <td>{{ row.worked | isoDuration: 'hm' }}</td>
-            <td>{{ row.paused | isoDuration: 'hm' }}</td>
-            <td>{{ row.workdayCount }}</td>
-            <td>{{ row.adjustedWorkdayCount }}</td>
-            <td>{{ row.openWorkdays }}</td>
-          </tr>
-        </tbody>
-      </table>
-      </div>
-    </ng-container>
+    @if (!loading()) {
+      @if (results() && results()!.length === 0) {
+        <p class="empty">Sin datos en el rango seleccionado.</p>
+      }
+      @if (results() && results()!.length > 0) {
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Día</th>
+                <th>Trabajado</th>
+                <th>Pausas</th>
+                <th>Jornadas</th>
+                <th>Ajustadas</th>
+                <th>Abiertas</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of results(); track row) {
+                <tr>
+                  <td>{{ row.day }}</td>
+                  <td>{{ row.worked | isoDuration: 'hm' }}</td>
+                  <td>{{ row.paused | isoDuration: 'hm' }}</td>
+                  <td>{{ row.workdayCount }}</td>
+                  <td>{{ row.adjustedWorkdayCount }}</td>
+                  <td>{{ row.openWorkdays }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
   </section>
 </section>

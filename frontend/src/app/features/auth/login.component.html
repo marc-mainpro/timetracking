@@ -20,7 +20,9 @@
         <input type="password" formControlName="password" placeholder="Tu contraseña" />
       </label>
 
-      <p class="error" *ngIf="errorMessage() as message">{{ message }}</p>
+      @if (errorMessage(); as message) {
+        <p class="error">{{ message }}</p>
+      }
 
       <button type="submit" [disabled]="loading()">{{ loading() ? 'Entrando…' : 'Entrar' }}</button>
     </form>
