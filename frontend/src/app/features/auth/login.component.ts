@@ -37,7 +37,10 @@ export class LoginComponent {
     this.authService.login(this.form.getRawValue()).subscribe({
       next: () => {
         this.loading.set(false);
-        void this.router.navigate(['/employee-dashboard']);
+        const landingRoute = this.authService.hasRole('TENANT_ADMIN')
+          ? '/admin/employees'
+          : '/employee-dashboard';
+        void this.router.navigate([landingRoute]);
       },
       error: (error) => {
         this.loading.set(false);

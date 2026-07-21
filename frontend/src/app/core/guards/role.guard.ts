@@ -16,6 +16,7 @@ export function roleGuard(requiredRoles: string[]): CanActivateFn {
       return true;
     }
 
-    return router.createUrlTree(['/employee-dashboard']);
+    const fallbackRoute = authService.hasRole('TENANT_ADMIN') ? '/admin/employees' : '/employee-dashboard';
+    return router.createUrlTree([fallbackRoute]);
   };
 }
