@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -39,6 +40,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    /** Indice unico parcial que garantiza una unica jornada activa por empleado (V4__timetracking.sql). */
+    private static final String ACTIVE_WORKDAY_UNIQUE_INDEX = "ux_workday_active";
 
     @ExceptionHandler(DomainException.class)
     public ProblemDetail handleDomainException(DomainException ex) {
@@ -98,8 +102,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        String message = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
-        if (message != null && message.contains("ux_workday_active")) {
+        if (ACTIVE_WORKDAY_UNIQUE_INDEX.equals(violatedConstraintName(ex))) {
             ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "El empleado ya tiene una jornada activa");
             problem.setTitle("Business rule violation");
             enrich(problem, "WORKDAY_ALREADY_OPEN");
@@ -109,6 +112,18 @@ public class GlobalExceptionHandler {
         problem.setTitle("Concurrent modification");
         enrich(problem, "CONCURRENT_MODIFICATION");
         return problem;
+    }
+
+    /**
+     * Nombre de la constraint violada segun Hibernate (agnostico del driver),
+     * o {@code null} si la excepcion no envuelve una violacion de constraint.
+     * Preferible a hacer {@code contains} sobre el mensaje del driver, que es
+     * fragil ante cambios de version o de idioma.
+     */
+    private String violatedConstraintName(DataIntegrityViolationException ex) {
+        return ex.getCause() instanceof ConstraintViolationException constraintViolation
+                ? constraintViolation.getConstraintName()
+                : null;
     }
 
     @ExceptionHandler(AccessDeniedException.class)
