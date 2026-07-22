@@ -2,8 +2,6 @@
 
 [![CI](https://github.com/marc-mainpro/timetracking/actions/workflows/ci.yml/badge.svg)](https://github.com/marc-mainpro/timetracking/actions/workflows/ci.yml)
 
-> El badge usa el placeholder `OWNER/REPO`: sustitúyelo por el owner/repo reales en cuanto se cree el remote de GitHub.
-
 MVP SaaS multitenant de control horario con Spring Boot, Angular y PostgreSQL.
 Incluye registro de tenant, autenticación JWT con refresh token, gestión de
 empleados, fichajes, correcciones, informes, auditoría y Transactional Outbox.
