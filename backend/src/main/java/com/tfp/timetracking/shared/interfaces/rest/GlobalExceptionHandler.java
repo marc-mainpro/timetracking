@@ -1,7 +1,10 @@
 package com.tfp.timetracking.shared.interfaces.rest;
 
+import com.tfp.timetracking.corrections.domain.CorrectionAlreadyPendingException;
+import com.tfp.timetracking.identity.domain.EmailAlreadyInUseException;
 import com.tfp.timetracking.shared.application.ResourceNotFoundException;
 import com.tfp.timetracking.shared.domain.DomainException;
+import com.tfp.timetracking.timetracking.domain.WorkdayAlreadyOpenException;
 import jakarta.persistence.OptimisticLockException;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -43,6 +46,8 @@ public class GlobalExceptionHandler {
 
     /** Indice unico parcial que garantiza una unica jornada activa por empleado (V4__timetracking.sql). */
     private static final String ACTIVE_WORKDAY_UNIQUE_INDEX = "ux_workday_active";
+    private static final String GLOBAL_USER_EMAIL_UNIQUE_CONSTRAINT = "uq_app_user_email";
+    private static final String PENDING_CORRECTION_UNIQUE_INDEX = "ux_correction_request_pending";
 
     @ExceptionHandler(DomainException.class)
     public ProblemDetail handleDomainException(DomainException ex) {
@@ -102,16 +107,28 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        if (ACTIVE_WORKDAY_UNIQUE_INDEX.equals(violatedConstraintName(ex))) {
-            ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "El empleado ya tiene una jornada activa");
-            problem.setTitle("Business rule violation");
-            enrich(problem, "WORKDAY_ALREADY_OPEN");
-            return problem;
+        DomainException businessConflict = knownBusinessConflict(ex);
+        if (businessConflict != null) {
+            return handleDomainException(businessConflict);
         }
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Conflicto de concurrencia");
         problem.setTitle("Concurrent modification");
         enrich(problem, "CONCURRENT_MODIFICATION");
         return problem;
+    }
+
+    private DomainException knownBusinessConflict(DataIntegrityViolationException ex) {
+        String constraintName = violatedConstraintName(ex);
+        if (ACTIVE_WORKDAY_UNIQUE_INDEX.equals(constraintName)) {
+            return new WorkdayAlreadyOpenException();
+        }
+        if (GLOBAL_USER_EMAIL_UNIQUE_CONSTRAINT.equals(constraintName)) {
+            return new EmailAlreadyInUseException("");
+        }
+        if (PENDING_CORRECTION_UNIQUE_INDEX.equals(constraintName)) {
+            return new CorrectionAlreadyPendingException();
+        }
+        return null;
     }
 
     /**
@@ -121,9 +138,14 @@ public class GlobalExceptionHandler {
      * fragil ante cambios de version o de idioma.
      */
     private String violatedConstraintName(DataIntegrityViolationException ex) {
-        return ex.getCause() instanceof ConstraintViolationException constraintViolation
-                ? constraintViolation.getConstraintName()
-                : null;
+        Throwable cause = ex;
+        while (cause != null) {
+            if (cause instanceof ConstraintViolationException constraintViolation) {
+                return constraintViolation.getConstraintName();
+            }
+            cause = cause.getCause();
+        }
+        return null;
     }
 
     @ExceptionHandler(AccessDeniedException.class)
