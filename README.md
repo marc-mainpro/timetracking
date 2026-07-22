@@ -1,6 +1,6 @@
 # TFP — MVP control horario
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/marc-mainpro/timetracking/actions/workflows/ci.yml/badge.svg)](https://github.com/marc-mainpro/timetracking/actions/workflows/ci.yml)
 
 > El badge usa el placeholder `OWNER/REPO`: sustitúyelo por el owner/repo reales en cuanto se cree el remote de GitHub.
 
@@ -63,12 +63,12 @@ Requisitos: Docker y Docker Compose.
     `index.html`.
 
 4. URLs disponibles:
-   - Frontend: http://localhost:4200
-   - API: http://localhost:8080
-   - Health: http://localhost:8080/actuator/health
-   - OpenAPI JSON: http://localhost:8080/v3/api-docs
-   - OpenAPI YAML: http://localhost:8080/v3/api-docs.yaml
-   - Swagger UI: http://localhost:8080/swagger-ui.html
+   - Frontend: <http://localhost:4200>
+   - API: <http://localhost:8080>
+   - Health: <http://localhost:8080/actuator/health>
+   - OpenAPI JSON: <http://localhost:8080/v3/api-docs>
+   - OpenAPI YAML: <http://localhost:8080/v3/api-docs.yaml>
+   - Swagger UI: <http://localhost:8080/swagger-ui.html>
 
 5. Smoke test automático:
 
