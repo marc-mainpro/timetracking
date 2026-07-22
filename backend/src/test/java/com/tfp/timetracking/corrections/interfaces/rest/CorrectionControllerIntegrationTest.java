@@ -1,5 +1,6 @@
 package com.tfp.timetracking.corrections.interfaces.rest;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -86,6 +87,17 @@ class CorrectionControllerIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.errors[0].field").value("resolutionComment"));
+    }
+
+    @Test
+    void rejectsInvalidPaginationParameters() throws Exception {
+        TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("correction-pagination");
+
+        mockMvc.perform(get("/api/v1/corrections")
+                        .param("page", "-1")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.employee().token()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("INVALID_ARGUMENT"));
     }
 
     private String startAndCloseWorkday(String token) throws Exception {

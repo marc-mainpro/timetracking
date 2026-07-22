@@ -1,6 +1,7 @@
 package com.tfp.timetracking.audit.interfaces.rest;
 
 import com.tfp.timetracking.audit.application.ListAuditEventsUseCase;
+import com.tfp.timetracking.shared.interfaces.rest.PageQuery;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.Instant;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -31,6 +32,8 @@ public class AuditEventController {
             @RequestParam(required = false) String action,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
-        return auditEventRestMapper.toPagedResponse(listAuditEventsUseCase.list(page, size, action, from, to));
+        PageQuery pageQuery = PageQuery.of(page, size);
+        return auditEventRestMapper.toPagedResponse(
+                listAuditEventsUseCase.list(pageQuery.page(), pageQuery.size(), action, from, to));
     }
 }

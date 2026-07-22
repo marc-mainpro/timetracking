@@ -90,6 +90,17 @@ class AuditEventControllerIntegrationTest {
                 .andExpect(jsonPath("$.content.length()").value(0));
     }
 
+    @Test
+    void rejectsInvalidPaginationParameters() throws Exception {
+        TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("audit-pagination");
+
+        mockMvc.perform(get("/api/v1/admin/audit-events")
+                        .param("size", "101")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("INVALID_ARGUMENT"));
+    }
+
     private String startAndCloseWorkday(String token) throws Exception {
         String response = mockMvc.perform(post("/api/v1/workdays/start")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))

@@ -11,6 +11,7 @@ import com.tfp.timetracking.identity.application.ListEmployeesUseCase;
 import com.tfp.timetracking.identity.application.UpdateEmployeeCommand;
 import com.tfp.timetracking.identity.application.UpdateEmployeeUseCase;
 import com.tfp.timetracking.identity.domain.UserStatus;
+import com.tfp.timetracking.shared.interfaces.rest.PageQuery;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -66,8 +67,9 @@ public class EmployeeController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String status) {
+        PageQuery pageQuery = PageQuery.of(page, size);
         UserStatus userStatus = status != null ? UserStatus.valueOf(status) : null;
-        return employeeRestMapper.toPagedResponse(listEmployeesUseCase.list(page, size, userStatus));
+        return employeeRestMapper.toPagedResponse(listEmployeesUseCase.list(pageQuery.page(), pageQuery.size(), userStatus));
     }
 
     @PostMapping

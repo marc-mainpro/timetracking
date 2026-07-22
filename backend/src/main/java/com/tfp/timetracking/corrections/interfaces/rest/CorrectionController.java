@@ -6,6 +6,7 @@ import com.tfp.timetracking.corrections.application.ListCorrectionRequestsUseCas
 import com.tfp.timetracking.corrections.application.RejectCorrectionRequestUseCase;
 import com.tfp.timetracking.corrections.application.ResolveCorrectionCommand;
 import com.tfp.timetracking.corrections.domain.CorrectionRequestStatus;
+import com.tfp.timetracking.shared.interfaces.rest.PageQuery;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -48,8 +49,10 @@ public class CorrectionController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String status) {
+        PageQuery pageQuery = PageQuery.of(page, size);
         CorrectionRequestStatus requestStatus = status != null ? CorrectionRequestStatus.valueOf(status) : null;
-        return correctionRestMapper.toPagedResponse(listCorrectionRequestsUseCase.list(page, size, requestStatus));
+        return correctionRestMapper.toPagedResponse(
+                listCorrectionRequestsUseCase.list(pageQuery.page(), pageQuery.size(), requestStatus));
     }
 
     @GetMapping("/{correctionId}")
