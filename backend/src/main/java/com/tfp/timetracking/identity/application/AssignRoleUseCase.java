@@ -33,9 +33,11 @@ public class AssignRoleUseCase {
         User user = userRepository.findById(tenantContext.currentTenantId(), command.employeeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado"));
         Set<Role> roles = command.roles().stream().map(Role::valueOf).collect(Collectors.toSet());
-        if (user.isActive() && user.hasRole(Role.TENANT_ADMIN) && !roles.contains(Role.TENANT_ADMIN)
-                && userRepository.countActiveAdminsExcludingUser(tenantContext.currentTenantId(), user.id()) == 0) {
-            throw new LastAdminException();
+        if (user.isActive() && user.hasRole(Role.TENANT_ADMIN) && !roles.contains(Role.TENANT_ADMIN)) {
+            userRepository.lockActiveAdmins(tenantContext.currentTenantId());
+            if (userRepository.countActiveAdminsExcludingUser(tenantContext.currentTenantId(), user.id()) == 0) {
+                throw new LastAdminException();
+            }
         }
         user.assignRoles(roles, clock);
         User saved = userRepository.save(user);

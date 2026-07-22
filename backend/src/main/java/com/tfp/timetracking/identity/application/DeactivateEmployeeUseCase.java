@@ -48,9 +48,11 @@ public class DeactivateEmployeeUseCase {
     public User deactivate(UUID employeeId) {
         User user = userRepository.findById(tenantContext.currentTenantId(), employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado"));
-        if (user.isActive() && user.hasRole(Role.TENANT_ADMIN)
-                && userRepository.countActiveAdminsExcludingUser(tenantContext.currentTenantId(), user.id()) == 0) {
-            throw new LastAdminException();
+        if (user.isActive() && user.hasRole(Role.TENANT_ADMIN)) {
+            userRepository.lockActiveAdmins(tenantContext.currentTenantId());
+            if (userRepository.countActiveAdminsExcludingUser(tenantContext.currentTenantId(), user.id()) == 0) {
+                throw new LastAdminException();
+            }
         }
         user.deactivate(clock, idGenerator);
         revokeRefreshTokens(user.id());

@@ -116,6 +116,10 @@ class RegisterTenantUseCaseAtomicityIntegrationTest {
                 }
 
                 @Override
+                public void lockActiveAdmins(UUID tenantId) {
+                }
+
+                @Override
                 public long countActiveAdmins(UUID tenantId) {
                     return 0;
                 }
