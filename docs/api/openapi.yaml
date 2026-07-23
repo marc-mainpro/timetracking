@@ -166,6 +166,7 @@ paths:
             type: "integer"
             format: "int32"
             default: 0
+            minimum: 0
         -
           name: "size"
           in: "query"
@@ -174,6 +175,8 @@ paths:
             type: "integer"
             format: "int32"
             default: 20
+            minimum: 1
+            maximum: 100
         -
           name: "status"
           in: "query"
@@ -383,6 +386,7 @@ paths:
             type: "integer"
             format: "int32"
             default: 0
+            minimum: 0
         -
           name: "size"
           in: "query"
@@ -391,6 +395,8 @@ paths:
             type: "integer"
             format: "int32"
             default: 20
+            minimum: 1
+            maximum: 100
         -
           name: "from"
           in: "query"
@@ -550,6 +556,7 @@ paths:
             type: "integer"
             format: "int32"
             default: 0
+            minimum: 0
         -
           name: "size"
           in: "query"
@@ -558,6 +565,8 @@ paths:
             type: "integer"
             format: "int32"
             default: 20
+            minimum: 1
+            maximum: 100
         -
           name: "status"
           in: "query"
@@ -605,6 +614,7 @@ paths:
             type: "integer"
             format: "int32"
             default: 0
+            minimum: 0
         -
           name: "size"
           in: "query"
@@ -613,6 +623,8 @@ paths:
             type: "integer"
             format: "int32"
             default: 20
+            minimum: 1
+            maximum: 100
         -
           name: "employeeId"
           in: "query"
@@ -675,6 +687,7 @@ paths:
             type: "integer"
             format: "int32"
             default: 0
+            minimum: 0
         -
           name: "size"
           in: "query"
@@ -683,6 +696,8 @@ paths:
             type: "integer"
             format: "int32"
             default: 20
+            minimum: 1
+            maximum: 100
         -
           name: "action"
           in: "query"
