@@ -6,6 +6,29 @@ MVP SaaS multitenant de control horario con Spring Boot, Angular y PostgreSQL.
 Incluye registro de tenant, autenticación JWT con refresh token, gestión de
 empleados, fichajes, correcciones, informes, auditoría y Transactional Outbox.
 
+## Estado actual del desarrollo
+
+Actualmente este proyecto constuye un MVP básico donde se pueden manejar
+multiples tenant, registrar la jornada laboral de los usuarios, hacer ajustes
+sobre dichos fichajes y extraer informes de fichajes en formato CSV.
+
+### Próximos pasos
+
+- gestión de vacaciones y ausencias.
+- control de incidencias horarias.
+- Horarios y calendarios personales y de equipo.
+- Gestiópn de turnos.
+- Notificaciones.
+- infromes avanzados.
+- Observabilidad.
+
+### Pasos para una versión productiva
+
+- billing.
+- MFA.
+- Mensajeria (RabbitMQ o Kafka).
+- Workers para tareas pesadas.
+
 ## Arquitectura
 
 - Monolito modular con separación dominio/aplicación/infraestructura.
@@ -39,7 +62,8 @@ Requisitos: Docker y Docker Compose.
    cp .env.example .env
    ```
 
-   Editar `.env` si se quieren credenciales distintas de las de ejemplo (nunca commitear `.env`).
+   Editar `.env` si se quieren credenciales distintas de las de ejemplo (nunca
+   commitear `.env`).
 
 2. Levantar los servicios (Postgres + backend + frontend):
 
