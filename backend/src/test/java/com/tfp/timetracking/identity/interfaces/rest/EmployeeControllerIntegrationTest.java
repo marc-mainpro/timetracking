@@ -133,13 +133,13 @@ class EmployeeControllerIntegrationTest {
                         .param("page", "-1")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token()))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errorCode").value("INVALID_ARGUMENT"));
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
 
         mockMvc.perform(get("/api/v1/employees")
                         .param("size", "101")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token()))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errorCode").value("INVALID_ARGUMENT"));
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
     }
 
     @Test

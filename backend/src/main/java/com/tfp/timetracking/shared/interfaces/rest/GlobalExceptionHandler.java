@@ -21,6 +21,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 /**
  * Manejador global de errores (CONTEXT-GLOBAL §7, ADR-0006): traduce las
@@ -34,6 +35,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  *       construccion del dominio (p. ej. timezone IANA invalida) -&gt; 400.</li>
  *   <li>{@link MethodArgumentNotValidException}: Bean Validation de un DTO de
  *       request -&gt; 400, con detalle por campo ({@code errors}).</li>
+ *   <li>{@link HandlerMethodValidationException}: Bean Validation de
+ *       parametros de query/path (p. ej. {@code page}/{@code size}) -&gt; 400,
+ *       con detalle por parametro ({@code errors}).</li>
  * </ul>
  */
 @RestControllerAdvice
@@ -78,6 +82,25 @@ public class GlobalExceptionHandler {
         problem.setTitle("Validation failed");
         List<Map<String, String>> errors = ex.getBindingResult().getFieldErrors().stream()
                 .map(this::toFieldError)
+                .toList();
+        problem.setProperty("errors", errors);
+        enrich(problem, "VALIDATION_ERROR");
+        return problem;
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ProblemDetail handleMethodValidation(HandlerMethodValidationException ex) {
+        ProblemDetail problem =
+                ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "La solicitud contiene parametros invalidos");
+        problem.setTitle("Validation failed");
+        List<Map<String, String>> errors = ex.getParameterValidationResults().stream()
+                .flatMap(result -> result.getResolvableErrors().stream()
+                        .map(error -> {
+                            Map<String, String> fieldError = new LinkedHashMap<String, String>();
+                            fieldError.put("field", result.getMethodParameter().getParameterName());
+                            fieldError.put("message", error.getDefaultMessage());
+                            return fieldError;
+                        }))
                 .toList();
         problem.setProperty("errors", errors);
         enrich(problem, "VALIDATION_ERROR");

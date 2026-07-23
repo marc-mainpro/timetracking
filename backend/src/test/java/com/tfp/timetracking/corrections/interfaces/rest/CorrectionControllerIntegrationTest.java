@@ -97,7 +97,7 @@ class CorrectionControllerIntegrationTest {
                         .param("page", "-1")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.employee().token()))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errorCode").value("INVALID_ARGUMENT"));
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
     }
 
     private String startAndCloseWorkday(String token) throws Exception {

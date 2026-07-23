@@ -9,6 +9,8 @@ import com.tfp.timetracking.corrections.domain.CorrectionRequestStatus;
 import com.tfp.timetracking.shared.interfaces.rest.PageQuery;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,8 +48,8 @@ public class CorrectionController {
     @GetMapping
     @PreAuthorize("hasAnyRole('EMPLOYEE','TENANT_ADMIN')")
     public PagedCorrectionsResponse list(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
             @RequestParam(required = false) String status) {
         PageQuery pageQuery = PageQuery.of(page, size);
         CorrectionRequestStatus requestStatus = status != null ? CorrectionRequestStatus.valueOf(status) : null;

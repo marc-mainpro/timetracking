@@ -134,13 +134,13 @@ class WorkdayControllerIntegrationTest {
                         .param("size", "0")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.employee().token()))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errorCode").value("INVALID_ARGUMENT"));
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
 
         mockMvc.perform(get("/api/v1/admin/workdays")
                         .param("page", "-1")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token()))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errorCode").value("INVALID_ARGUMENT"));
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
     }
 
     @TestConfiguration

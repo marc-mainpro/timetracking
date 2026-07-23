@@ -98,7 +98,7 @@ class AuditEventControllerIntegrationTest {
                         .param("size", "101")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token()))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errorCode").value("INVALID_ARGUMENT"));
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
     }
 
     private String startAndCloseWorkday(String token) throws Exception {
