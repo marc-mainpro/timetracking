@@ -17,10 +17,11 @@ sobre dichos fichajes y extraer informes de fichajes en formato CSV.
 - gestión de vacaciones y ausencias.
 - control de incidencias horarias.
 - Horarios y calendarios personales y de equipo.
-- Gestiópn de turnos.
+- Gestión de turnos.
 - Notificaciones.
 - infromes avanzados.
 - Observabilidad.
+- despliegue continuo mediante Docker y github container registry
 
 ### Pasos para una versión productiva
 
