@@ -175,12 +175,18 @@ class TenantAdminConcurrencyIntegrationTest {
     private List<Throwable> executeConcurrently(ThrowingRunnable first, ThrowingRunnable second) throws Exception {
         CountDownLatch start = new CountDownLatch(1);
         List<Throwable> failures = new CopyOnWriteArrayList<>();
-        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+        // No usar try-with-resources: ExecutorService.close() espera
+        // indefinidamente a las tareas y un worker deadlockeado colgaria el
+        // test hasta el timeout de CI en vez de fallar con TimeoutException.
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
             Future<?> firstFuture = executor.submit(task(first, start, failures));
             Future<?> secondFuture = executor.submit(task(second, start, failures));
             start.countDown();
             firstFuture.get(10, TimeUnit.SECONDS);
             secondFuture.get(10, TimeUnit.SECONDS);
+        } finally {
+            executor.shutdownNow();
         }
         return failures;
     }
