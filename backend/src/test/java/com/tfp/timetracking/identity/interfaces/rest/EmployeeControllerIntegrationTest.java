@@ -126,6 +126,23 @@ class EmployeeControllerIntegrationTest {
     }
 
     @Test
+    void rejectsInvalidPaginationParameters() throws Exception {
+        TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("employees-pagination");
+
+        mockMvc.perform(get("/api/v1/employees")
+                        .param("page", "-1")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+
+        mockMvc.perform(get("/api/v1/employees")
+                        .param("size", "101")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+    }
+
+    @Test
     void cannotRemoveLastActiveAdminRole() throws Exception {
         TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("last-admin");
 

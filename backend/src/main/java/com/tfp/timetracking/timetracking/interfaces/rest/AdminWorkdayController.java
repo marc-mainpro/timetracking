@@ -2,7 +2,10 @@ package com.tfp.timetracking.timetracking.interfaces.rest;
 
 import com.tfp.timetracking.timetracking.application.GetTenantWorkdayUseCase;
 import com.tfp.timetracking.timetracking.application.ListTenantWorkdaysUseCase;
+import com.tfp.timetracking.shared.interfaces.rest.PageQuery;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -34,12 +37,14 @@ public class AdminWorkdayController {
     @GetMapping
     @PreAuthorize("hasRole('TENANT_ADMIN')")
     public PagedResponse<WorkdayResponse> list(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
             @RequestParam(required = false) UUID employeeId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
-        return workdayRestMapper.toPagedResponse(listTenantWorkdaysUseCase.list(page, size, employeeId, from, to));
+        PageQuery pageQuery = PageQuery.of(page, size);
+        return workdayRestMapper.toPagedResponse(
+                listTenantWorkdaysUseCase.list(pageQuery.page(), pageQuery.size(), employeeId, from, to));
     }
 
     @GetMapping("/{workdayId}")

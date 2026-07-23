@@ -34,20 +34,20 @@ class WorkdaySummaryQueryPortAdapter implements WorkdaySummaryQueryPort {
 
     @Override
     public List<WorkdayReportEntry> findByEmployee(UUID tenantId, UUID employeeId, Instant from, Instant to) {
-        return toEntries(workdayJpaRepository.findRowsByEmployee(tenantId, employeeId, from, to));
+        return toEntries(tenantId, workdayJpaRepository.findRowsByEmployee(tenantId, employeeId, from, to));
     }
 
     @Override
     public List<WorkdayReportEntry> findByTenant(UUID tenantId, Instant from, Instant to) {
-        return toEntries(workdayJpaRepository.findRowsByTenant(tenantId, from, to));
+        return toEntries(tenantId, workdayJpaRepository.findRowsByTenant(tenantId, from, to));
     }
 
-    private List<WorkdayReportEntry> toEntries(List<ReportWorkdayRow> rows) {
+    private List<WorkdayReportEntry> toEntries(UUID tenantId, List<ReportWorkdayRow> rows) {
         if (rows.isEmpty()) {
             return List.of();
         }
         List<UUID> workdayIds = rows.stream().map(ReportWorkdayRow::id).toList();
-        Map<UUID, List<BreakInterval>> breaksByWorkday = breakJpaRepository.findClosedBreaksByWorkdayIds(workdayIds).stream()
+        Map<UUID, List<BreakInterval>> breaksByWorkday = breakJpaRepository.findClosedBreaksByWorkdayIds(tenantId, workdayIds).stream()
                 .collect(Collectors.groupingBy(
                         ReportBreakRow::workdayId,
                         Collectors.mapping(row -> new BreakInterval(row.startedAt(), row.endedAt()), Collectors.toList())));

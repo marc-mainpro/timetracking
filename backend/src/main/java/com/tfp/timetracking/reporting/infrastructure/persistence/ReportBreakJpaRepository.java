@@ -20,8 +20,9 @@ interface ReportBreakJpaRepository extends JpaRepository<BreakEntryJpaEntity, UU
             select new com.tfp.timetracking.reporting.infrastructure.persistence.ReportBreakRow(
                 b.workday.id, b.startedAt, b.endedAt)
             from BreakEntryJpaEntity b
-            where b.workday.id in :workdayIds
+            where b.workday.tenantId = :tenantId
+              and b.workday.id in :workdayIds
               and b.endedAt is not null
             """)
-    List<ReportBreakRow> findClosedBreaksByWorkdayIds(@Param("workdayIds") Collection<UUID> workdayIds);
+    List<ReportBreakRow> findClosedBreaksByWorkdayIds(@Param("tenantId") UUID tenantId, @Param("workdayIds") Collection<UUID> workdayIds);
 }
