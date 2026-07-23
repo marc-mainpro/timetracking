@@ -1,5 +1,6 @@
 package com.tfp.timetracking.shared.interfaces.rest;
 
+import com.tfp.timetracking.shared.application.ConstraintViolationTranslator;
 import com.tfp.timetracking.shared.application.ResourceNotFoundException;
 import com.tfp.timetracking.shared.domain.DomainException;
 import jakarta.persistence.OptimisticLockException;
@@ -8,6 +9,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,8 +44,18 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    /** Indice unico parcial que garantiza una unica jornada activa por empleado (V4__timetracking.sql). */
-    private static final String ACTIVE_WORKDAY_UNIQUE_INDEX = "ux_workday_active";
+    /**
+     * Constraints de negocio conocidas, indexadas por nombre. Cada modulo
+     * registra las suyas como beans {@link ConstraintViolationTranslator}, de
+     * modo que este handler no depende de los dominios concretos.
+     */
+    private final Map<String, ConstraintViolationTranslator> translatorsByConstraint;
+
+    public GlobalExceptionHandler(List<ConstraintViolationTranslator> translators) {
+        this.translatorsByConstraint = translators.stream()
+                .collect(Collectors.toUnmodifiableMap(
+                        ConstraintViolationTranslator::constraintName, Function.identity()));
+    }
 
     @ExceptionHandler(DomainException.class)
     public ProblemDetail handleDomainException(DomainException ex) {
@@ -102,16 +115,23 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        if (ACTIVE_WORKDAY_UNIQUE_INDEX.equals(violatedConstraintName(ex))) {
-            ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "El empleado ya tiene una jornada activa");
-            problem.setTitle("Business rule violation");
-            enrich(problem, "WORKDAY_ALREADY_OPEN");
-            return problem;
+        DomainException businessConflict = knownBusinessConflict(ex);
+        if (businessConflict != null) {
+            return handleDomainException(businessConflict);
         }
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Conflicto de concurrencia");
         problem.setTitle("Concurrent modification");
         enrich(problem, "CONCURRENT_MODIFICATION");
         return problem;
+    }
+
+    private DomainException knownBusinessConflict(DataIntegrityViolationException ex) {
+        String constraintName = violatedConstraintName(ex);
+        if (constraintName == null) {
+            return null;
+        }
+        ConstraintViolationTranslator translator = translatorsByConstraint.get(constraintName);
+        return translator != null ? translator.translate() : null;
     }
 
     /**
@@ -121,9 +141,14 @@ public class GlobalExceptionHandler {
      * fragil ante cambios de version o de idioma.
      */
     private String violatedConstraintName(DataIntegrityViolationException ex) {
-        return ex.getCause() instanceof ConstraintViolationException constraintViolation
-                ? constraintViolation.getConstraintName()
-                : null;
+        Throwable cause = ex;
+        while (cause != null) {
+            if (cause instanceof ConstraintViolationException constraintViolation) {
+                return constraintViolation.getConstraintName();
+            }
+            cause = cause.getCause();
+        }
+        return null;
     }
 
     @ExceptionHandler(AccessDeniedException.class)
