@@ -2,7 +2,11 @@ package com.tfp.timetracking.shared.interfaces.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.tfp.timetracking.corrections.application.PendingCorrectionConstraintTranslator;
+import com.tfp.timetracking.identity.application.UserEmailConstraintTranslator;
+import com.tfp.timetracking.timetracking.application.ActiveWorkdayConstraintTranslator;
 import java.sql.SQLException;
+import java.util.List;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -11,7 +15,10 @@ import org.springframework.http.ProblemDetail;
 
 class GlobalExceptionHandlerTest {
 
-    private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    private final GlobalExceptionHandler handler = new GlobalExceptionHandler(List.of(
+            new ActiveWorkdayConstraintTranslator(),
+            new UserEmailConstraintTranslator(),
+            new PendingCorrectionConstraintTranslator()));
 
     @Test
     void mapsGlobalUniqueEmailConstraintToBusinessError() {

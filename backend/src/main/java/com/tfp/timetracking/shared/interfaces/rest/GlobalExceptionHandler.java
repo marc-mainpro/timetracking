@@ -1,16 +1,16 @@
 package com.tfp.timetracking.shared.interfaces.rest;
 
-import com.tfp.timetracking.corrections.domain.CorrectionAlreadyPendingException;
-import com.tfp.timetracking.identity.domain.EmailAlreadyInUseException;
+import com.tfp.timetracking.shared.application.ConstraintViolationTranslator;
 import com.tfp.timetracking.shared.application.ResourceNotFoundException;
 import com.tfp.timetracking.shared.domain.DomainException;
-import com.tfp.timetracking.timetracking.domain.WorkdayAlreadyOpenException;
 import jakarta.persistence.OptimisticLockException;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,10 +44,18 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    /** Indice unico parcial que garantiza una unica jornada activa por empleado (V4__timetracking.sql). */
-    private static final String ACTIVE_WORKDAY_UNIQUE_INDEX = "ux_workday_active";
-    private static final String GLOBAL_USER_EMAIL_UNIQUE_CONSTRAINT = "uq_app_user_email";
-    private static final String PENDING_CORRECTION_UNIQUE_INDEX = "ux_correction_request_pending";
+    /**
+     * Constraints de negocio conocidas, indexadas por nombre. Cada modulo
+     * registra las suyas como beans {@link ConstraintViolationTranslator}, de
+     * modo que este handler no depende de los dominios concretos.
+     */
+    private final Map<String, ConstraintViolationTranslator> translatorsByConstraint;
+
+    public GlobalExceptionHandler(List<ConstraintViolationTranslator> translators) {
+        this.translatorsByConstraint = translators.stream()
+                .collect(Collectors.toUnmodifiableMap(
+                        ConstraintViolationTranslator::constraintName, Function.identity()));
+    }
 
     @ExceptionHandler(DomainException.class)
     public ProblemDetail handleDomainException(DomainException ex) {
@@ -119,16 +127,11 @@ public class GlobalExceptionHandler {
 
     private DomainException knownBusinessConflict(DataIntegrityViolationException ex) {
         String constraintName = violatedConstraintName(ex);
-        if (ACTIVE_WORKDAY_UNIQUE_INDEX.equals(constraintName)) {
-            return new WorkdayAlreadyOpenException();
+        if (constraintName == null) {
+            return null;
         }
-        if (GLOBAL_USER_EMAIL_UNIQUE_CONSTRAINT.equals(constraintName)) {
-            return new EmailAlreadyInUseException("");
-        }
-        if (PENDING_CORRECTION_UNIQUE_INDEX.equals(constraintName)) {
-            return new CorrectionAlreadyPendingException();
-        }
-        return null;
+        ConstraintViolationTranslator translator = translatorsByConstraint.get(constraintName);
+        return translator != null ? translator.translate() : null;
     }
 
     /**
