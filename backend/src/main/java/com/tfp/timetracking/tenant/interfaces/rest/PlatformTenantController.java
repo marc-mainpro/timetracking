@@ -2,15 +2,20 @@ package com.tfp.timetracking.tenant.interfaces.rest;
 
 import com.tfp.timetracking.shared.interfaces.rest.PageQuery;
 import com.tfp.timetracking.tenant.application.ChangeTenantLifecycleUseCase;
+import com.tfp.timetracking.tenant.application.CreateTenantUseCase;
 import com.tfp.timetracking.tenant.application.GetTenantUseCase;
 import com.tfp.timetracking.tenant.application.ListTenantsUseCase;
+import com.tfp.timetracking.tenant.application.RegisterTenantCommand;
+import com.tfp.timetracking.tenant.application.RegisterTenantResult;
 import com.tfp.timetracking.tenant.domain.TenantStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import java.net.URI;
 import java.util.UUID;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,17 +39,34 @@ public class PlatformTenantController {
     private final ListTenantsUseCase listTenantsUseCase;
     private final GetTenantUseCase getTenantUseCase;
     private final ChangeTenantLifecycleUseCase changeTenantLifecycleUseCase;
+    private final CreateTenantUseCase createTenantUseCase;
     private final PlatformTenantRestMapper mapper;
 
     public PlatformTenantController(
             ListTenantsUseCase listTenantsUseCase,
             GetTenantUseCase getTenantUseCase,
             ChangeTenantLifecycleUseCase changeTenantLifecycleUseCase,
+            CreateTenantUseCase createTenantUseCase,
             PlatformTenantRestMapper mapper) {
         this.listTenantsUseCase = listTenantsUseCase;
         this.getTenantUseCase = getTenantUseCase;
         this.changeTenantLifecycleUseCase = changeTenantLifecycleUseCase;
+        this.createTenantUseCase = createTenantUseCase;
         this.mapper = mapper;
+    }
+
+    @PostMapping
+    @Operation(summary = "Crea un tenant y su primer TENANT_ADMIN (solo PLATFORM_ADMIN)")
+    public ResponseEntity<RegisterTenantResponse> create(@Valid @RequestBody RegisterTenantRequest request) {
+        RegisterTenantResult result = createTenantUseCase.create(new RegisterTenantCommand(
+                request.tenantName(),
+                request.timezone(),
+                request.adminEmail(),
+                request.adminPassword(),
+                request.firstName(),
+                request.lastName()));
+        RegisterTenantResponse body = new RegisterTenantResponse(result.tenantId(), result.adminUserId());
+        return ResponseEntity.created(URI.create("/api/v1/platform/tenants/" + result.tenantId())).body(body);
     }
 
     @GetMapping

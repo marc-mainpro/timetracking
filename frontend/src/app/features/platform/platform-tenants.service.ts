@@ -28,6 +28,20 @@ export interface PagedTenants {
   totalPages: number;
 }
 
+export interface CreateTenantPayload {
+  tenantName: string;
+  timezone: string;
+  adminEmail: string;
+  adminPassword: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface CreatedTenant {
+  tenantId: string;
+  adminUserId: string;
+}
+
 export interface AuditEvent {
   id: string;
   actorUserId: string | null;
@@ -56,6 +70,10 @@ export class PlatformTenantsService {
       params = params.set('status', status);
     }
     return this.http.get<PagedTenants>('/api/v1/platform/tenants', { params });
+  }
+
+  create(payload: CreateTenantPayload): Observable<CreatedTenant> {
+    return this.http.post<CreatedTenant>('/api/v1/platform/tenants', payload);
   }
 
   get(tenantId: string): Observable<PlatformTenantDetail> {

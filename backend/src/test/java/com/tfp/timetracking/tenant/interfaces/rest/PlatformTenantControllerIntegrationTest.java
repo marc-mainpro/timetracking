@@ -140,6 +140,48 @@ class PlatformTenantControllerIntegrationTest {
     }
 
     @Test
+    void platformAdminCreatesTenantAndItsAdminCanLogIn() throws Exception {
+        String platformToken = createPlatformAdminToken("create");
+        String ownerEmail = "owner+create+" + Instant.now().toEpochMilli() + "@acme.test";
+
+        String response = mockMvc.perform(post("/api/v1/platform/tenants")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(platformToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new RegisterTenantRequest(
+                                "Nueva Org", "Europe/Madrid", ownerEmail, "supersecretpwd", "Owner", "Nuevo"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tenantId").exists())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String tenantId = objectMapper.readTree(response).get("tenantId").asText();
+
+        // El TENANT_ADMIN recién creado puede autenticarse.
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .header("X-Forwarded-For", "203.0.113.90")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AuthLoginRequest(ownerEmail, "supersecretpwd"))))
+                .andExpect(status().isOk());
+
+        // Aparece en el listado de plataforma.
+        mockMvc.perform(get("/api/v1/platform/tenants").header(HttpHeaders.AUTHORIZATION, bearer(platformToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[?(@.id == '" + tenantId + "')]").exists());
+    }
+
+    @Test
+    void tenantAdminCannotCreateTenants() throws Exception {
+        TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("plat-create-forbidden");
+
+        mockMvc.perform(post("/api/v1/platform/tenants")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(tenant.admin().token()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new RegisterTenantRequest(
+                                "Otra", "Europe/Madrid", "x@acme.test", "supersecretpwd", "X", "Y"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void tenantAdminCannotAccessPlatformApi() throws Exception {
         TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("plat-forbidden");
 

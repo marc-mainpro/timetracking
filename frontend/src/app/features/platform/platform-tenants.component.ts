@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import {
@@ -14,16 +15,18 @@ const STATUS_FILTERS = ['', 'PENDING', 'ACTIVE', 'SUSPENDED', 'ARCHIVED'] as con
 
 @Component({
   selector: 'app-platform-tenants',
-  imports: [DatePipe],
+  imports: [DatePipe, ReactiveFormsModule],
   templateUrl: './platform-tenants.component.html',
   styleUrl: './platform-tenants.component.scss'
 })
 export class PlatformTenantsComponent {
   private readonly tenantsService = inject(PlatformTenantsService);
   private readonly errorMessagesService = inject(ErrorMessagesService);
+  private readonly fb = inject(FormBuilder);
 
   readonly statusFilters = STATUS_FILTERS;
   readonly loading = signal(false);
+  readonly saving = signal(false);
   readonly page = signal(0);
   readonly result = signal<PagedTenants | null>(null);
   readonly selectedStatus = signal<string>('');
@@ -31,10 +34,43 @@ export class PlatformTenantsComponent {
   readonly auditEvents = signal<AuditEvent[]>([]);
   readonly message = signal<string | null>(null);
   readonly error = signal<string | null>(null);
+  readonly formError = signal<string | null>(null);
+
+  readonly form = this.fb.nonNullable.group({
+    tenantName: ['', [Validators.required]],
+    timezone: ['Europe/Madrid', [Validators.required]],
+    adminEmail: ['', [Validators.required, Validators.email]],
+    adminPassword: ['', [Validators.required, Validators.minLength(10)]],
+    firstName: ['', [Validators.required]],
+    lastName: ['', [Validators.required]]
+  });
 
   constructor() {
     this.load();
     this.loadAudit();
+  }
+
+  createTenant(): void {
+    if (this.form.invalid || this.saving()) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    this.saving.set(true);
+    this.formError.set(null);
+    this.message.set(null);
+    this.tenantsService.create(this.form.getRawValue()).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.message.set(`Tenant "${this.form.controls.tenantName.value}" creado.`);
+        this.form.reset({ tenantName: '', timezone: 'Europe/Madrid', adminEmail: '', adminPassword: '', firstName: '', lastName: '' });
+        this.page.set(0);
+        this.load();
+      },
+      error: (err) => {
+        this.saving.set(false);
+        this.formError.set(this.errorMessagesService.fromProblem(err.error));
+      }
+    });
   }
 
   load(): void {

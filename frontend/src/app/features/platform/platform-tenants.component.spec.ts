@@ -103,6 +103,35 @@ describe('PlatformTenantsComponent', () => {
     expect(component.message()).toContain('activado');
   });
 
+  it('creates a tenant and reloads the list', () => {
+    component.form.setValue({
+      tenantName: 'Nueva Org',
+      timezone: 'Europe/Madrid',
+      adminEmail: 'owner@acme.test',
+      adminPassword: 'supersecretpwd',
+      firstName: 'Owner',
+      lastName: 'Nuevo'
+    });
+    component.createTenant();
+
+    const create = httpMock.expectOne('/api/v1/platform/tenants');
+    expect(create.request.method).toBe('POST');
+    create.flush({ tenantId: 't-2', adminUserId: 'u-2' });
+
+    // Tras crear, recarga el listado.
+    httpMock
+      .expectOne((req) => req.url === '/api/v1/platform/tenants' && req.method === 'GET')
+      .flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
+
+    expect(component.message()).toContain('creado');
+  });
+
+  it('does not submit an invalid create form', () => {
+    component.form.reset({ tenantName: '', timezone: '', adminEmail: '', adminPassword: '', firstName: '', lastName: '' });
+    component.createTenant();
+    httpMock.expectNone((req) => req.method === 'POST' && req.url === '/api/v1/platform/tenants');
+  });
+
   it('loads a tenant detail', () => {
     component.viewDetail(tenant);
     httpMock

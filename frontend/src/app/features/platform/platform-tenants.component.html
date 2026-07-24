@@ -74,6 +74,40 @@
     </article>
 
     <aside class="card detail-card">
+      <h3>Crear tenant</h3>
+      <form [formGroup]="form" (ngSubmit)="createTenant()" class="create-form">
+        <label>
+          Organización
+          <input type="text" formControlName="tenantName" />
+        </label>
+        <label>
+          Zona horaria
+          <input type="text" formControlName="timezone" />
+        </label>
+        <label>
+          Email del admin
+          <input type="email" formControlName="adminEmail" />
+        </label>
+        <label>
+          Contraseña del admin
+          <input type="password" formControlName="adminPassword" autocomplete="new-password" />
+        </label>
+        <div class="two-cols">
+          <label>
+            Nombre
+            <input type="text" formControlName="firstName" />
+          </label>
+          <label>
+            Apellido
+            <input type="text" formControlName="lastName" />
+          </label>
+        </div>
+        @if (formError(); as err) {
+          <p class="error">{{ err }}</p>
+        }
+        <button type="submit" [disabled]="saving()">{{ saving() ? 'Creando…' : 'Crear tenant' }}</button>
+      </form>
+
       @if (selectedTenant(); as tenant) {
         <div class="detail-head">
           <h2>{{ tenant.name }}</h2>

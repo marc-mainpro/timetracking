@@ -54,6 +54,23 @@ describe('PlatformTenantsService', () => {
     });
   });
 
+  it('creates a tenant via the platform endpoint', () => {
+    service
+      .create({
+        tenantName: 'Acme',
+        timezone: 'Europe/Madrid',
+        adminEmail: 'a@acme.test',
+        adminPassword: 'supersecretpwd',
+        firstName: 'Ana',
+        lastName: 'Doe'
+      })
+      .subscribe();
+    const req = httpMock.expectOne('/api/v1/platform/tenants');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body.tenantName).toBe('Acme');
+    req.flush({ tenantId: 't-1', adminUserId: 'u-1' });
+  });
+
   it('omits the status query param when no filter is set', () => {
     service.list(0, 20).subscribe();
     httpMock.expectOne('/api/v1/platform/tenants?page=0&size=20').flush({
