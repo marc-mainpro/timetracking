@@ -3,7 +3,7 @@ info:
   title: OpenAPI definition
   version: v0
 servers:
-- url: http://localhost:18080
+- url: http://localhost:18082
   description: Generated server url
 paths:
   /api/v1/employees/{employeeId}:
@@ -147,6 +147,60 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/WorkdayResponse'
+  /api/v1/platform/tenants:
+    get:
+      tags:
+      - Platform - Tenants
+      summary: Lista los tenants, con filtro opcional por estado
+      operationId: list
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PagedPlatformTenantsResponse'
+    post:
+      tags:
+      - Platform - Tenants
+      summary: Crea un tenant y su primer TENANT_ADMIN (solo PLATFORM_ADMIN)
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterTenantRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RegisterTenantResponse'
   /api/v1/platform/tenants/{tenantId}/suspend:
     post:
       tags:
@@ -242,7 +296,7 @@ paths:
     get:
       tags:
       - Employees
-      operationId: list
+      operationId: list_1
       parameters:
       - name: page
         in: query
@@ -276,7 +330,7 @@ paths:
     post:
       tags:
       - Employees
-      operationId: create
+      operationId: create_1
       requestBody:
         content:
           application/json:
@@ -607,42 +661,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/EmployeeDaySummaryResponse'
-  /api/v1/platform/tenants:
-    get:
-      tags:
-      - Platform - Tenants
-      summary: Lista los tenants, con filtro opcional por estado
-      operationId: list_1
-      parameters:
-      - name: page
-        in: query
-        required: false
-        schema:
-          type: integer
-          format: int32
-          default: 0
-          minimum: 0
-      - name: size
-        in: query
-        required: false
-        schema:
-          type: integer
-          format: int32
-          default: 20
-          maximum: 100
-          minimum: 1
-      - name: status
-        in: query
-        required: false
-        schema:
-          type: string
-      responses:
-        '200':
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/PagedPlatformTenantsResponse'
   /api/v1/platform/tenants/{tenantId}:
     get:
       tags:
@@ -1049,6 +1067,37 @@ components:
         workedDuration:
           type: string
           example: PT2H30M
+    RegisterTenantRequest:
+      type: object
+      properties:
+        tenantName:
+          type: string
+          minLength: 1
+        timezone:
+          type: string
+          minLength: 1
+        adminEmail:
+          type: string
+          minLength: 1
+        adminPassword:
+          type: string
+          maxLength: 2147483647
+          minLength: 10
+        firstName:
+          type: string
+          minLength: 1
+        lastName:
+          type: string
+          minLength: 1
+    RegisterTenantResponse:
+      type: object
+      properties:
+        tenantId:
+          type: string
+          format: uuid
+        adminUserId:
+          type: string
+          format: uuid
     SuspendTenantRequest:
       type: object
       properties:
@@ -1128,37 +1177,6 @@ components:
           type: string
           maxLength: 500
           minLength: 0
-    RegisterTenantRequest:
-      type: object
-      properties:
-        tenantName:
-          type: string
-          minLength: 1
-        timezone:
-          type: string
-          minLength: 1
-        adminEmail:
-          type: string
-          minLength: 1
-        adminPassword:
-          type: string
-          maxLength: 2147483647
-          minLength: 10
-        firstName:
-          type: string
-          minLength: 1
-        lastName:
-          type: string
-          minLength: 1
-    RegisterTenantResponse:
-      type: object
-      properties:
-        tenantId:
-          type: string
-          format: uuid
-        adminUserId:
-          type: string
-          format: uuid
     AuthTokenResponse:
       type: object
       properties:

@@ -3,8 +3,13 @@
 [![CI](https://github.com/marc-mainpro/timetracking/actions/workflows/ci.yml/badge.svg)](https://github.com/marc-mainpro/timetracking/actions/workflows/ci.yml)
 
 MVP SaaS multitenant de control horario con Spring Boot, Angular y PostgreSQL.
-Incluye registro de tenant, autenticación JWT con refresh token, gestión de
-empleados, fichajes, correcciones, informes, auditoría y Transactional Outbox.
+Incluye alta de tenants por administración de plataforma (`PLATFORM_ADMIN`),
+autenticación JWT con refresh token, gestión de empleados, fichajes,
+correcciones, informes, auditoría y Transactional Outbox.
+
+> V2: el alta de tenants es una operación de plataforma
+> (`POST /api/v1/platform/tenants`, rol `PLATFORM_ADMIN`). El registro público
+> autoservicio está deshabilitado por defecto (`registration.public.enabled`).
 
 ## Estado actual del desarrollo
 

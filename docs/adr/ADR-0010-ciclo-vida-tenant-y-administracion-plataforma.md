@@ -38,7 +38,17 @@ a todos los tenants.
    existentes en vez de introducir un modelo de identidad paralelo. Ese tenant
    se excluye del listado de plataforma y no opera con datos de negocio.
 
-4. **API de plataforma.** Vive **dentro del módulo `tenant`** (que posee el
+4. **Creación de tenants solo por plataforma.** El alta de tenants es una
+   operación de plataforma: `POST /api/v1/platform/tenants` (`PLATFORM_ADMIN`)
+   crea el tenant y su primer `TENANT_ADMIN` (reutilizando
+   `RegisterTenantUseCase`) y registra auditoría. El registro público
+   autoservicio (`POST /api/v1/auth/register`) queda **deshabilitado por
+   defecto** mediante la bandera `registration.public.enabled` (RF-TEN-010); se
+   conserva tras la bandera para poder reactivarlo sin cambios de código. El
+   perfil de test lo mantiene habilitado para no reescribir las suites que
+   arrancan tenants por esa vía.
+
+5. **API de plataforma.** Vive **dentro del módulo `tenant`** (que posee el
    agregado y su repositorio), exponiendo `/api/v1/platform/tenants` (listado
    paginado + filtro, detalle y transiciones) protegido con
    `@PreAuthorize("hasRole('PLATFORM_ADMIN')")`. Cada transición publica el
