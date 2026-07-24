@@ -50,6 +50,11 @@ security:
   cors:
     allowed-origin: ${FRONTEND_ORIGIN:http://localhost:4200}
 
+platform:
+  admin:
+    email: ${PLATFORM_ADMIN_EMAIL:}
+    password: ${PLATFORM_ADMIN_PASSWORD:}
+
 app:
   request:
     max-payload-bytes: ${APP_REQUEST_MAX_PAYLOAD_BYTES:65536}
