@@ -32,6 +32,10 @@ services:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET es obligatorio (minimo 32 bytes); definelo en .env}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:4200}
       AUTH_REFRESH_COOKIE_SECURE: ${AUTH_REFRESH_COOKIE_SECURE:-false}
+      # Aprovisionamiento controlado del PLATFORM_ADMIN inicial (T50-04).
+      # Si se dejan vacios, no se crea ningun usuario de plataforma.
+      PLATFORM_ADMIN_EMAIL: ${PLATFORM_ADMIN_EMAIL:-}
+      PLATFORM_ADMIN_PASSWORD: ${PLATFORM_ADMIN_PASSWORD:-}
     ports:
       - "8080:8080"
     healthcheck:
