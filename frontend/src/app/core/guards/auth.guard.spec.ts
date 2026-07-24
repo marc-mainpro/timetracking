@@ -57,6 +57,18 @@ describe('authGuard and roleGuard', () => {
     const result = TestBed.runInInjectionContext(() => roleGuard(['EMPLOYEE'])({} as never, {} as never));
     expect(result).toEqual(router.createUrlTree(['/admin/employees']));
   });
+
+  it('redirects a PLATFORM_ADMIN hitting another route to the platform area', () => {
+    authService['accessToken'].set(sampleToken(['PLATFORM_ADMIN']));
+    const result = TestBed.runInInjectionContext(() => roleGuard(['TENANT_ADMIN'])({} as never, {} as never));
+    expect(result).toEqual(router.createUrlTree(['/platform/tenants']));
+  });
+
+  it('allows a PLATFORM_ADMIN through its own guard', () => {
+    authService['accessToken'].set(sampleToken(['PLATFORM_ADMIN']));
+    const result = TestBed.runInInjectionContext(() => roleGuard(['PLATFORM_ADMIN'])({} as never, {} as never));
+    expect(result).toBeTrue();
+  });
 });
 
 function sampleToken(roles: string[]): string {

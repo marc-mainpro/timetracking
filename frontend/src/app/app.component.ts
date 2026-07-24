@@ -35,6 +35,10 @@ export class AppComponent {
     return this.authService.hasRole('TENANT_ADMIN');
   }
 
+  showPlatformLinks(): boolean {
+    return this.authService.hasRole('PLATFORM_ADMIN');
+  }
+
   toggleMenu(): void {
     this.menuOpen.update((open) => !open);
   }

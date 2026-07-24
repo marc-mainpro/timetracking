@@ -1,0 +1,142 @@
+.admin-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin: 0;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: var(--surface, #fff);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.toolbar button.active {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.tenant-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.tenant-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.row-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.pill {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.pill--active {
+  background: rgba(34, 139, 34, 0.15);
+  color: #1a7a1a;
+}
+
+.pill--pending {
+  background: rgba(218, 165, 32, 0.18);
+  color: #8a6d1a;
+}
+
+.pill--suspended {
+  background: rgba(220, 53, 69, 0.15);
+  color: #b02a37;
+}
+
+.pill--archived {
+  background: rgba(0, 0, 0, 0.12);
+  color: #555;
+}
+
+.danger {
+  color: #b02a37;
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.detail-card dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.75rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.detail-card dt {
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.audit-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.info {
+  color: #1a7a1a;
+}
+
+.error {
+  color: #b02a37;
+}
