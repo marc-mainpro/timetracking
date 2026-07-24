@@ -3,7 +3,11 @@ package com.tfp.timetracking.tenant.application.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tfp.timetracking.shared.domain.IntegrationEvent;
+import com.tfp.timetracking.tenant.domain.event.TenantActivated;
+import com.tfp.timetracking.tenant.domain.event.TenantArchived;
+import com.tfp.timetracking.tenant.domain.event.TenantReactivated;
 import com.tfp.timetracking.tenant.domain.event.TenantRegistered;
+import com.tfp.timetracking.tenant.domain.event.TenantSuspended;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,6 +36,49 @@ class TenantIntegrationEventMapperTest {
         assertThat(event.payload())
                 .containsExactlyInAnyOrderEntriesOf(
                         java.util.Map.of("tenantId", tenantId, "name", "Acme Corp", "timezone", "Europe/Madrid"));
+    }
+
+    @Test
+    void mapsTenantActivatedWithoutReason() {
+        UUID eventId = UUID.randomUUID();
+        UUID tenantId = UUID.randomUUID();
+        Instant occurredAt = Instant.parse("2026-07-21T09:00:00Z");
+
+        IntegrationEvent event = TenantIntegrationEventMapper.map(
+                        new TenantActivated(eventId, occurredAt, tenantId, tenantId))
+                .orElseThrow();
+
+        assertThat(event.eventType()).isEqualTo("tenant.activated.v1");
+        assertThat(event.tenantId()).isEqualTo(tenantId);
+        assertThat(event.payload()).containsExactlyInAnyOrderEntriesOf(java.util.Map.of("tenantId", tenantId));
+    }
+
+    @Test
+    void mapsTenantSuspendedWithReason() {
+        UUID tenantId = UUID.randomUUID();
+        IntegrationEvent event = TenantIntegrationEventMapper.map(new TenantSuspended(
+                        UUID.randomUUID(), Instant.parse("2026-07-21T09:00:00Z"), tenantId, tenantId, "Impago"))
+                .orElseThrow();
+
+        assertThat(event.eventType()).isEqualTo("tenant.suspended.v1");
+        assertThat(event.payload())
+                .containsExactlyInAnyOrderEntriesOf(java.util.Map.of("tenantId", tenantId, "reason", "Impago"));
+    }
+
+    @Test
+    void mapsTenantReactivatedAndArchived() {
+        UUID tenantId = UUID.randomUUID();
+        Instant occurredAt = Instant.parse("2026-07-21T09:00:00Z");
+
+        assertThat(TenantIntegrationEventMapper.map(new TenantReactivated(UUID.randomUUID(), occurredAt, tenantId, tenantId))
+                        .orElseThrow()
+                        .eventType())
+                .isEqualTo("tenant.reactivated.v1");
+        assertThat(TenantIntegrationEventMapper.map(
+                                new TenantArchived(UUID.randomUUID(), occurredAt, tenantId, tenantId, null))
+                        .orElseThrow()
+                        .eventType())
+                .isEqualTo("tenant.archived.v1");
     }
 
     @Test

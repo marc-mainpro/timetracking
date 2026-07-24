@@ -51,7 +51,8 @@ class TenantRepositoryAdapterIntegrationTest {
     void persistsAndRecoversTenantWithFullMapping() {
         UUID id = UUID.randomUUID();
         Instant now = Instant.parse("2026-01-15T10:00:00Z");
-        Tenant tenant = Tenant.reconstitute(id, "Acme Corp", TenantStatus.ACTIVE, "Europe/Madrid", now, now);
+        Tenant tenant =
+                Tenant.reconstitute(id, "Acme Corp", TenantStatus.ACTIVE, "Europe/Madrid", now, now, now, null, null, null);
 
         tenantRepository.save(tenant);
 
@@ -62,13 +63,14 @@ class TenantRepositoryAdapterIntegrationTest {
         assertThat(recovered.status()).isEqualTo(TenantStatus.ACTIVE);
         assertThat(recovered.createdAt()).isEqualTo(now);
         assertThat(recovered.updatedAt()).isEqualTo(now);
+        assertThat(recovered.activatedAt()).isEqualTo(now);
     }
 
     @Test
     void existsByIdReflectsPersistedState() {
         UUID id = UUID.randomUUID();
         Instant now = Instant.now();
-        Tenant tenant = Tenant.reconstitute(id, "Beta Inc", TenantStatus.ACTIVE, "UTC", now, now);
+        Tenant tenant = Tenant.reconstitute(id, "Beta Inc", TenantStatus.ACTIVE, "UTC", now, now, now, null, null, null);
 
         assertThat(tenantRepository.existsById(id)).isFalse();
 
@@ -83,16 +85,18 @@ class TenantRepositoryAdapterIntegrationTest {
     }
 
     @Test
-    void savingDeactivatedTenantPersistsInactiveStatus() {
+    void savingSuspendedTenantPersistsStatusAndReason() {
         UUID id = UUID.randomUUID();
-        Instant now = Instant.now();
-        Tenant tenant = Tenant.reconstitute(id, "Gamma LLC", TenantStatus.ACTIVE, "UTC", now, now);
-        tenant.deactivate(() -> now.plusSeconds(30));
+        Instant now = Instant.parse("2026-01-15T10:00:00Z");
+        Tenant tenant = Tenant.reconstitute(id, "Gamma LLC", TenantStatus.ACTIVE, "UTC", now, now, now, null, null, null);
+        tenant.suspend("Impago", () -> now.plusSeconds(30), java.util.UUID::randomUUID);
 
         tenantRepository.save(tenant);
 
         Tenant recovered = tenantRepository.findById(id).orElseThrow();
-        assertThat(recovered.status()).isEqualTo(TenantStatus.INACTIVE);
+        assertThat(recovered.status()).isEqualTo(TenantStatus.SUSPENDED);
         assertThat(recovered.isActive()).isFalse();
+        assertThat(recovered.suspensionReason()).isEqualTo("Impago");
+        assertThat(recovered.suspendedAt()).isEqualTo(now.plusSeconds(30));
     }
 }

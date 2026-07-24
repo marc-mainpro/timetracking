@@ -104,6 +104,7 @@ class GenerateEmployeeTimeSummaryUseCaseTest {
 
     private Tenant tenant() {
         Instant now = Instant.parse("2025-01-01T00:00:00Z");
-        return Tenant.reconstitute(tenantId, "Acme", TenantStatus.ACTIVE, "Europe/Madrid", now, now);
+        return Tenant.reconstitute(
+                tenantId, "Acme", TenantStatus.ACTIVE, "Europe/Madrid", now, now, now, null, null, null);
     }
 }
