@@ -114,6 +114,11 @@ class PlatformAdminBootstrapTest {
         }
 
         @Override
+        public void lockActiveAdmins(UUID tenantId) {
+            // Sin concurrencia en memoria: no hay filas que bloquear.
+        }
+
+        @Override
         public long countActiveAdmins(UUID tenantId) {
             return 0;
         }
