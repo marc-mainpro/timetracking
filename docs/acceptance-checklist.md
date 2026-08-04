@@ -22,6 +22,30 @@
 - Ningún endpoint privado sin auth: `RouteAuthorizationIntegrationTest`.
 - Problem Details sin fuga interna: `GlobalExceptionHandlerIntegrationTest`.
 
+## Registro público controlado (T53)
+
+- El alta pública crea una solicitud, nunca un tenant activo:
+  `PublicTenantRegistrationControllerIntegrationTest`, `TenantRegistrationTest`.
+- El tenant nace en `PENDING` al aprobar la solicitud, y la aprobación es
+  idempotente: `ApproveTenantRegistrationUseCaseTest`,
+  `PlatformTenantRegistrationControllerIntegrationTest`.
+- Verificación de correo con token de un solo uso, caducidad y reenvío limitado:
+  `TenantRegistrationTest`, `VerifyTenantRegistrationEmailUseCaseTest`,
+  `ResendTenantRegistrationVerificationUseCaseTest`,
+  `PublicTenantRegistrationControllerIntegrationTest`.
+- Del token solo se almacena el hash y el correo sale por el Outbox:
+  `Sha256VerificationTokenGeneratorTest`, `TenantRegistrationEmailListenerTest`.
+- Respuestas indistinguibles para un correo existente y uno inexistente
+  (RF-REG-005): `PublicTenantRegistrationControllerIntegrationTest`,
+  `RequestTenantRegistrationUseCaseTest`.
+- Solo `PLATFORM_ADMIN` ve y decide sobre las solicitudes:
+  `PlatformTenantRegistrationControllerIntegrationTest`.
+- Flag `registration.public.enabled` apagado ⇒ 403 en los tres endpoints
+  públicos: `PublicRegistrationDisabledIntegrationTest`.
+- Frontend: alta pública, verificación y bandeja de plataforma:
+  `tenant-registration.component.spec`, `verify-registration-email.component.spec`,
+  `platform-registrations.component.spec`.
+
 ## Multitenancy
 
 - `tenantId` nunca se confía al cliente: documentado en `AGENTS.md`, validado
