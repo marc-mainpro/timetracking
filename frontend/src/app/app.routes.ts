@@ -39,6 +39,12 @@ export const routes: Routes = [
       import('./features/reports/employee-report.routes').then((m) => m.EMPLOYEE_REPORT_ROUTES)
   },
   {
+    path: 'admin/calendars',
+    canActivate: [authGuard, roleGuard(['TENANT_ADMIN'])],
+    loadChildren: () =>
+      import('./features/calendars/calendars.routes').then((m) => m.CALENDARS_ROUTES)
+  },
+  {
     path: 'admin/employees',
     canActivate: [authGuard, roleGuard(['TENANT_ADMIN'])],
     loadChildren: () =>

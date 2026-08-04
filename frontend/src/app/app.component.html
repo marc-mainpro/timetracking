@@ -30,6 +30,9 @@
           <a routerLink="/admin/employees" routerLinkActive="active" (click)="closeMenu()">Empleados</a>
         }
         @if (showAdminLinks()) {
+          <a routerLink="/admin/calendars" routerLinkActive="active" (click)="closeMenu()">Calendarios</a>
+        }
+        @if (showAdminLinks()) {
           <a routerLink="/admin/corrections" routerLinkActive="active" (click)="closeMenu()">Revisiones</a>
         }
         @if (showAdminLinks()) {
