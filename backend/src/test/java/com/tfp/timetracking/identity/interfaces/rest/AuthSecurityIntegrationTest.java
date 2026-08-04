@@ -116,7 +116,7 @@ class AuthSecurityIntegrationTest {
     void inactiveTenantWithValidTokenGets401OnAuthenticatedRequest() throws Exception {
         RegisteredAdmin admin = registerAdmin(ip("token-tenant-register"));
         LoginResult login = login(admin, ip("token-tenant-login"));
-        jdbcTemplate.update("UPDATE tenant SET status = 'INACTIVE' WHERE id = ?", admin.tenantId());
+        jdbcTemplate.update("UPDATE tenant SET status = 'SUSPENDED' WHERE id = ?", admin.tenantId());
 
         mockMvc.perform(post("/api/v1/auth/logout").header(HttpHeaders.AUTHORIZATION, "Bearer " + login.accessToken()))
                 .andExpect(status().isUnauthorized())

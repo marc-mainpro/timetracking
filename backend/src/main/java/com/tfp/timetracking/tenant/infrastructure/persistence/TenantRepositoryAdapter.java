@@ -1,9 +1,15 @@
 package com.tfp.timetracking.tenant.infrastructure.persistence;
 
+import com.tfp.timetracking.shared.domain.PagedResult;
 import com.tfp.timetracking.tenant.domain.Tenant;
 import com.tfp.timetracking.tenant.domain.TenantRepository;
+import com.tfp.timetracking.tenant.domain.TenantStatus;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -34,5 +40,19 @@ public class TenantRepositoryAdapter implements TenantRepository {
     @Override
     public boolean existsById(UUID id) {
         return jpaRepository.existsById(id);
+    }
+
+    @Override
+    public PagedResult<Tenant> findAllExcluding(UUID excludedId, TenantStatus status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<TenantJpaEntity> result = status == null
+                ? jpaRepository.findByIdNot(excludedId, pageable)
+                : jpaRepository.findByIdNotAndStatus(excludedId, status.name(), pageable);
+        return new PagedResult<>(
+                result.getContent().stream().map(TenantMapper::toDomain).toList(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages());
     }
 }

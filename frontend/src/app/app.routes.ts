@@ -60,6 +60,11 @@ export const routes: Routes = [
     loadChildren: () => import('./features/reports/reports.routes').then((m) => m.REPORTS_ROUTES)
   },
   {
+    path: 'platform',
+    canActivate: [authGuard, roleGuard(['PLATFORM_ADMIN'])],
+    loadChildren: () => import('./features/platform/platform.routes').then((m) => m.PLATFORM_ROUTES)
+  },
+  {
     path: '**',
     redirectTo: 'auth/login'
   }

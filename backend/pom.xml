@@ -83,6 +83,14 @@
             <version>8.10.1</version>
         </dependency>
 
+        <!-- Correo: verificacion de alta, recuperacion de contrasena y
+             notificaciones (T110-01, ADR-0012). El adaptador SMTP solo se
+             activa con mail.enabled=true. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

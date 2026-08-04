@@ -2,10 +2,12 @@ package com.tfp.timetracking.identity.application.integration;
 
 import com.tfp.timetracking.identity.domain.event.EmployeeCreated;
 import com.tfp.timetracking.identity.domain.event.EmployeeDeactivated;
+import com.tfp.timetracking.shared.application.IntegrationEventMapper;
 import com.tfp.timetracking.shared.domain.IntegrationEvent;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.stereotype.Component;
 
 /**
  * Traduce eventos de dominio del modulo {@code identity} a eventos de
@@ -18,11 +20,11 @@ import java.util.Optional;
  * ({@code identity.employee-created.v1}), por eso {@code aggregateType} aqui
  * es {@code "Employee"} y no {@code "User"}.
  */
-public final class IdentityIntegrationEventMapper {
+@Component
+public class IdentityIntegrationEventMapper implements IntegrationEventMapper {
 
     private static final String AGGREGATE_TYPE = "Employee";
 
-    private IdentityIntegrationEventMapper() {}
 
     /**
      * @param domainEvent evento de dominio recogido tras persistir el agregado
@@ -30,7 +32,8 @@ public final class IdentityIntegrationEventMapper {
      *     si el evento de dominio no tiene traduccion a integracion en este
      *     modulo
      */
-    public static Optional<IntegrationEvent> map(Object domainEvent) {
+    @Override
+    public Optional<IntegrationEvent> map(Object domainEvent) {
         if (domainEvent instanceof EmployeeCreated event) {
             return Optional.of(new IntegrationEvent(
                     event.eventId(),

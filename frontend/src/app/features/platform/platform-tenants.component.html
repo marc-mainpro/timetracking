@@ -1,0 +1,149 @@
+<section class="admin-shell">
+  <header class="card admin-header">
+    <div>
+      <p class="eyebrow">Plataforma</p>
+      <h1>Administración de tenants</h1>
+    </div>
+  </header>
+
+  @if (message(); as info) {
+    <p class="info">{{ info }}</p>
+  }
+  @if (error(); as err) {
+    <p class="error">{{ err }}</p>
+  }
+
+  <section class="layout">
+    <article class="card list-card">
+      <div class="toolbar">
+        @for (status of statusFilters; track status) {
+          <button
+            type="button"
+            [class.active]="selectedStatus() === status"
+            (click)="applyStatus(status)">
+            {{ statusLabel(status) }}
+          </button>
+        }
+      </div>
+
+      @if (loading()) {
+        <p class="info">Cargando…</p>
+      }
+
+      @for (tenant of result()?.content ?? []; track tenant.id) {
+        <div class="tenant-row">
+          <div class="tenant-main">
+            <strong>{{ tenant.name }}</strong>
+            <small>{{ tenant.timezone }} · alta {{ tenant.createdAt | date: 'short' }}</small>
+          </div>
+          <span class="pill pill--{{ tenant.status.toLowerCase() }}">{{ tenant.status }}</span>
+          <div class="row-actions">
+            <button type="button" (click)="viewDetail(tenant)">Detalle</button>
+            @if (tenant.status === 'PENDING') {
+              <button type="button" (click)="activate(tenant)">Activar</button>
+            }
+            @if (tenant.status === 'ACTIVE') {
+              <button type="button" (click)="suspend(tenant)">Suspender</button>
+            }
+            @if (tenant.status === 'SUSPENDED') {
+              <button type="button" (click)="reactivate(tenant)">Reactivar</button>
+            }
+            @if (tenant.status === 'ACTIVE' || tenant.status === 'SUSPENDED') {
+              <button type="button" class="danger" (click)="archive(tenant)">Archivar</button>
+            }
+          </div>
+        </div>
+      } @empty {
+        @if (!loading()) {
+          <p class="info">No hay tenants para este filtro.</p>
+        }
+      }
+
+      @if (result(); as result) {
+        <footer class="pager">
+          <button type="button" (click)="previousPage()" [disabled]="page() === 0 || loading()">Anterior</button>
+          <span>Página {{ result.page + 1 }} de {{ result.totalPages || 1 }}</span>
+          <button
+            type="button"
+            (click)="nextPage()"
+            [disabled]="result.page + 1 >= result.totalPages || loading()">
+            Siguiente
+          </button>
+        </footer>
+      }
+    </article>
+
+    <aside class="card detail-card">
+      <h3>Crear tenant</h3>
+      <form [formGroup]="form" (ngSubmit)="createTenant()" class="create-form">
+        <label>
+          Organización
+          <input type="text" formControlName="tenantName" />
+        </label>
+        <label>
+          Zona horaria
+          <input type="text" formControlName="timezone" />
+        </label>
+        <label>
+          Email del admin
+          <input type="email" formControlName="adminEmail" />
+        </label>
+        <label>
+          Contraseña del admin
+          <input type="password" formControlName="adminPassword" autocomplete="new-password" />
+        </label>
+        <div class="two-cols">
+          <label>
+            Nombre
+            <input type="text" formControlName="firstName" />
+          </label>
+          <label>
+            Apellido
+            <input type="text" formControlName="lastName" />
+          </label>
+        </div>
+        @if (formError(); as err) {
+          <p class="error">{{ err }}</p>
+        }
+        <button type="submit" [disabled]="saving()">{{ saving() ? 'Creando…' : 'Crear tenant' }}</button>
+      </form>
+
+      @if (selectedTenant(); as tenant) {
+        <div class="detail-head">
+          <h2>{{ tenant.name }}</h2>
+          <button type="button" (click)="closeDetail()">Cerrar</button>
+        </div>
+        <dl>
+          <dt>Estado</dt>
+          <dd><span class="pill pill--{{ tenant.status.toLowerCase() }}">{{ tenant.status }}</span></dd>
+          <dt>Zona horaria</dt>
+          <dd>{{ tenant.timezone }}</dd>
+          <dt>Creación</dt>
+          <dd>{{ tenant.createdAt | date: 'medium' }}</dd>
+          <dt>Activación</dt>
+          <dd>{{ tenant.activatedAt ? (tenant.activatedAt | date: 'medium') : '—' }}</dd>
+          <dt>Suspensión</dt>
+          <dd>{{ tenant.suspendedAt ? (tenant.suspendedAt | date: 'medium') : '—' }}</dd>
+          @if (tenant.suspensionReason) {
+            <dt>Motivo</dt>
+            <dd>{{ tenant.suspensionReason }}</dd>
+          }
+          <dt>Archivado</dt>
+          <dd>{{ tenant.archivedAt ? (tenant.archivedAt | date: 'medium') : '—' }}</dd>
+        </dl>
+      } @else {
+        <p class="eyebrow">Selecciona un tenant para ver su detalle.</p>
+      }
+
+      <h3>Auditoría de plataforma</h3>
+      @for (event of auditEvents(); track event.id) {
+        <div class="audit-row">
+          <strong>{{ event.action }}</strong>
+          <small>{{ event.occurredAt | date: 'short' }}</small>
+        </div>
+      } @empty {
+        <p class="eyebrow">Sin eventos de auditoría.</p>
+      }
+    </aside>
+  </section>
+</section>

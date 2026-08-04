@@ -1,6 +1,25 @@
 spring:
   application:
     name: timetracking
+  # Cada funcionalidad de la V2 aporta su configuración en su propio fichero
+  # bajo config/, en vez de añadir un bloque a este application.yml compartido
+  # (ADR-0011). Todos los imports son `optional:`, así que un fichero que aún no
+  # existe simplemente se ignora: por eso la lista puede declararse entera de
+  # antemano y nadie tiene que volver a editar este fichero al añadir su feature.
+  # Spring Boot no admite comodines en imports `classpath:`, de ahí la
+  # enumeración explícita.
+  config:
+    import:
+      - optional:classpath:config/registration.yml
+      - optional:classpath:config/sessions.yml
+      - optional:classpath:config/account-lockout.yml
+      - optional:classpath:config/mail.yml
+      - optional:classpath:config/calendar.yml
+      - optional:classpath:config/absence.yml
+      - optional:classpath:config/shift.yml
+      - optional:classpath:config/notification.yml
+      - optional:classpath:config/observability.yml
+      - optional:classpath:config/backup.yml
   jpa:
     open-in-view: false
     hibernate:
@@ -49,6 +68,18 @@ auth:
 security:
   cors:
     allowed-origin: ${FRONTEND_ORIGIN:http://localhost:4200}
+
+platform:
+  admin:
+    email: ${PLATFORM_ADMIN_EMAIL:}
+    password: ${PLATFORM_ADMIN_PASSWORD:}
+
+registration:
+  # El alta de tenants es una operación de plataforma (PLATFORM_ADMIN vía
+  # POST /api/v1/platform/tenants). El registro público autoservicio está
+  # deshabilitado por defecto (RF-TEN-010).
+  public:
+    enabled: ${PUBLIC_REGISTRATION_ENABLED:false}
 
 app:
   request:

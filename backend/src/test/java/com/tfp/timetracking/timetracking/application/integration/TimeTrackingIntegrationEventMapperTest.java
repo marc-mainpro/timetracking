@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test;
 
 class TimeTrackingIntegrationEventMapperTest {
 
+    private static final TimeTrackingIntegrationEventMapper MAPPER = new TimeTrackingIntegrationEventMapper();
+
     @Test
     void mapsWorkdayStartedToIntegrationEventWithFullEnvelope() {
         UUID eventId = UUID.randomUUID();
@@ -24,7 +26,7 @@ class TimeTrackingIntegrationEventMapperTest {
         Instant occurredAt = Instant.parse("2026-07-20T09:00:00Z");
         WorkdayStarted domainEvent = new WorkdayStarted(eventId, occurredAt, tenantId, workdayId, employeeId, occurredAt);
 
-        Optional<IntegrationEvent> mapped = TimeTrackingIntegrationEventMapper.map(domainEvent);
+        Optional<IntegrationEvent> mapped = MAPPER.map(domainEvent);
 
         assertThat(mapped).isPresent();
         IntegrationEvent event = mapped.orElseThrow();
@@ -50,7 +52,7 @@ class TimeTrackingIntegrationEventMapperTest {
         Instant endedAt = Instant.parse("2026-07-20T17:00:00Z");
         WorkdayClosed domainEvent = new WorkdayClosed(eventId, endedAt, tenantId, workdayId, employeeId, startedAt, endedAt);
 
-        Optional<IntegrationEvent> mapped = TimeTrackingIntegrationEventMapper.map(domainEvent);
+        Optional<IntegrationEvent> mapped = MAPPER.map(domainEvent);
 
         assertThat(mapped).isPresent();
         IntegrationEvent event = mapped.orElseThrow();
@@ -71,7 +73,7 @@ class TimeTrackingIntegrationEventMapperTest {
         BreakStarted domainEvent = new BreakStarted(
                 UUID.randomUUID(), Instant.now(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), Instant.now());
 
-        assertThat(TimeTrackingIntegrationEventMapper.map(domainEvent)).isEmpty();
+        assertThat(MAPPER.map(domainEvent)).isEmpty();
     }
 
     @Test
@@ -79,6 +81,6 @@ class TimeTrackingIntegrationEventMapperTest {
         BreakEnded domainEvent = new BreakEnded(
                 UUID.randomUUID(), Instant.now(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), Instant.now());
 
-        assertThat(TimeTrackingIntegrationEventMapper.map(domainEvent)).isEmpty();
+        assertThat(MAPPER.map(domainEvent)).isEmpty();
     }
 }

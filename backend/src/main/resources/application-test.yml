@@ -40,3 +40,10 @@ security:
 app:
   request:
     max-payload-bytes: 65536
+
+# El registro público se mantiene habilitado en el perfil de test para que las
+# suites que arrancan tenants vía POST /api/v1/auth/register sigan funcionando;
+# en producción está deshabilitado por defecto (RF-TEN-010).
+registration:
+  public:
+    enabled: true

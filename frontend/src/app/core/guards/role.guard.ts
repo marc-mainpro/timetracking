@@ -16,7 +16,12 @@ export function roleGuard(requiredRoles: string[]): CanActivateFn {
       return true;
     }
 
-    const fallbackRoute = authService.hasRole('TENANT_ADMIN') ? '/admin/employees' : '/employee-dashboard';
+    let fallbackRoute = '/employee-dashboard';
+    if (authService.hasRole('PLATFORM_ADMIN')) {
+      fallbackRoute = '/platform/tenants';
+    } else if (authService.hasRole('TENANT_ADMIN')) {
+      fallbackRoute = '/admin/employees';
+    }
     return router.createUrlTree([fallbackRoute]);
   };
 }

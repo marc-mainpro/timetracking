@@ -35,6 +35,9 @@
         @if (showAdminLinks()) {
           <a routerLink="/admin/reports" routerLinkActive="active" (click)="closeMenu()">Informes</a>
         }
+        @if (showPlatformLinks()) {
+          <a routerLink="/platform/tenants" routerLinkActive="active" (click)="closeMenu()">Tenants</a>
+        }
       </div>
     </nav>
     <button type="button" class="logout ghost" (click)="logout()">Salir</button>
@@ -45,7 +48,6 @@
 } @else {
   <nav class="app-nav app-nav--guest">
     <a routerLink="/auth/login" routerLinkActive="active">Login</a>
-    <a routerLink="/auth/register" routerLinkActive="active">Registrar organización</a>
   </nav>
 }
 
