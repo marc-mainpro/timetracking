@@ -41,6 +41,29 @@ sesiones, calendarios, ausencias, turnos, informes, notificaciones).
 |---|---|---|---|
 | Panel de plataforma (RF-TEN-001..008 UI) | T50-06 | `PlatformTenantsComponent`, `PlatformTenantsService`, `roleGuard(['PLATFORM_ADMIN'])` | `platform-tenants.service.spec`, `platform-tenants.component.spec`, `auth.guard.spec` |
 
+## Calendarios laborales (RF-CAL)
+
+| Requisito | Tarea | Caso de uso / componente | Endpoint | Prueba |
+|---|---|---|---|---|
+| RF-CAL-001 Crear calendario | T70-01/04 | `WorkCalendar.create`, `CreateWorkCalendarUseCase` | `POST /api/v1/admin/calendars` | `WorkCalendarTest`, `WorkCalendarUseCasesTest`, `AdminCalendarControllerIntegrationTest` |
+| RF-CAL-002 Definir días laborables | T70-01 | `CalendarDayRule`, `WorkCalendar.isWorkingDay` | `POST`/`PUT /api/v1/admin/calendars` | `WorkCalendarTest`, `CalendarValueObjectsTest`, `FlywayCalendarMigrationIntegrationTest` |
+| RF-CAL-003 Gestionar festivos | T70-01 | `Holiday`, `WorkCalendar.dayOf` | `PUT /api/v1/admin/calendars/{id}` | `WorkCalendarTest`, `AdminCalendarControllerIntegrationTest` |
+| RF-CAL-004 Jornadas especiales | T70-01 | `SpecialDay`, `WorkCalendar.dayOf` | `PUT /api/v1/admin/calendars/{id}` | `WorkCalendarTest`, `CalendarRepositoryAdapterIntegrationTest` |
+| RF-CAL-005 Vigencia temporal | T70-01 | `WorkCalendar.isEffectiveOn` | `POST`/`PUT /api/v1/admin/calendars` | `WorkCalendarTest`, `EffectiveCalendarResolverTest` |
+| RF-CAL-006 Asignación por tenant/equipo/empleado | T70-02/04 | `CalendarAssignment`, `EffectiveCalendarResolver`, `AssignCalendarUseCase` | `POST`/`GET`/`DELETE /api/v1/admin/calendar-assignments` | `CalendarAssignmentTest`, `EffectiveCalendarResolverTest`, `AdminCalendarAssignmentControllerIntegrationTest` |
+| RF-CAL-006 Precedencia: la más específica prevalece | T70-02 | `AssignmentScope.specificity`, `EffectiveCalendarResolver.resolve` | `GET /api/v1/admin/calendar-assignments/effective` | `EffectiveCalendarResolverTest`, `AdminCalendarAssignmentControllerIntegrationTest` |
+| RF-CAL-007 Zona horaria del calendario | T70-01 | `WorkCalendar.zoneId`, `startOfDay`, `endOfDayExclusive` | `POST`/`PUT /api/v1/admin/calendars` | `WorkCalendarDaylightSavingTest` |
+| RNF-011 Instantes en UTC, fechas locales como `DATE` | T70-03 | `V16__calendar.sql`, `WorkCalendarJpaEntity` | — | `FlywayCalendarMigrationIntegrationTest`, `CalendarRepositoryAdapterIntegrationTest` |
+| RNF-012 Cambio de horario de verano (23 h / 25 h) | T70-01 | `WorkCalendar.civilDayLength` | — | `WorkCalendarDaylightSavingTest` |
+| RT-003 Cross-tenant en calendarios y asignaciones | T70-04/05 | repositorios tenant-scoped, 404 en vez de 403 | todos los de calendario | `AdminCalendarControllerIntegrationTest`, `AdminCalendarAssignmentControllerIntegrationTest`, `CalendarRepositoryAdapterIntegrationTest` |
+| RT-004 Solo `TENANT_ADMIN` administra calendarios | T70-05 | `@PreAuthorize("hasRole('TENANT_ADMIN')")` | todos los de calendario | `AdminCalendarControllerIntegrationTest`, `AdminCalendarAssignmentControllerIntegrationTest` |
+
+## Frontend de calendarios
+
+| Requisito | Tarea | Componente | Prueba |
+|---|---|---|---|
+| UI de calendarios (RF-CAL-001..006) | T70-05 | `AdminCalendarsComponent`, `CalendarsService`, `roleGuard(['TENANT_ADMIN'])` | `admin-calendars.component.spec`, `calendars.service.spec` |
+
 ## Documentación
 
 | Artefacto | Tarea | Ubicación |

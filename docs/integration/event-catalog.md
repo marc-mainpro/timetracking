@@ -426,6 +426,128 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
 - **Idempotencia:** igual que en `.approved`, deduplicar por `eventId` evita
   notificaciones o efectos duplicados en sistemas externos.
 
+### `calendar.calendar-created.v1`, `calendar.calendar-updated.v1`
+
+- **Módulo productor:** `calendar` (`calendar.application.integration.CalendarIntegrationEventMapper`).
+- **Disparador de negocio:** un `TENANT_ADMIN` crea o edita un calendario
+  laboral (`POST` / `PUT /api/v1/admin/calendars`, T70-04, ADR-0013).
+- **`aggregateId`:** id del calendario.
+
+```json
+{
+  "eventId": "4d5e6f70-8192-4a3b-8c4d-5e6f70819304",
+  "eventType": "calendar.calendar-created.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-04T09:00:00Z",
+  "tenantId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+  "aggregateId": "7e8f9012-3456-4789-a012-3456789abcde",
+  "payload": {
+    "calendarId": "7e8f9012-3456-4789-a012-3456789abcde",
+    "name": "Calendario general",
+    "timezone": "Europe/Madrid",
+    "validFrom": "2026-01-01",
+    "validTo": "2026-12-31"
+  }
+}
+```
+
+| `payload`    | Tipo   | Descripción                                                        |
+| ------------ | ------ | ------------------------------------------------------------------ |
+| `calendarId` | UUID   | Igual que `aggregateId`.                                           |
+| `name`       | string | Nombre del calendario, único dentro del tenant.                    |
+| `timezone`   | string | Zona horaria IANA del calendario (RF-CAL-007).                     |
+| `validFrom`  | string | Inicio de vigencia como fecha local `YYYY-MM-DD`, **no** instante. |
+| `validTo`    | string | Fin de vigencia inclusivo. **Ausente** si la vigencia es indefinida. |
+
+- **Fechas locales, no instantes:** la vigencia de un calendario es un periodo
+  del calendario civil (RNF-011). Serializarla como `Instant` obligaría a elegir
+  una hora arbitraria y haría que el mismo calendario «cambiara de día» según la
+  zona del consumidor.
+- **El payload es la cabecera, no el detalle:** reglas semanales, festivos y
+  jornadas especiales no viajan en el evento. Un consumidor que necesite el
+  detalle debe releerlo por la API. Mantener el contrato externo pequeño evita
+  versionarlo cada vez que cambie la estructura interna del calendario.
+- **Idempotencia:** deduplicar por `eventId`. `.updated` es un hecho de
+  reemplazo completo, así que reprocesarlo es inocuo si el consumidor guarda la
+  última versión leída.
+
+### `calendar.calendar-archived.v1`
+
+- **Módulo productor:** `calendar` (`CalendarIntegrationEventMapper`).
+- **Disparador de negocio:** un `TENANT_ADMIN` archiva un calendario
+  (`DELETE /api/v1/admin/calendars/{id}`, borrado lógico). A partir de ese
+  momento el calendario deja de participar en la resolución del calendario
+  efectivo, y los empleados que lo tuvieran asignado pasan a resolver al ámbito
+  menos específico que sí tenga calendario disponible.
+- **`aggregateId`:** id del calendario.
+
+```json
+{
+  "eventId": "5e6f7081-9243-4b5c-8d6e-7f8091a2b3c4",
+  "eventType": "calendar.calendar-archived.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-04T10:00:00Z",
+  "tenantId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+  "aggregateId": "7e8f9012-3456-4789-a012-3456789abcde",
+  "payload": {
+    "calendarId": "7e8f9012-3456-4789-a012-3456789abcde",
+    "name": "Calendario general"
+  }
+}
+```
+
+| `payload`    | Tipo   | Descripción              |
+| ------------ | ------ | ------------------------ |
+| `calendarId` | UUID   | Igual que `aggregateId`. |
+| `name`       | string | Nombre en el momento de archivarlo. |
+
+- **Idempotencia:** archivar es idempotente por naturaleza (el agregado rechaza
+  un segundo archivado con `CALENDAR_ARCHIVED`), pero el consumidor debe
+  deduplicar igualmente por `eventId` ante una redelivery.
+
+### `calendar.calendar-assigned.v1`, `calendar.calendar-assignment-removed.v1`
+
+- **Módulo productor:** `calendar` (`CalendarIntegrationEventMapper`).
+- **Disparador de negocio:** un `TENANT_ADMIN` asigna un calendario a un ámbito
+  o retira la asignación (`POST` / `DELETE /api/v1/admin/calendar-assignments`,
+  RF-CAL-006).
+- **`aggregateId`:** id de la **asignación**; el calendario afectado va en
+  `payload.calendarId`.
+
+```json
+{
+  "eventId": "6f708192-a3b4-4c5d-8e6f-708192a3b4c5",
+  "eventType": "calendar.calendar-assigned.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-04T11:00:00Z",
+  "tenantId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+  "aggregateId": "8f901234-5678-4901-b234-56789abcdef0",
+  "payload": {
+    "assignmentId": "8f901234-5678-4901-b234-56789abcdef0",
+    "calendarId": "7e8f9012-3456-4789-a012-3456789abcde",
+    "scope": "EMPLOYEE",
+    "targetId": "5d6e7f80-9192-4a3b-8c4d-5e6f70819293"
+  }
+}
+```
+
+| `payload`      | Tipo   | Descripción                                                                 |
+| -------------- | ------ | --------------------------------------------------------------------------- |
+| `assignmentId` | UUID   | Igual que `aggregateId`.                                                    |
+| `calendarId`   | UUID   | Calendario asignado.                                                        |
+| `scope`        | string | `TENANT`, `TEAM` o `EMPLOYEE`, de menor a mayor precedencia.                 |
+| `targetId`     | UUID   | Equipo o empleado destinatario. **Ausente** en ámbito `TENANT`.              |
+
+- **`targetId` de ámbito `TEAM` es opaco:** el sistema no gestiona equipos
+  (ADR-0013); no hay clave ajena ni garantía de que el equipo exista en ningún
+  otro módulo.
+- **Relevante para turnos y ausencias:** ambos eventos cambian qué calendario
+  rige para los empleados afectados. Un consumidor que cachee la resolución debe
+  invalidarla al recibirlos.
+- **Idempotencia:** deduplicar por `eventId`. El estado autoritativo es siempre
+  el de `GET /api/v1/admin/calendar-assignments/effective`; el evento es una
+  notificación, no la fuente de verdad.
+
 ## Eventos de dominio sin traducción a integración
 
 Decisión de alcance del MVP (T702, reafirmada en T704): `BreakStarted` /

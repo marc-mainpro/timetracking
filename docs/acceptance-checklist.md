@@ -13,6 +13,11 @@
 - Correcciones solicitadas y resueltas: `CorrectionControllerIntegrationTest`,
   `AuditEventControllerIntegrationTest`, frontend `corrections`.
 - Informes y CSV: `ReportControllerIntegrationTest`, frontend `reports`.
+- Calendarios laborales con festivos, jornadas especiales y vigencia, asignables
+  a organización, equipo o empleado con la regla «la asignación más específica
+  prevalece»: `WorkCalendarTest`, `EffectiveCalendarResolverTest`,
+  `AdminCalendarControllerIntegrationTest`,
+  `AdminCalendarAssignmentControllerIntegrationTest`, frontend `calendars`.
 
 ## Seguridad
 
@@ -27,6 +32,11 @@
 - `tenantId` nunca se confía al cliente: documentado en `AGENTS.md`, validado
   por repos tenant-aware y suites cross-tenant.
 - Dos tenants operan sin compartir datos: `EndToEndFlowIT`.
+- Un tenant no puede leer ni modificar calendarios ni asignaciones de otro, y
+  recibe 404 en vez de 403 para no filtrar su existencia:
+  `AdminCalendarControllerIntegrationTest`,
+  `AdminCalendarAssignmentControllerIntegrationTest`,
+  `CalendarRepositoryAdapterIntegrationTest`.
 
 ## Outbox y eventos
 
