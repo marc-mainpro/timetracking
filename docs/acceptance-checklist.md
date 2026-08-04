@@ -49,3 +49,15 @@
 - Smoke reproducible: `scripts/smoke.sh`.
 - Datos base para demo: `scripts/seed-demo.sh`.
 - Manuales y guion: `docs/manuals/*.md`, `docs/demo/demo-script.md`.
+- Logs estructurados con correlación, tenant, usuario, caso de uso y resultado
+  (RNF-019, RO-002): `StructuredLoggingIntegrationTest`.
+- Correlation ID también en las tareas programadas (RNF-020):
+  `OutboxJobsCorrelationTest`, `ScheduledJobRunnerTest`.
+- Health checks de aplicación, PostgreSQL, Outbox y correo, con detalle solo
+  para administradores autenticados (RO-001): `HealthEndpointIntegrationTest`,
+  `OutboxHealthIndicatorTest`, `MailHealthIndicatorTest`.
+- Métricas de peticiones, errores, latencia, Outbox, notificaciones y jobs
+  (RO-003): `/actuator/metrics`, `NotificationMetricsTest`,
+  `ScheduledJobRunnerTest`.
+- Sin contraseñas, tokens ni cookies en los logs (RS-014):
+  `NoSecretsInLogsTest`, `StructuredLoggingIntegrationTest`.
