@@ -21,6 +21,14 @@
   `docs/security/owasp-review.md`.
 - Ningún endpoint privado sin auth: `RouteAuthorizationIntegrationTest`.
 - Problem Details sin fuga interna: `GlobalExceptionHandlerIntegrationTest`.
+- Detección de secretos en CI sobre toda la historia de git (RS-016): job
+  `secret-scan` de `.github/workflows/ci.yml`, `.gitleaks.toml`; 124 commits
+  escaneados sin hallazgos y prueba negativa verificada.
+- Análisis de dependencias vulnerables en CI (RS-015): jobs
+  `frontend-dependencies` y `backend-dependencies`,
+  `scripts/security/npm-audit-gate.sh`. Política de severidad, excepciones y
+  aprobaciones en `docs/security/dependency-scanning-policy.md`. Parcial en
+  backend hasta dar de alta el secreto `NVD_API_KEY`.
 
 ## Multitenancy
 
@@ -49,3 +57,10 @@
 - Smoke reproducible: `scripts/smoke.sh`.
 - Datos base para demo: `scripts/seed-demo.sh`.
 - Manuales y guion: `docs/manuals/*.md`, `docs/demo/demo-script.md`.
+- Backup automatizado con retención y cifrado (RO-005, RO-006):
+  `scripts/backup/backup-postgres.sh`, estrategia en
+  `docs/adr/ADR-0013-estrategia-backup-retencion.md`.
+- Restauración documentada y **probada de verdad** (RO-007, RT-008):
+  `scripts/backup/restore-postgres.sh`; acta del simulacro del 2026-08-04
+  (13 s, smoke tests en verde, incidencia detectada y corregida) en
+  `docs/manuals/backup-restore.md` §4.
