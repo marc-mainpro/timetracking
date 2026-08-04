@@ -1,0 +1,63 @@
+# Defensas contra fuerza bruta en autenticación (T30-03 / T30-04, RS-007,
+# RS-008, ADR-0013).
+#
+# Son dos controles complementarios y conviven aquí a propósito:
+#
+#   * `auth.rate-limit`  — límite por IP y endpoint, en memoria del proceso.
+#     Frena la ráfaga; no sobrevive a un reinicio ni se comparte entre réplicas.
+#   * `auth.account-lockout` — bloqueo por cuenta, persistido en `account_lockout`.
+#     Frena el ataque distribuido desde muchas IPs, que el anterior no ve.
+#
+# `auth.rate-limit.capacity` y `auth.rate-limit.window` (el valor por defecto
+# que heredan las reglas sin límite propio) siguen en `application.yml`, que es
+# donde ya estaban.
+
+auth:
+  rate-limit:
+    # Se evalúan en orden: gana la primera regla cuyo método y patrón casan.
+    # Los patrones son Ant (`**`), no rutas literales, para que los endpoints
+    # de olas posteriores queden cubiertos desde el día en que se publiquen.
+    endpoints:
+      # Login: hereda capacity/window globales. Es la primera línea contra la
+      # fuerza bruta desde una única IP.
+      - method: POST
+        pattern: /api/v1/auth/login
+
+      # Registro público de tenant: hereda el límite global. Crear tenants es
+      # caro y no hay motivo legítimo para repetirlo desde la misma IP.
+      - method: POST
+        pattern: /api/v1/auth/register
+
+      # Refresh: límite más alto. Es una operación legítima y frecuente (una
+      # por sesión cada 15 min de TTL del access token) y varios empleados
+      # detrás del mismo NAT corporativo comparten IP de origen; con el límite
+      # de login se echaría a gente de sesiones válidas.
+      - method: POST
+        pattern: /api/v1/auth/refresh
+        capacity: 30
+        window: PT1M
+
+      # Recuperación de contraseña y reenvío de verificación: límite bajo y
+      # ventana larga. Cada petición manda un correo, así que el abuso no es
+      # solo fuerza bruta sino usar el sistema para bombardear el buzón de un
+      # tercero. Los endpoints concretos llegan en olas posteriores (ver
+      # HANDOFF.md); el patrón ya los cubre.
+      - method: POST
+        pattern: /api/v1/auth/password/**
+        capacity: 5
+        window: PT15M
+      - method: POST
+        pattern: /api/v1/auth/verification/**
+        capacity: 5
+        window: PT15M
+
+  # Bloqueo temporal de cuenta (RF-USR-008, RS-008).
+  #
+  # 5 intentos / 15 min de bloqueo: bastante por debajo de lo que necesita un
+  # ataque de diccionario y muy por encima de lo que gasta una persona que se
+  # equivoca al teclear. La ventana de 30 min evita que fallos aislados
+  # separados por días acaben bloqueando a un usuario legítimo.
+  account-lockout:
+    threshold: ${AUTH_LOCKOUT_THRESHOLD:5}
+    lock-duration: ${AUTH_LOCKOUT_DURATION:PT15M}
+    failure-window: ${AUTH_LOCKOUT_FAILURE_WINDOW:PT30M}
