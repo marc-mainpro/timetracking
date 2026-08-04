@@ -1,0 +1,77 @@
+.verify-shell {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.verify-card {
+  width: 100%;
+  max-width: 30rem;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  border-radius: var(--radius, 12px);
+  box-shadow: var(--shadow, 0 1px 2px rgba(0, 0, 0, 0.04));
+  padding: 1.75rem;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  color: var(--text-muted, #6b7280);
+  margin: 0 0 0.5rem;
+}
+
+.lede {
+  color: var(--text-muted, #6b7280);
+  margin: 0.5rem 0 1rem;
+}
+
+.hint {
+  color: var(--text-muted, #6b7280);
+  font-size: 0.85rem;
+  margin-top: 1rem;
+}
+
+.resend-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.resend-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.resend-form input {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.12));
+  border-radius: var(--radius-sm, 8px);
+  font: inherit;
+}
+
+.resend-form button {
+  align-self: flex-start;
+  padding: 0.5rem 0.9rem;
+  border: 0;
+  border-radius: var(--radius-sm, 8px);
+  background: var(--accent, #4f46e5);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.resend-form button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.info {
+  color: var(--ok, #15803d);
+  font-size: 0.9rem;
+}
