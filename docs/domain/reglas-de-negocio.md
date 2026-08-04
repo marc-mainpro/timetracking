@@ -37,6 +37,35 @@ un test unitario asociado.
 - Toda aprobación genera un registro de auditoría y aplica los cambios a la
   jornada de forma controlada (la jornada pasa a `ADJUSTED`).
 
+## WorkCalendar
+
+- El nombre es único dentro del tenant.
+- La zona horaria debe ser una zona IANA válida.
+- `validTo`, si existe, no puede ser anterior a `validFrom`; ambos extremos son
+  inclusivos y `validTo` nulo significa vigencia indefinida.
+- Un día de la semana no puede tener dos reglas; un día laborable exige minutos
+  esperados mayores que 0 y uno no laborable exige exactamente 0.
+- Una misma fecha no puede aparecer dos veces, ni como festivo y jornada especial
+  a la vez: con las dos presentes la precedencia dejaría de ser explicable.
+- Un calendario archivado no admite edición, ni un segundo archivado, ni nuevas
+  asignaciones.
+- La jornada esperada de un día **no** cambia porque ese día civil dure 23 o 25
+  horas por el cambio de horario estacional.
+
+## CalendarAssignment
+
+- Ámbito `TENANT` sin destinatario; `TEAM` y `EMPLOYEE` con destinatario
+  obligatorio (→ 400 si no cuadra).
+- Una única asignación por `(tenant, ámbito, destinatario)` (→ 409), respaldada
+  por índices únicos parciales en la V16.
+- **Resolución del calendario efectivo (contrato reutilizable):** prevalece la
+  asignación más específica —empleado > equipo > tenant— entre las que apunten al
+  empleado y cuyo calendario esté activo y vigente esa fecha. Un calendario
+  archivado o caducado no bloquea su ámbito: se cae al siguiente menos
+  específico. Que ningún calendario aplique es un resultado legítimo, no un
+  error. La implementa `EffectiveCalendarResolver` y **no debe reimplementarse**
+  en otros módulos (ADR-0017).
+
 ## Excepciones de dominio → `errorCode`
 
 `TENANT_INACTIVE`, `USER_INACTIVE`, `EMAIL_ALREADY_IN_USE`,
@@ -44,7 +73,9 @@ un test unitario asociado.
 `WORKDAY_ALREADY_OPEN`, `WORKDAY_NOT_OPEN`, `WORKDAY_OPEN_BREAK`,
 `WORKDAY_ALREADY_CLOSED`, `BREAK_ALREADY_OPEN`, `BREAK_NOT_OPEN`,
 `CORRECTION_ALREADY_PENDING`, `CORRECTION_ALREADY_RESOLVED`,
-`CONCURRENT_MODIFICATION`.
+`CONCURRENT_MODIFICATION`, `CALENDAR_ARCHIVED`,
+`CALENDAR_NAME_ALREADY_EXISTS`, `CALENDAR_DUPLICATE_DAY_RULE`,
+`CALENDAR_DUPLICATE_DATE`, `CALENDAR_ASSIGNMENT_ALREADY_EXISTS`.
 
 ## Gestión temporal
 

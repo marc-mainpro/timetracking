@@ -1,0 +1,13 @@
+# Calendarios laborales (T70, ADR-0011). El import `optional:` de este fichero
+# ya esta declarado en application.yml, asi que no hace falta tocar nada
+# compartido para que estos valores se apliquen.
+#
+# Los limites son cotas defensivas de entrada, no reglas de negocio: impiden que
+# un PUT con un calendario de decenas de miles de festivos degrade el servicio.
+# 400 cubre con holgura una decada de festivos nacionales, autonomicos y locales.
+calendar:
+  max-holidays-per-calendar: ${CALENDAR_MAX_HOLIDAYS:400}
+  max-special-days-per-calendar: ${CALENDAR_MAX_SPECIAL_DAYS:400}
+  # Zona horaria IANA aplicada cuando el cliente crea un calendario sin
+  # indicarla (RF-CAL-007). El calendario guarda siempre su zona resuelta.
+  default-timezone: ${CALENDAR_DEFAULT_TIMEZONE:Europe/Madrid}
