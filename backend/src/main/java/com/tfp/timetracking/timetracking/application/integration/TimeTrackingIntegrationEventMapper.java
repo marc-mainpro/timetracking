@@ -1,10 +1,12 @@
 package com.tfp.timetracking.timetracking.application.integration;
 
+import com.tfp.timetracking.shared.application.IntegrationEventMapper;
 import com.tfp.timetracking.shared.domain.IntegrationEvent;
 import com.tfp.timetracking.timetracking.domain.event.WorkdayClosed;
 import com.tfp.timetracking.timetracking.domain.event.WorkdayStarted;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.stereotype.Component;
 
 /**
  * Traduce eventos de dominio del modulo {@code timetracking} a eventos de
@@ -22,11 +24,11 @@ import java.util.Optional;
  * {@code time-tracking.break-started.v1}/{@code .break-ended.v1} sin romper
  * compatibilidad con los tipos ya publicados.
  */
-public final class TimeTrackingIntegrationEventMapper {
+@Component
+public class TimeTrackingIntegrationEventMapper implements IntegrationEventMapper {
 
     private static final String AGGREGATE_TYPE = "Workday";
 
-    private TimeTrackingIntegrationEventMapper() {}
 
     /**
      * @param domainEvent evento de dominio recogido tras persistir el agregado
@@ -35,7 +37,8 @@ public final class TimeTrackingIntegrationEventMapper {
      *     modulo (incluye deliberadamente {@code BreakStarted}/{@code
      *     BreakEnded}, ver javadoc de la clase)
      */
-    public static Optional<IntegrationEvent> map(Object domainEvent) {
+    @Override
+    public Optional<IntegrationEvent> map(Object domainEvent) {
         if (domainEvent instanceof WorkdayStarted event) {
             return Optional.of(new IntegrationEvent(
                     event.eventId(),

@@ -1,9 +1,12 @@
 package com.tfp.timetracking.shared.infrastructure;
 
+import com.tfp.timetracking.shared.infrastructure.security.PublicEndpointsContributor;
+import com.tfp.timetracking.shared.infrastructure.security.PublicEndpointsContributor.PublicEndpoint;
 import com.tfp.timetracking.shared.infrastructure.security.RateLimitFilter;
 import com.tfp.timetracking.shared.infrastructure.security.CorrelationIdFilter;
 import com.tfp.timetracking.shared.infrastructure.security.RequestSizeLimitFilter;
 import com.tfp.timetracking.shared.infrastructure.security.UserStatusFilter;
+import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -23,13 +26,24 @@ import org.springframework.web.cors.CorsConfigurationSource;
 /**
  * Configuracion de seguridad HTTP compartida.
  *
- * <p>Se expone {@code /actuator/health} y los endpoints publicos de
- * autenticacion listados en CONTEXT-API §2
- * ({@code /api/v1/auth/register}, {@code /login}, {@code /refresh}); el resto
- * exige autenticacion Bearer JWT. La configuracion concreta de JWT, CORS y
- * mapeo de claims a authorities la aporta el modulo {@code identity} via
- * beans de Spring, evitando dependencias Java desde {@code shared} a
- * {@code identity} y manteniendo el monolito modular sin ciclos.
+ * <p>La regla de fondo es {@code anyRequest().authenticated()}: todo exige
+ * Bearer JWT salvo las excepciones que cada modulo declara implementando
+ * {@link PublicEndpointsContributor} (ADR-0011). Antes esas excepciones eran
+ * una lista literal aqui, lo que obligaba a cada modulo a editar un fichero de
+ * {@code shared} para abrir su propio endpoint publico. Hoy {@code shared} solo
+ * aporta salud y documentacion, {@code identity} aporta login y refresh, y
+ * {@code tenant} el alta publica.
+ *
+ * <p><b>El orden de los filtros no es contribuible</b> y se mantiene aqui: es
+ * una decision global sobre la cadena (correlation id antes que nada, limite de
+ * tamano antes del parseo, rate limit antes de autenticar, estado de usuario y
+ * tenant despues de autenticar) y dejarla abierta a contribuciones haria que el
+ * comportamiento dependiese del orden de arranque de los beans.
+ *
+ * <p>La configuracion concreta de JWT, CORS y mapeo de claims a authorities la
+ * aporta el modulo {@code identity} via beans de Spring, evitando dependencias
+ * Java desde {@code shared} a {@code identity} y manteniendo el monolito
+ * modular sin ciclos.
  */
 @Configuration
 public class SecurityConfig {
@@ -45,8 +59,12 @@ public class SecurityConfig {
             RateLimitFilter rateLimitFilter,
             RequestSizeLimitFilter requestSizeLimitFilter,
             CorrelationIdFilter correlationIdFilter,
-            UserStatusFilter userStatusFilter)
+            UserStatusFilter userStatusFilter,
+            List<PublicEndpointsContributor> publicEndpointsContributors)
             throws Exception {
+        List<PublicEndpoint> publicEndpoints = publicEndpointsContributors.stream()
+                .flatMap(contributor -> contributor.publicEndpoints().stream())
+                .toList();
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.disable())
@@ -69,13 +87,16 @@ public class SecurityConfig {
                         .jwt(jwt -> jwt
                                 .decoder(jwtDecoder)
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter)))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                        .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")
-                        .permitAll()
-                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh")
-                        .permitAll()
-                        .anyRequest().authenticated());
+                .authorizeHttpRequests(auth -> {
+                    for (PublicEndpoint endpoint : publicEndpoints) {
+                        if (endpoint.method() == null) {
+                            auth.requestMatchers(endpoint.pattern()).permitAll();
+                        } else {
+                            auth.requestMatchers(endpoint.method(), endpoint.pattern()).permitAll();
+                        }
+                    }
+                    auth.anyRequest().authenticated();
+                });
         return http.build();
     }
 }

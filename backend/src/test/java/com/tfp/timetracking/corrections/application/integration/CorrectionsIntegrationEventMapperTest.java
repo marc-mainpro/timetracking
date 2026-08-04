@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Test;
 
 class CorrectionsIntegrationEventMapperTest {
 
+    private static final CorrectionsIntegrationEventMapper MAPPER = new CorrectionsIntegrationEventMapper();
+
     @Test
     void mapsCorrectionRequestedToIntegrationEventWithFullEnvelope() {
         UUID eventId = UUID.randomUUID();
@@ -25,7 +27,7 @@ class CorrectionsIntegrationEventMapperTest {
         CorrectionRequested domainEvent =
                 new CorrectionRequested(eventId, occurredAt, tenantId, correctionId, workdayId, requestedBy);
 
-        Optional<IntegrationEvent> mapped = CorrectionsIntegrationEventMapper.map(domainEvent);
+        Optional<IntegrationEvent> mapped = MAPPER.map(domainEvent);
 
         assertThat(mapped).isPresent();
         IntegrationEvent event = mapped.orElseThrow();
@@ -50,7 +52,7 @@ class CorrectionsIntegrationEventMapperTest {
         CorrectionApproved domainEvent =
                 new CorrectionApproved(eventId, occurredAt, tenantId, correctionId, workdayId, resolvedBy);
 
-        Optional<IntegrationEvent> mapped = CorrectionsIntegrationEventMapper.map(domainEvent);
+        Optional<IntegrationEvent> mapped = MAPPER.map(domainEvent);
 
         assertThat(mapped).isPresent();
         IntegrationEvent event = mapped.orElseThrow();
@@ -73,7 +75,7 @@ class CorrectionsIntegrationEventMapperTest {
         CorrectionRejected domainEvent =
                 new CorrectionRejected(eventId, occurredAt, tenantId, correctionId, workdayId, resolvedBy);
 
-        Optional<IntegrationEvent> mapped = CorrectionsIntegrationEventMapper.map(domainEvent);
+        Optional<IntegrationEvent> mapped = MAPPER.map(domainEvent);
 
         assertThat(mapped).isPresent();
         IntegrationEvent event = mapped.orElseThrow();
@@ -87,6 +89,6 @@ class CorrectionsIntegrationEventMapperTest {
 
     @Test
     void ignoresUnknownDomainEvents() {
-        assertThat(CorrectionsIntegrationEventMapper.map(new Object())).isEmpty();
+        assertThat(MAPPER.map(new Object())).isEmpty();
     }
 }

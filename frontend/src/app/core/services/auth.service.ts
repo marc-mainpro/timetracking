@@ -12,15 +12,6 @@ interface LoginRequest {
   password: string;
 }
 
-interface RegisterRequest {
-  tenantName: string;
-  timezone: string;
-  adminEmail: string;
-  adminPassword: string;
-  firstName: string;
-  lastName: string;
-}
-
 interface JwtPayload {
   sub: string;
   tenantId: string;
@@ -39,10 +30,6 @@ export class AuthService {
     return this.http
       .post<AuthTokenResponse>('/api/v1/auth/login', request, { withCredentials: true })
       .pipe(tap((response) => this.setAccessToken(response.accessToken)), map(() => void 0));
-  }
-
-  register(request: RegisterRequest): Observable<void> {
-    return this.http.post('/api/v1/auth/register', request).pipe(map(() => void 0));
   }
 
   refresh(): Observable<string> {

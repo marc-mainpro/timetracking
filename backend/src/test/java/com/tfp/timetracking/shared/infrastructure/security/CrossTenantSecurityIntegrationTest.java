@@ -111,7 +111,7 @@ class CrossTenantSecurityIntegrationTest {
         TestTenantFactory.TenantActors tenantA = testTenantFactory.createTenantActors("A-active");
         TestTenantFactory.TenantActors tenantB = testTenantFactory.createTenantActors("B-inactive");
 
-        jdbcTemplate.update("UPDATE tenant SET status = 'INACTIVE' WHERE id = ?", tenantB.tenantId());
+        jdbcTemplate.update("UPDATE tenant SET status = 'SUSPENDED' WHERE id = ?", tenantB.tenantId());
 
         mockMvc.perform(get("/api/v1/test/admin/users")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenantA.admin().token()))

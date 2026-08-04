@@ -159,6 +159,41 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
   evento, `tenantId`, que es estable y único por tenant) para no duplicar el
   alta ante una redelivery.
 
+### `tenant.activated.v1`, `tenant.suspended.v1`, `tenant.reactivated.v1`, `tenant.archived.v1`
+
+- **Módulo productor:** `tenant` (`TenantIntegrationEventMapper`).
+- **Disparador de negocio:** transiciones del ciclo de vida del tenant
+  ejecutadas por un `PLATFORM_ADMIN` desde la API de plataforma
+  (`POST /api/v1/platform/tenants/{id}/{activate|suspend|reactivate|archive}`,
+  ADR-0010). Cada transición valida el estado de origen en el agregado
+  `Tenant` y, tras persistir, emite el evento correspondiente vía Outbox.
+- **`aggregateId`:** id del tenant afectado (igual que `tenantId`).
+
+```json
+{
+  "eventId": "9c1e0b2a-2d3f-4a5b-8c7d-1e2f3a4b5c6d",
+  "eventType": "tenant.suspended.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-07-24T10:00:00Z",
+  "tenantId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+  "aggregateId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+  "payload": {
+    "tenantId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+    "reason": "Impago reiterado"
+  }
+}
+```
+
+| `payload`  | Tipo   | Descripción                                                        |
+| ---------- | ------ | ------------------------------------------------------------------ |
+| `tenantId` | UUID   | Igual que `aggregateId`.                                           |
+| `reason`   | string | Solo en `suspended` (obligatorio) y `archived` (opcional). Ausente en `activated`/`reactivated`. |
+
+- **Idempotencia:** un consumidor que reaccione a la suspensión/archivado
+  (p.ej. cortar accesos externos) debe deduplicar por `eventId`. El estado
+  operativo autoritativo es siempre el del propio tenant; el evento es una
+  notificación, no la fuente de verdad.
+
 ### `identity.employee-created.v1`
 
 - **Módulo productor:** `identity` (`identity.application.integration.IdentityIntegrationEventMapper`).

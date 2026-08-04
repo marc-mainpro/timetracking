@@ -1,5 +1,6 @@
 package com.tfp.timetracking.tenant.domain;
 
+import com.tfp.timetracking.shared.domain.PagedResult;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,4 +15,12 @@ public interface TenantRepository {
     Optional<Tenant> findById(UUID id);
 
     boolean existsById(UUID id);
+
+    /**
+     * Listado paginado de tenants para la administración de plataforma
+     * (RF-TEN-001), excluyendo el tenant indicado (el de sistema). Si
+     * {@code status} no es {@code null}, filtra por ese estado. Ordenado por
+     * fecha de creación descendente.
+     */
+    PagedResult<Tenant> findAllExcluding(UUID excludedId, TenantStatus status, int page, int size);
 }

@@ -1,0 +1,24 @@
+# Correo saliente (T110-01, ADR-0012).
+#
+# mail.enabled=false por defecto: sin SMTP configurado el contenedor levanta
+# LoggingEmailSender, que solo registra destinatario y asunto. Así ni los tests
+# ni un arranque local sin mailpit intentan abrir una conexión SMTP.
+#
+# Con mail.enabled=true hace falta que spring.mail.* apunte a un servidor real
+# (mailpit en desarrollo, ver docker-compose.yml).
+mail:
+  enabled: ${MAIL_ENABLED:false}
+  from: ${MAIL_FROM:no-reply@timetracking.local}
+
+spring:
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:false}
