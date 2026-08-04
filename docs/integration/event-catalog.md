@@ -426,6 +426,187 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
 - **Idempotencia:** igual que en `.approved`, deduplicar por `eventId` evita
   notificaciones o efectos duplicados en sistemas externos.
 
+### `tenant.registration-requested.v1`
+
+- **Módulo productor:** `tenant` (`tenant.application.integration.TenantIntegrationEventMapper`).
+- **Disparador de negocio:** alguien envía el formulario público de alta
+  (`POST /api/v1/public/tenant-registrations`, RF-REG-001). **Todavía no existe
+  ningún tenant**: solo una solicitud pendiente de verificar el correo.
+- **`tenantId`:** el tenant de plataforma
+  (`00000000-0000-0000-0000-000000000001`). Una solicitud es anterior al tenant,
+  así que no hay otro al que atribuirla.
+- **`aggregateId`:** id de la solicitud (`tenant_registration.id`).
+
+```json
+{
+  "eventId": "0d4f8a2c-3b91-4d67-8f2e-1a6b9c0d3e45",
+  "eventType": "tenant.registration-requested.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-01T10:00:00Z",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "aggregateId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+  "payload": {
+    "registrationId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+    "companyName": "Acme Corp",
+    "email": "owner@acme.test",
+    "source": "PUBLIC_WEB"
+  }
+}
+```
+
+| `payload`        | Tipo   | Descripción                                            |
+| ---------------- | ------ | ------------------------------------------------------ |
+| `registrationId` | UUID   | Igual que `aggregateId`.                               |
+| `companyName`    | string | Nombre de la organización solicitada.                  |
+| `email`          | string | Correo del propietario, normalizado a minúsculas.      |
+| `source`         | string | Canal de entrada de la solicitud (`PUBLIC_WEB`).       |
+
+- **Idempotencia:** deduplicar por `eventId`. Un consumidor de métricas o
+  antifraude no debe contar dos veces la misma solicitud ante una redelivery.
+
+### `tenant.registration-verification-requested.v1`
+
+- **Módulo productor:** `tenant` (`tenant.application.integration.TenantIntegrationEventMapper`).
+- **Disparador de negocio:** hay que hacer llegar al solicitante un token de
+  verificación, ya sea en el alta inicial o en un reenvío (RF-REG-004).
+- **Consumidor:** `tenant.infrastructure.TenantRegistrationEmailListener`, que
+  invoca el puerto `EmailSender` fuera de la transacción de negocio (ADR-0012).
+- **`aggregateId`:** id de la solicitud.
+
+> **Contiene un secreto.** `verificationToken` es el token en claro, y es el
+> único campo de todo este catálogo que lo es. Existe porque el consumidor de
+> correo necesita construir el enlace, y por eso va en un evento distinto del
+> que describe el hecho de negocio. El publicador nunca registra el payload en
+> el log (solo el sobre), el token caduca en 24 h y es de un solo uso, pero la
+> fila de `outbox_message` lo contiene hasta que el archivador la purga: ver la
+> sección de consecuencias de ADR-0016.
+
+```json
+{
+  "eventId": "1e5f9b3d-4c02-4e78-9a3f-2b7c0d1e4f56",
+  "eventType": "tenant.registration-verification-requested.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-01T10:00:00Z",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "aggregateId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+  "payload": {
+    "registrationId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+    "email": "owner@acme.test",
+    "ownerFirstName": "Ana",
+    "verificationToken": "8Zt3xQ9pR1sV7kL0mN4bC6dE2fG5hJ8yA1uW3iO5qS0",
+    "expiresAt": "2026-08-02T10:00:00Z",
+    "resend": false
+  }
+}
+```
+
+| `payload`           | Tipo    | Descripción                                                  |
+| ------------------- | ------- | ------------------------------------------------------------ |
+| `registrationId`    | UUID    | Igual que `aggregateId`.                                     |
+| `email`             | string  | Destinatario del correo de verificación.                     |
+| `ownerFirstName`    | string  | Nombre del propietario, para personalizar el mensaje.        |
+| `verificationToken` | string  | Token en claro, un solo uso. **Nunca debe registrarse.**      |
+| `expiresAt`         | Instant | Caducidad del token.                                         |
+| `resend`            | boolean | `true` si es un reenvío y no el envío inicial.               |
+
+- **Idempotencia:** deduplicar por `eventId`. Reenviar dos veces el mismo correo
+  es molesto pero inocuo; el token no cambia por reprocesar el evento.
+
+### `tenant.registration-email-verified.v1`
+
+- **Módulo productor:** `tenant` (`tenant.application.integration.TenantIntegrationEventMapper`).
+- **Disparador de negocio:** el solicitante demuestra que controla el correo
+  (`POST /api/v1/public/tenant-registrations/verify-email`) y la solicitud pasa a
+  `PENDING_REVIEW`.
+- **`aggregateId`:** id de la solicitud.
+
+```json
+{
+  "eventId": "2f60ac4e-5d13-4f89-ab40-3c8d1e2f5061",
+  "eventType": "tenant.registration-email-verified.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-01T10:05:00Z",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "aggregateId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+  "payload": {
+    "registrationId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+    "email": "owner@acme.test"
+  }
+}
+```
+
+| `payload`        | Tipo   | Descripción                       |
+| ---------------- | ------ | --------------------------------- |
+| `registrationId` | UUID   | Igual que `aggregateId`.          |
+| `email`          | string | Correo verificado.                |
+
+- **Idempotencia:** deduplicar por `eventId`. Un consumidor que avise a
+  plataforma de que hay trabajo en la bandeja no debe notificar dos veces.
+
+### `tenant.registration-approved.v1`
+
+- **Módulo productor:** `tenant` (`tenant.application.integration.TenantIntegrationEventMapper`).
+- **Disparador de negocio:** un `PLATFORM_ADMIN` aprueba la solicitud
+  (`POST /api/v1/platform/registrations/{id}/approve`). En la misma transacción
+  se crean el tenant —**en estado `PENDING`, no `ACTIVE`**— y su primer
+  `TENANT_ADMIN`, que dispara además `identity.employee-created.v1`.
+- **`aggregateId`:** id de la solicitud, no del tenant creado.
+
+```json
+{
+  "eventId": "3a71bd5f-6e24-4a90-bc51-4d9e2f306172",
+  "eventType": "tenant.registration-approved.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-01T11:00:00Z",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "aggregateId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+  "payload": {
+    "registrationId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+    "tenantId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+    "ownerUserId": "9b8a7c6d-5e4f-4302-9182-736455647382"
+  }
+}
+```
+
+| `payload`        | Tipo | Descripción                                                        |
+| ---------------- | ---- | ------------------------------------------------------------------ |
+| `registrationId` | UUID | Igual que `aggregateId`.                                           |
+| `tenantId`       | UUID | Tenant creado, en estado `PENDING`. No coincide con el del sobre.  |
+| `ownerUserId`    | UUID | Primer `TENANT_ADMIN` de ese tenant.                               |
+
+- **Idempotencia:** deduplicar por `eventId`. El caso de uso ya es idempotente
+  (una segunda aprobación no crea un segundo tenant), pero un consumidor que
+  provisione recursos externos debe serlo también.
+
+### `tenant.registration-rejected.v1`
+
+- **Módulo productor:** `tenant` (`tenant.application.integration.TenantIntegrationEventMapper`).
+- **Disparador de negocio:** un `PLATFORM_ADMIN` rechaza la solicitud con motivo
+  obligatorio (`POST /api/v1/platform/registrations/{id}/reject`).
+- **`aggregateId`:** id de la solicitud.
+
+```json
+{
+  "eventId": "4b82ce60-7f35-4ba1-cd62-5e0f3a417283",
+  "eventType": "tenant.registration-rejected.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-01T11:10:00Z",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "aggregateId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+  "payload": {
+    "registrationId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+    "reason": "Dominio desechable"
+  }
+}
+```
+
+| `payload`        | Tipo   | Descripción                          |
+| ---------------- | ------ | ------------------------------------ |
+| `registrationId` | UUID   | Igual que `aggregateId`.             |
+| `reason`         | string | Motivo del rechazo, siempre presente. |
+
+- **Idempotencia:** deduplicar por `eventId`.
+
 ## Eventos de dominio sin traducción a integración
 
 Decisión de alcance del MVP (T702, reafirmada en T704): `BreakStarted` /

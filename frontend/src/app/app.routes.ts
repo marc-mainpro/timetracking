@@ -33,6 +33,11 @@ export const routes: Routes = [
       import('./features/corrections/corrections.routes').then((m) => m.CORRECTIONS_ROUTES)
   },
   {
+    path: 'registro',
+    loadChildren: () =>
+      import('./features/registration/registration.routes').then((m) => m.REGISTRATION_ROUTES)
+  },
+  {
     path: 'reports',
     canActivate: [authGuard, roleGuard(['EMPLOYEE'])],
     loadChildren: () =>

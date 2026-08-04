@@ -38,6 +38,30 @@
   incorrectas (anti-enumeración, RS-008):
   `AccountLockoutIntegrationTest#lockedAccountIsIndistinguishableFromAnUnknownAccount`.
 
+## Registro público controlado (T53)
+
+- El alta pública crea una solicitud, nunca un tenant activo:
+  `PublicTenantRegistrationControllerIntegrationTest`, `TenantRegistrationTest`.
+- El tenant nace en `PENDING` al aprobar la solicitud, y la aprobación es
+  idempotente: `ApproveTenantRegistrationUseCaseTest`,
+  `PlatformTenantRegistrationControllerIntegrationTest`.
+- Verificación de correo con token de un solo uso, caducidad y reenvío limitado:
+  `TenantRegistrationTest`, `VerifyTenantRegistrationEmailUseCaseTest`,
+  `ResendTenantRegistrationVerificationUseCaseTest`,
+  `PublicTenantRegistrationControllerIntegrationTest`.
+- Del token solo se almacena el hash y el correo sale por el Outbox:
+  `Sha256VerificationTokenGeneratorTest`, `TenantRegistrationEmailListenerTest`.
+- Respuestas indistinguibles para un correo existente y uno inexistente
+  (RF-REG-005): `PublicTenantRegistrationControllerIntegrationTest`,
+  `RequestTenantRegistrationUseCaseTest`.
+- Solo `PLATFORM_ADMIN` ve y decide sobre las solicitudes:
+  `PlatformTenantRegistrationControllerIntegrationTest`.
+- Flag `registration.public.enabled` apagado ⇒ 403 en los tres endpoints
+  públicos: `PublicRegistrationDisabledIntegrationTest`.
+- Frontend: alta pública, verificación y bandeja de plataforma:
+  `tenant-registration.component.spec`, `verify-registration-email.component.spec`,
+  `platform-registrations.component.spec`.
+
 ## Multitenancy
 
 - `tenantId` nunca se confía al cliente: documentado en `AGENTS.md`, validado
@@ -67,7 +91,7 @@
 - Manuales y guion: `docs/manuals/*.md`, `docs/demo/demo-script.md`.
 - Backup automatizado con retención y cifrado (RO-005, RO-006):
   `scripts/backup/backup-postgres.sh`, estrategia en
-  `docs/adr/ADR-0013-estrategia-backup-retencion.md`.
+  `docs/adr/ADR-0016-estrategia-backup-retencion.md`.
 - Restauración documentada y **probada de verdad** (RO-007, RT-008):
   `scripts/backup/restore-postgres.sh`; acta del simulacro del 2026-08-04
   (13 s, smoke tests en verde, incidencia detectada y corregida) en

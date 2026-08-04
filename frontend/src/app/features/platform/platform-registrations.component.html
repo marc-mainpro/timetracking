@@ -1,0 +1,76 @@
+<section class="admin-shell">
+  <header class="card admin-header">
+    <div>
+      <p class="eyebrow">Plataforma</p>
+      <h1>Solicitudes de alta</h1>
+    </div>
+  </header>
+
+  @if (message(); as info) {
+    <p class="info">{{ info }}</p>
+  }
+  @if (error(); as err) {
+    <p class="error">{{ err }}</p>
+  }
+
+  <article class="card list-card">
+    <div class="toolbar">
+      @for (status of statusFilters; track status) {
+        <button
+          type="button"
+          [class.active]="selectedStatus() === status"
+          (click)="applyStatus(status)">
+          {{ statusLabel(status) }}
+        </button>
+      }
+    </div>
+
+    @if (loading()) {
+      <p class="info">Cargando…</p>
+    }
+
+    @for (registration of result()?.content ?? []; track registration.id) {
+      <div class="registration-row">
+        <div class="registration-main">
+          <strong>{{ registration.companyName }}</strong>
+          <small>
+            {{ registration.ownerFirstName }} {{ registration.ownerLastName }} · {{ registration.email }}
+          </small>
+          <small>
+            {{ registration.timezone }} · solicitado {{ registration.createdAt | date: 'short' }}
+            @if (registration.verifiedAt) {
+              · verificado {{ registration.verifiedAt | date: 'short' }}
+            }
+          </small>
+          @if (registration.decisionReason) {
+            <small class="reason">Motivo: {{ registration.decisionReason }}</small>
+          }
+        </div>
+        <span class="pill pill--{{ registration.status.toLowerCase() }}">{{ registration.status }}</span>
+        <div class="row-actions">
+          @if (registration.status === 'PENDING_REVIEW') {
+            <button type="button" (click)="approve(registration)">Aprobar</button>
+            <button type="button" class="danger" (click)="reject(registration)">Rechazar</button>
+          }
+        </div>
+      </div>
+    } @empty {
+      @if (!loading()) {
+        <p class="info">No hay solicitudes para este filtro.</p>
+      }
+    }
+
+    @if (result(); as result) {
+      <footer class="pager">
+        <button type="button" (click)="previousPage()" [disabled]="page() === 0 || loading()">Anterior</button>
+        <span>Página {{ result.page + 1 }} de {{ result.totalPages || 1 }}</span>
+        <button
+          type="button"
+          (click)="nextPage()"
+          [disabled]="result.page + 1 >= result.totalPages || loading()">
+          Siguiente
+        </button>
+      </footer>
+    }
+  </article>
+</section>

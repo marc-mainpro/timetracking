@@ -1,6 +1,7 @@
 package com.tfp.timetracking.tenant.interfaces.rest;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,8 +21,13 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Con el registro público deshabilitado (comportamiento por defecto en
- * producción, RF-TEN-010), {@code POST /api/v1/auth/register} responde 403: los
- * tenants solo se crean desde la administración de plataforma.
+ * producción, RF-TEN-010), tanto el alta heredada {@code /api/v1/auth/register}
+ * como el flujo de solicitudes de la V2 responden 403: los tenants solo se
+ * crean desde la administración de plataforma.
+ *
+ * <p>La bandera se comprueba en las tres operaciones públicas, no solo en el
+ * alta: si solo se cerrase la puerta de entrada, seguir verificando o reenviando
+ * correos de solicitudes previas mantendría vivo medio flujo.
  */
 @Testcontainers
 @ActiveProfiles("test")
@@ -56,6 +62,37 @@ class PublicRegistrationDisabledIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new RegisterTenantRequest(
                                 "Bloqueada", "Europe/Madrid", "blocked@acme.test", "supersecretpwd", "A", "B"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void tenantRegistrationRequestsAreForbiddenWhenDisabled() throws Exception {
+        mockMvc.perform(post("/api/v1/public/tenant-registrations")
+                        .header("X-Forwarded-For", "203.0.113.201")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new TenantRegistrationRequestBody(
+                                "Bloqueada",
+                                "Europe/Madrid",
+                                "Ana",
+                                "Ruiz",
+                                "blocked-v2@acme.test",
+                                "supersecretpwd",
+                                true))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.errorCode").value("FORBIDDEN"));
+    }
+
+    @Test
+    void verificationAndResendAreAlsoForbiddenWhenDisabled() throws Exception {
+        mockMvc.perform(post("/api/v1/public/tenant-registrations/verify-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new VerifyRegistrationEmailRequest("cualquiera"))))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/v1/public/tenant-registrations/resend-verification")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new ResendVerificationRequest("alguien@acme.test"))))
                 .andExpect(status().isForbidden());
     }
 }

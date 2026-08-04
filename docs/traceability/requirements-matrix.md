@@ -20,6 +20,30 @@ sesiones, calendarios, ausencias, turnos, informes, notificaciones).
 | RF-TEN-008 Archivado | T50-05 | `ChangeTenantLifecycleUseCase.archive` | `POST /api/v1/platform/tenants/{id}/archive` | `ChangeTenantLifecycleUseCaseTest` |
 | RF-TEN-009 Bloqueo por estado | T50-03 | `AuthenticateUserUseCase`, `RefreshSessionUseCase`, `IdentityAuthenticatedPrincipalStateChecker`, `TenantAccessRepository` | login/refresh + toda petición autenticada | `TenantAccessRepositoryAdapterIntegrationTest`, `AuthSecurityIntegrationTest`, `PlatformTenantControllerIntegrationTest` |
 
+## Registro público de tenants (RF-REG) — épica T53
+
+| Requisito | Tarea | Caso de uso / componente | Endpoint | Pruebas |
+|---|---|---|---|---|
+| RF-REG-001 Solicitud de alta | T53-01, T53-03 | `TenantRegistration`, `RequestTenantRegistrationUseCase`, `PublicTenantRegistrationController` | `POST /api/v1/public/tenant-registrations` | `TenantRegistrationTest`, `RequestTenantRegistrationUseCaseTest`, `PublicTenantRegistrationControllerIntegrationTest` |
+| RF-REG-002 Validación de datos (incl. términos) | T53-01 | `TenantRegistrationRequestBody` (Bean Validation), invariantes de `TenantRegistration` | `POST /api/v1/public/tenant-registrations` | `TenantRegistrationTest`, `PublicTenantRegistrationControllerIntegrationTest` |
+| RF-REG-003 Protección contra abuso (IP y correo) | T53-03 | `RegistrationProperties.Throttle`, `IpHasher`/`Sha256IpHasher`, `RequestTenantRegistrationUseCase` | `POST /api/v1/public/tenant-registrations` | `Sha256IpHasherTest`, `RequestTenantRegistrationUseCaseTest`, `PublicTenantRegistrationControllerIntegrationTest` |
+| RF-REG-004 Verificación de correo | T53-05 | `TenantRegistration.verifyEmail`, `VerifyTenantRegistrationEmailUseCase`, `TenantRegistrationEmailListener` (Outbox, ADR-0012) | `POST /api/v1/public/tenant-registrations/verify-email` | `TenantRegistrationTest`, `VerifyTenantRegistrationEmailUseCaseTest`, `TenantRegistrationEmailListenerTest`, `PublicTenantRegistrationControllerIntegrationTest` |
+| RF-REG-004 Reenvío limitado | T53-05 | `TenantRegistration.resendVerification`, `ResendTenantRegistrationVerificationUseCase` | `POST /api/v1/public/tenant-registrations/resend-verification` | `TenantRegistrationTest`, `ResendTenantRegistrationVerificationUseCaseTest` |
+| RF-REG-005 Mensajes anti-enumeración | T53-03, T53-05 | `TenantRegistrationAcceptedResponse`, casos de uso sin excepción de negocio | los tres endpoints públicos | `RequestTenantRegistrationUseCaseTest`, `ResendTenantRegistrationVerificationUseCaseTest`, `PublicTenantRegistrationControllerIntegrationTest` |
+| RF-REG-006 Auditoría del registro | T53-03 | `RegistrationAuditTrail`/`AnonymousRegistrationAuditTrail`, `AuditRecorder` en aprobación y rechazo | — | `RequestTenantRegistrationUseCaseTest`, `ApproveTenantRegistrationUseCaseTest`, `PlatformTenantRegistrationControllerIntegrationTest` |
+| RF-TEN-003 Creación por registro público controlado | T53-03 | `ApproveTenantRegistrationUseCase` (tenant en `PENDING` vía `Tenant.requestRegistration`) | `POST /api/v1/platform/registrations/{id}/approve` | `ApproveTenantRegistrationUseCaseTest`, `PlatformTenantRegistrationControllerIntegrationTest` |
+| RF-TEN-010 Registro público deshabilitable (flujo V2) | T53-04 | `PublicTenantRegistrationController` + flag `registration.public.enabled` (`config/registration.yml`) | los tres endpoints públicos (403 si off) | `PublicRegistrationDisabledIntegrationTest` |
+| Revisión y rechazo de solicitudes | T53-03 | `ListTenantRegistrationsUseCase`, `RejectTenantRegistrationUseCase`, `PlatformTenantRegistrationController` | `GET /api/v1/platform/registrations`, `POST .../{id}/reject` | `ListTenantRegistrationsUseCaseTest`, `RejectTenantRegistrationUseCaseTest`, `PlatformTenantRegistrationControllerIntegrationTest` |
+| Aislamiento por rol de las solicitudes (RT-003, RT-004) | T53-03 | `@PreAuthorize('hasRole(PLATFORM_ADMIN)')` en `PlatformTenantRegistrationController` | `/api/v1/platform/registrations/**` | `PlatformTenantRegistrationControllerIntegrationTest` (TENANT_ADMIN/EMPLOYEE → 403, anónimo → 401) |
+
+## Frontend del registro público
+
+| Requisito | Tarea | Componente | Prueba |
+|---|---|---|---|
+| RF-REG-001/002 pantalla pública de alta | T53-03 | `TenantRegistrationComponent`, `RegistrationService`, ruta `/registro` | `tenant-registration.component.spec`, `registration.service.spec` |
+| RF-REG-004 pantalla de verificación y reenvío | T53-05 | `VerifyRegistrationEmailComponent`, ruta `/registro/verificar` | `verify-registration-email.component.spec` |
+| Bandeja de solicitudes en plataforma | T53-03 | `PlatformRegistrationsComponent`, `PlatformRegistrationsService`, ruta `/platform/registrations` | `platform-registrations.component.spec`, `platform-registrations.service.spec` |
+
 ## Rol y seguridad de plataforma
 
 | Requisito | Tarea | Caso de uso / componente | Prueba |
@@ -76,6 +100,7 @@ sesiones, calendarios, ausencias, turnos, informes, notificaciones).
 |---|---|---|
 | ADR ciclo de vida + plataforma | — | `docs/adr/ADR-0010-...md` |
 | ADR logs estructurados y observabilidad | T140 | `docs/adr/ADR-0015-logs-estructurados-y-observabilidad.md` |
+| ADR solicitud de alta separada del tenant | T53 | `docs/adr/ADR-0016-solicitud-de-alta-separada-del-tenant.md` |
 | Catálogo de eventos `tenant.*.v1` | — | `docs/integration/event-catalog.md` |
 | OpenAPI `/api/v1/platform/**` | — | `docs/api/openapi.yaml` |
 | Reglas del agente V2 | T00-03 | `AGENTS.md` |
@@ -93,15 +118,13 @@ sesiones, calendarios, ausencias, turnos, informes, notificaciones).
 | Requisito | Tarea | Componente | Evidencia |
 |---|---|---|---|
 | RO-005 Backups periódicos de PostgreSQL | T150-02 | `scripts/backup/backup-postgres.sh` (`pg_dump -Fc`, cifrado AES-256, SHA-256, logs, códigos de salida) + cron diario 03:00 | Ejecución real 2026-08-04: backup de 24 011 B verificado con `pg_restore --list`; `docs/manuals/backup-restore.md` §2 |
-| RO-006 Política de retención | T150-01, T150-02 | Rotación *grandfather-father-son* en `backup-postgres.sh` (7 días + 4 semanas ISO) | `docs/adr/ADR-0013-estrategia-backup-retencion.md`; rotación probada con 9 backups sintéticos: elimina los que caen fuera de ambas ventanas y conserva el primero de cada semana ISO |
+| RO-006 Política de retención | T150-01, T150-02 | Rotación *grandfather-father-son* en `backup-postgres.sh` (7 días + 4 semanas ISO) | `docs/adr/ADR-0016-estrategia-backup-retencion.md`; rotación probada con 9 backups sintéticos: elimina los que caen fuera de ambas ventanas y conserva el primero de cada semana ISO |
 | RO-007 Procedimiento de restauración documentado y probado | T150-03, T150-04 | `scripts/backup/restore-postgres.sh` (parar → restaurar → validar → arrancar) + `scripts/smoke.sh` | `docs/manuals/backup-restore.md` §3 y §4; simulacro ejecutado 2026-08-04 |
 | RT-008 Restauración validada y documentada | T150-04 | Validación automática en el script (esquema, Flyway sin fallos, tablas de negocio con filas) y smoke tests | Simulacro 2026-08-04: 13 s, `TRUNCATE tenant CASCADE` recuperado a 3 tenants / 5 usuarios / 8 outbox, login HTTP 200, `scripts/smoke.sh` en verde. Acta completa en `docs/manuals/backup-restore.md` §4 |
-| RC-008 Sin alta disponibilidad (restricción asumida) | T150-01 | Backup lógico diario en lugar de PITR/réplica; RPO 24 h, RTO 1 h declarados | `docs/adr/ADR-0013-estrategia-backup-retencion.md` (alternativas descartadas) |
+| RC-008 Sin alta disponibilidad (restricción asumida) | T150-01 | Backup lógico diario en lugar de PITR/réplica; RPO 24 h, RTO 1 h declarados | `docs/adr/ADR-0016-estrategia-backup-retencion.md` (alternativas descartadas) |
 
 ## Pendiente (fuera de esta iteración)
 
-- T53 Registro público controlado (TenantRegistration, verificación de correo,
-  feature flag).
 - T130-04/05 Auditoría de tenant ampliada y consulta avanzada.
 - RF-TEN-001: `número de usuarios` y `último acceso` en el listado (dependen de
   identity/sesiones — épica T60).
