@@ -1,5 +1,6 @@
 package com.tfp.timetracking.identity.application;
 
+import com.tfp.timetracking.identity.domain.AccountLockedException;
 import com.tfp.timetracking.identity.domain.Email;
 import com.tfp.timetracking.identity.domain.InvalidCredentialsException;
 import com.tfp.timetracking.identity.domain.PasswordHasher;
@@ -27,6 +28,8 @@ public class AuthenticateUserUseCase {
     private final AccessTokenGenerator accessTokenGenerator;
     private final RefreshTokenGenerator refreshTokenGenerator;
     private final RefreshTokenHasher refreshTokenHasher;
+    private final AccountLockoutService accountLockoutService;
+    private final AuthenticationMetrics authenticationMetrics;
     private final Clock clock;
     private final IdGenerator idGenerator;
     private final Duration refreshTokenTtl;
@@ -39,9 +42,13 @@ public class AuthenticateUserUseCase {
             AccessTokenGenerator accessTokenGenerator,
             RefreshTokenGenerator refreshTokenGenerator,
             RefreshTokenHasher refreshTokenHasher,
+            AccountLockoutService accountLockoutService,
+            AuthenticationMetrics authenticationMetrics,
             Clock clock,
             IdGenerator idGenerator,
             @Value("${auth.refresh-token.ttl:P14D}") Duration refreshTokenTtl) {
+        this.accountLockoutService = accountLockoutService;
+        this.authenticationMetrics = authenticationMetrics;
         this.userRepository = userRepository;
         this.tenantAccessRepository = tenantAccessRepository;
         this.passwordHasher = passwordHasher;
@@ -54,13 +61,48 @@ public class AuthenticateUserUseCase {
         this.refreshTokenTtl = refreshTokenTtl;
     }
 
+    /**
+     * Autentica al usuario aplicando el bloqueo temporal por intentos fallidos
+     * (RF-USR-008, RS-008).
+     *
+     * <p><b>Anti-enumeracion:</b> el error {@code ACCOUNT_LOCKED} solo se
+     * devuelve a quien ademas ha acertado la contrasena. Un atacante que prueba
+     * credenciales recibe siempre {@code INVALID_CREDENTIALS}, exactamente la
+     * misma respuesta que ante un email inexistente, asi que no puede usar el
+     * login para descubrir que cuentas existen ni cuales ha conseguido
+     * bloquear. El usuario legitimo, que si conoce su contrasena, obtiene el
+     * mensaje explicativo que necesita.
+     *
+     * <p>Por eso la contrasena se comprueba <b>antes</b> de decidir la
+     * respuesta al bloqueo, y no se cortocircuita: el trabajo de BCrypt se hace
+     * igual en ambos caminos.
+     */
     @Transactional
     public AuthenticatedSession authenticate(AuthenticateUserCommand command) {
-        User user = userRepository.findByEmail(Email.of(command.email())).orElseThrow(InvalidCredentialsException::new);
-        ensureTenantAndUserAreActive(user);
-        if (!passwordHasher.matches(command.password(), user.passwordHash())) {
+        User user = userRepository.findByEmail(Email.of(command.email())).orElse(null);
+        if (user == null) {
+            authenticationMetrics.recordLoginFailed(AuthenticationMetrics.REASON_UNKNOWN_EMAIL);
             throw new InvalidCredentialsException();
         }
+        ensureTenantAndUserAreActive(user);
+
+        boolean passwordMatches = passwordHasher.matches(command.password(), user.passwordHash());
+        if (accountLockoutService.isLocked(user)) {
+            accountLockoutService.registerBlockedAttempt(user);
+            authenticationMetrics.recordLoginFailed(AuthenticationMetrics.REASON_LOCKED);
+            if (passwordMatches) {
+                throw new AccountLockedException();
+            }
+            throw new InvalidCredentialsException();
+        }
+        if (!passwordMatches) {
+            accountLockoutService.registerFailedAttempt(user);
+            authenticationMetrics.recordLoginFailed(AuthenticationMetrics.REASON_BAD_CREDENTIALS);
+            throw new InvalidCredentialsException();
+        }
+
+        accountLockoutService.registerSuccessfulAttempt(user);
+        authenticationMetrics.recordLoginSucceeded();
         return issueSession(user);
     }
 

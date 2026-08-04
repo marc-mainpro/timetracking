@@ -72,6 +72,7 @@ public class GlobalExceptionHandler {
 
     private boolean authenticationErrorCode(String errorCode) {
         return java.util.Set.of(
+                        "ACCOUNT_LOCKED",
                         "INVALID_CREDENTIALS",
                         "INVALID_REFRESH_TOKEN",
                         "REFRESH_TOKEN_REUSED",
