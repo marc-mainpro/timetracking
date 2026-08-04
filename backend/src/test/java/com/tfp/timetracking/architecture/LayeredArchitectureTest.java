@@ -1,35 +1,17 @@
 package com.tfp.timetracking.architecture;
 
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
+import static com.tngtech.archunit.core.domain.properties.HasName.Predicates.nameMatching;
 import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
+import com.tfp.timetracking.corrections.domain.CorrectionRequestStatus;
+import com.tfp.timetracking.corrections.interfaces.rest.CorrectionController;
+import com.tfp.timetracking.identity.domain.UserStatus;
+import com.tfp.timetracking.identity.interfaces.rest.EmployeeController;
 import com.tfp.timetracking.shared.domain.DomainException;
 import com.tfp.timetracking.shared.interfaces.rest.GlobalExceptionHandler;
-import com.tfp.timetracking.identity.interfaces.rest.EmployeeRestMapper;
-import com.tfp.timetracking.identity.interfaces.rest.EmployeeController;
-import com.tfp.timetracking.identity.domain.User;
-import com.tfp.timetracking.identity.domain.UserStatus;
-import com.tfp.timetracking.identity.domain.Email;
-import com.tfp.timetracking.corrections.interfaces.rest.CorrectionRestMapper;
-import com.tfp.timetracking.corrections.interfaces.rest.CorrectionController;
-import com.tfp.timetracking.corrections.domain.CorrectionRequest;
-import com.tfp.timetracking.corrections.domain.CorrectionRequestStatus;
-import com.tfp.timetracking.corrections.domain.ProposedChanges;
-import com.tfp.timetracking.corrections.domain.ProposedChanges.ProposedBreak;
-import com.tfp.timetracking.audit.interfaces.rest.AuditEventRestMapper;
-import com.tfp.timetracking.audit.domain.AuditEvent;
-import com.tfp.timetracking.timetracking.interfaces.rest.WorkdayRestMapper;
-import com.tfp.timetracking.timetracking.domain.Workday;
-import com.tfp.timetracking.timetracking.domain.BreakEntry;
-import com.tfp.timetracking.timetracking.domain.WorkdayStatus;
-import com.tfp.timetracking.reporting.interfaces.rest.ReportRestMapper;
-import com.tfp.timetracking.reporting.domain.EmployeeDaySummary;
-import com.tfp.timetracking.reporting.domain.TenantEmployeeSummary;
-import com.tfp.timetracking.tenant.interfaces.rest.PlatformTenantController;
-import com.tfp.timetracking.tenant.interfaces.rest.PlatformTenantRestMapper;
-import com.tfp.timetracking.tenant.domain.Tenant;
 import com.tfp.timetracking.tenant.domain.TenantStatus;
-import com.tfp.timetracking.shared.domain.Clock;
-import com.tfp.timetracking.shared.domain.PagedResult;
+import com.tfp.timetracking.tenant.interfaces.rest.PlatformTenantController;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
@@ -47,16 +29,29 @@ import com.tngtech.archunit.lang.ArchRule;
  * solo tienen {@code package-info.java} en cada capa, sin dependencias entre
  * clases; la regla debe pasar en verde igualmente.
  *
+ * <p><b>Excepcion por convencion (ADR-0011):</b> las clases {@code *RestMapper}
+ * de {@code interfaces.rest} pueden depender de {@code ..domain..}. Traducir un
+ * agregado a su DTO de respuesta exige leer el agregado, y ese es justamente el
+ * trabajo del mapper de borde: es traduccion, no logica de negocio. Antes esta
+ * excepcion se expresaba enumerando un {@code ignoreDependency} por cada par
+ * (mapper, tipo de dominio); esa lista literal obligaba a editar este test
+ * —compartido por todos los modulos— cada vez que se anadia un mapper, lo que
+ * convertia un fichero de test en un punto de contencion entre modulos. La
+ * regla por convencion cubre exactamente el mismo caso sin ese acoplamiento.
+ *
+ * <p>Las excepciones de {@code *Controller} siguen siendo explicitas y una a
+ * una <b>a proposito</b>: que un controlador conozca un tipo de dominio debe
+ * seguir doliendo y quedar justificado. Las tres actuales son enums usados como
+ * parametro de filtrado en la query string, no agregados.
+ *
  * <p>Excepcion puntual (T203, CONTEXT-GLOBAL §7 / ADR-0006): el
  * {@code @RestControllerAdvice} que traduce excepciones a Problem Details
  * ({@link GlobalExceptionHandler}, en {@code shared.interfaces.rest})
  * necesita capturar {@link DomainException} (en {@code shared.domain}) para
- * leer su {@code errorCode} y su mensaje. Esta es la unica forma de que
- * {@code interfaces} conozca un tipo de {@code domain}: no es logica de
- * negocio, es traduccion de errores en el borde de la API, y el propio
+ * leer su {@code errorCode} y su mensaje. No es logica de negocio, es
+ * traduccion de errores en el borde de la API, y el propio
  * {@code DomainException} sigue sin depender de Spring/JPA (ver
- * {@code DomainPurityTest}). Se permite explicitamente esta unica
- * dependencia en vez de relajar la regla en general.
+ * {@code DomainPurityTest}).
  */
 @AnalyzeClasses(packages = "com.tfp.timetracking", importOptions = ImportOption.DoNotIncludeTests.class)
 class LayeredArchitectureTest {
@@ -73,29 +68,11 @@ class LayeredArchitectureTest {
             .whereLayer("Domain").mayOnlyBeAccessedByLayers("Application", "Infrastructure")
             .whereLayer("Infrastructure").mayNotBeAccessedByAnyLayer()
             .ignoreDependency(GlobalExceptionHandler.class, DomainException.class)
-            .ignoreDependency(EmployeeRestMapper.class, User.class)
-            .ignoreDependency(EmployeeRestMapper.class, UserStatus.class)
-            .ignoreDependency(EmployeeRestMapper.class, Email.class)
-            .ignoreDependency(EmployeeRestMapper.class, PagedResult.class)
+            .ignoreDependency(
+                    nameMatching(".*RestMapper").as("clase *RestMapper del borde REST"),
+                    resideInAPackage("..domain..").as("tipo de dominio"))
             .ignoreDependency(EmployeeController.class, UserStatus.class)
-            .ignoreDependency(CorrectionRestMapper.class, CorrectionRequest.class)
-            .ignoreDependency(CorrectionRestMapper.class, CorrectionRequestStatus.class)
-            .ignoreDependency(CorrectionRestMapper.class, ProposedChanges.class)
-            .ignoreDependency(CorrectionRestMapper.class, ProposedBreak.class)
-            .ignoreDependency(CorrectionRestMapper.class, PagedResult.class)
             .ignoreDependency(CorrectionController.class, CorrectionRequestStatus.class)
-            .ignoreDependency(AuditEventRestMapper.class, AuditEvent.class)
-            .ignoreDependency(AuditEventRestMapper.class, PagedResult.class)
-            .ignoreDependency(WorkdayRestMapper.class, Workday.class)
-            .ignoreDependency(WorkdayRestMapper.class, BreakEntry.class)
-            .ignoreDependency(WorkdayRestMapper.class, WorkdayStatus.class)
-            .ignoreDependency(WorkdayRestMapper.class, Clock.class)
-            .ignoreDependency(WorkdayRestMapper.class, PagedResult.class)
-            .ignoreDependency(ReportRestMapper.class, EmployeeDaySummary.class)
-            .ignoreDependency(ReportRestMapper.class, TenantEmployeeSummary.class)
-            .ignoreDependency(PlatformTenantRestMapper.class, Tenant.class)
-            .ignoreDependency(PlatformTenantRestMapper.class, TenantStatus.class)
-            .ignoreDependency(PlatformTenantRestMapper.class, PagedResult.class)
             .ignoreDependency(PlatformTenantController.class, TenantStatus.class)
             .allowEmptyShould(true);
 }

@@ -1,5 +1,6 @@
 package com.tfp.timetracking.tenant.application.integration;
 
+import com.tfp.timetracking.shared.application.IntegrationEventMapper;
 import com.tfp.timetracking.shared.domain.IntegrationEvent;
 import com.tfp.timetracking.tenant.domain.event.TenantActivated;
 import com.tfp.timetracking.tenant.domain.event.TenantArchived;
@@ -9,6 +10,7 @@ import com.tfp.timetracking.tenant.domain.event.TenantSuspended;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.stereotype.Component;
 
 /**
  * Traduce eventos de dominio del modulo {@code tenant} a eventos de
@@ -16,11 +18,11 @@ import java.util.Optional;
  * tipo {@link IntegrationEvent} de {@code shared.domain}, nunca de
  * infraestructura de outbox (ver {@code OutboxEncapsulationTest}).
  */
-public final class TenantIntegrationEventMapper {
+@Component
+public class TenantIntegrationEventMapper implements IntegrationEventMapper {
 
     private static final String AGGREGATE_TYPE = "Tenant";
 
-    private TenantIntegrationEventMapper() {}
 
     /**
      * @param domainEvent evento de dominio recogido tras persistir el agregado
@@ -28,7 +30,8 @@ public final class TenantIntegrationEventMapper {
      *     si el evento de dominio no tiene traduccion a integracion en este
      *     modulo
      */
-    public static Optional<IntegrationEvent> map(Object domainEvent) {
+    @Override
+    public Optional<IntegrationEvent> map(Object domainEvent) {
         if (domainEvent instanceof TenantRegistered event) {
             return Optional.of(new IntegrationEvent(
                     event.eventId(),
