@@ -29,6 +29,14 @@
   `scripts/security/npm-audit-gate.sh`. Política de severidad, excepciones y
   aprobaciones en `docs/security/dependency-scanning-policy.md`. Parcial en
   backend hasta dar de alta el secreto `NVD_API_KEY`.
+- Rate limiting por endpoint y patrón, con 429 y `RATE_LIMIT_EXCEEDED`
+  (RS-007, T30-03): `RateLimitFilterIntegrationTest`, `RateLimitPropertiesTest`.
+- Bloqueo temporal de cuenta con umbral y duración configurables, reinicio tras
+  login correcto y auditoría (RF-USR-008, RS-008, T30-04): `AccountLockoutTest`,
+  `AccountLockoutServiceTest`, `AccountLockoutIntegrationTest`.
+- Una cuenta bloqueada no se distingue de una inexistente ante credenciales
+  incorrectas (anti-enumeración, RS-008):
+  `AccountLockoutIntegrationTest#lockedAccountIsIndistinguishableFromAnUnknownAccount`.
 
 ## Multitenancy
 

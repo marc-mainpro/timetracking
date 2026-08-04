@@ -30,10 +30,21 @@ public class JpaAuditRecorder implements AuditRecorder {
 
     @Override
     public void record(String action, String entityType, UUID entityId, Map<String, Object> metadata) {
+        record(tenantContext.currentTenantId(), tenantContext.currentUserId(), action, entityType, entityId, metadata);
+    }
+
+    @Override
+    public void record(
+            UUID tenantId,
+            UUID actorUserId,
+            String action,
+            String entityType,
+            UUID entityId,
+            Map<String, Object> metadata) {
         AuditEvent auditEvent = new AuditEvent(
                 idGenerator.newId(),
-                tenantContext.currentTenantId(),
-                tenantContext.currentUserId(),
+                tenantId,
+                actorUserId,
                 action,
                 entityType,
                 entityId,

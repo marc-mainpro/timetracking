@@ -39,3 +39,6 @@ security-reports/
 
 # Backups locales de PostgreSQL (T150)
 backups/
+
+# Worktrees de agentes (trabajo en paralelo de la V2)
+.claude/worktrees/
