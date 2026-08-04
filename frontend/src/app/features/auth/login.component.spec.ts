@@ -47,6 +47,28 @@ describe('LoginComponent', () => {
     expect(navigate).toHaveBeenCalledOnceWith(['/employee-dashboard']);
   });
 
+  it('explica al usuario que su cuenta está bloqueada temporalmente (RS-008)', () => {
+    submitWithProblem(401, {
+      errorCode: 'ACCOUNT_LOCKED',
+      detail: 'La cuenta esta bloqueada temporalmente por intentos fallidos'
+    });
+
+    expect(component.errorMessage()).toContain('bloqueada temporalmente');
+  });
+
+  it('explica al usuario que ha superado el límite de intentos (RS-007)', () => {
+    submitWithProblem(429, { errorCode: 'RATE_LIMIT_EXCEEDED' });
+
+    expect(component.errorMessage()).toContain('demasiados intentos');
+  });
+
+  function submitWithProblem(status: number, problem: Record<string, unknown>): void {
+    component.form.setValue({ email: 'admin@acme.test', password: 'supersecretpwd' });
+    component.submit();
+
+    httpMock.expectOne('/api/v1/auth/login').flush(problem, { status, statusText: 'Error' });
+  }
+
   function submitWithToken(accessToken: string): void {
     component.form.setValue({ email: 'admin@acme.test', password: 'supersecretpwd' });
     component.submit();

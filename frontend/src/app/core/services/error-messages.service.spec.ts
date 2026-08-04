@@ -14,6 +14,24 @@ describe('ErrorMessagesService', () => {
     expect(service.fromProblem({ errorCode: 'INVALID_CREDENTIALS' })).toBe('Las credenciales no son válidas.');
   });
 
+  it('explains an account locked by failed attempts (RS-008)', () => {
+    expect(service.fromProblem({ errorCode: 'ACCOUNT_LOCKED' })).toBe(
+      'Tu cuenta está bloqueada temporalmente por varios intentos fallidos. Vuelve a intentarlo dentro de unos minutos.'
+    );
+  });
+
+  it('explains that the rate limit was exceeded (RS-007)', () => {
+    expect(service.fromProblem({ errorCode: 'RATE_LIMIT_EXCEEDED' })).toBe(
+      'Has realizado demasiados intentos. Espera un momento e inténtalo otra vez.'
+    );
+  });
+
+  it('does not leak the backend detail when the code is known', () => {
+    expect(service.fromProblem({ errorCode: 'ACCOUNT_LOCKED', detail: 'La cuenta esta bloqueada temporalmente' })).toBe(
+      'Tu cuenta está bloqueada temporalmente por varios intentos fallidos. Vuelve a intentarlo dentro de unos minutos.'
+    );
+  });
+
   it('formats validation errors field by field', () => {
     expect(
       service.fromProblem({
