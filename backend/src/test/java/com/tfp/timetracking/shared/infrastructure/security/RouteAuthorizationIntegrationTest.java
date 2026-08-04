@@ -31,6 +31,11 @@ class RouteAuthorizationIntegrationTest {
             "POST /api/v1/auth/login",
             "POST /api/v1/auth/refresh",
             "POST /api/v1/auth/register",
+            // Alta pública V2 (T53): abiertas en la cadena, gobernadas por
+            // registration.public.enabled (ver TenantPublicEndpoints).
+            "POST /api/v1/public/tenant-registrations",
+            "POST /api/v1/public/tenant-registrations/verify-email",
+            "POST /api/v1/public/tenant-registrations/resend-verification",
             "GET /actuator/health",
             "GET /v3/api-docs",
             "GET /swagger-ui.html");
