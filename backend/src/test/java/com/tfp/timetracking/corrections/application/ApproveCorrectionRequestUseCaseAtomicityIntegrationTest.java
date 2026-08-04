@@ -167,8 +167,28 @@ class ApproveCorrectionRequestUseCaseAtomicityIntegrationTest {
         @Bean
         @Primary
         AuditRecorder failingAuditRecorder() {
-            return (action, entityType, entityId, metadata) -> {
-                throw new IllegalStateException("Fallo simulado en auditoria tras escribir en el outbox");
+            // Clase anonima y no lambda: AuditRecorder dejo de ser una interfaz
+            // funcional al anadir la variante con tenant y actor explicitos que
+            // usa el bloqueo de cuentas (T30-04), donde todavia no hay
+            // principal autenticado del que leerlos.
+            return new AuditRecorder() {
+
+                @Override
+                public void record(
+                        String action, String entityType, java.util.UUID entityId, Map<String, Object> metadata) {
+                    throw new IllegalStateException("Fallo simulado en auditoria tras escribir en el outbox");
+                }
+
+                @Override
+                public void record(
+                        java.util.UUID tenantId,
+                        java.util.UUID actorUserId,
+                        String action,
+                        String entityType,
+                        java.util.UUID entityId,
+                        Map<String, Object> metadata) {
+                    throw new IllegalStateException("Fallo simulado en auditoria tras escribir en el outbox");
+                }
             };
         }
     }
