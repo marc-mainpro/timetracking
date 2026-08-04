@@ -88,6 +88,11 @@ class PlatformAdminBootstrapTest {
         }
 
         @Override
+        public void lockActiveAdmins(UUID tenantId) {
+            // Doble en memoria y sin concurrencia: no hay filas que bloquear.
+        }
+
+        @Override
         public java.util.Optional<User> findById(UUID tenantId, UUID id) {
             return java.util.Optional.empty();
         }

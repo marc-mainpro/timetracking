@@ -1,6 +1,7 @@
 package com.tfp.timetracking.identity.application;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.tfp.timetracking.identity.domain.LastAdminException;
@@ -42,5 +43,6 @@ class AssignRoleUseCaseTest {
 
         assertThatThrownBy(() -> useCase.assign(new EmployeeRolesCommand(userId, Set.of("EMPLOYEE"))))
                 .isInstanceOf(LastAdminException.class);
+        verify(userRepository).lockActiveAdmins(tenantId);
     }
 }

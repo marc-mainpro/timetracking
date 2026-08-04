@@ -24,6 +24,20 @@ interface UserJpaRepository extends JpaRepository<UserJpaEntity, UUID> {
 
     Page<UserJpaEntity> findByTenantIdAndStatus(UUID tenantId, String status, Pageable pageable);
 
+    @Query(
+            value = """
+                    select u.id
+                    from app_user u
+                    join user_role ur on ur.user_id = u.id
+                    where u.tenant_id = :tenantId
+                      and u.status = 'ACTIVE'
+                      and ur.role = 'TENANT_ADMIN'
+                    order by u.id
+                    for update
+                    """,
+            nativeQuery = true)
+    List<UUID> lockActiveAdmins(@Param("tenantId") UUID tenantId);
+
     @Query("""
             select count(user)
             from UserJpaEntity user

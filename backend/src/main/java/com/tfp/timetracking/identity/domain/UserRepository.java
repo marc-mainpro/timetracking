@@ -36,6 +36,8 @@ public interface UserRepository {
 
     PagedResult<User> findByTenant(UUID tenantId, UserStatus status, int page, int size);
 
+    void lockActiveAdmins(UUID tenantId);
+
     long countActiveAdmins(UUID tenantId);
 
     long countActiveAdminsExcludingUser(UUID tenantId, UUID userId);

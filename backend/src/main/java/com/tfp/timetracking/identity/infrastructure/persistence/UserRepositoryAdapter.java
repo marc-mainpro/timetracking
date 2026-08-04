@@ -73,6 +73,11 @@ public class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
+    public void lockActiveAdmins(UUID tenantId) {
+        jpaRepository.lockActiveAdmins(tenantId);
+    }
+
+    @Override
     public long countActiveAdmins(UUID tenantId) {
         return jpaRepository.countActiveAdmins(tenantId);
     }

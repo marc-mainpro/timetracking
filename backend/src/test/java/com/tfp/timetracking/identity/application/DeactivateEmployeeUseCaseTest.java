@@ -1,6 +1,7 @@
 package com.tfp.timetracking.identity.application;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.tfp.timetracking.identity.domain.LastAdminException;
@@ -50,5 +51,6 @@ class DeactivateEmployeeUseCaseTest {
         when(userRepository.countActiveAdminsExcludingUser(tenantId, userId)).thenReturn(0L);
 
         assertThatThrownBy(() -> useCase.deactivate(userId)).isInstanceOf(LastAdminException.class);
+        verify(userRepository).lockActiveAdmins(tenantId);
     }
 }

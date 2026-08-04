@@ -31,10 +31,17 @@ public class AssignRoleUseCase {
     public User assign(EmployeeRolesCommand command) {
         User user = userRepository.findById(tenantContext.currentTenantId(), command.employeeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado"));
+        // tenantAssignableRoles rechaza PLATFORM_ADMIN: es un rol global y no debe
+        // poder concederse desde la administracion de un tenant (T50-04, ADR-0010).
         Set<Role> roles = Role.tenantAssignableRoles(command.roles());
-        if (user.isActive() && user.hasRole(Role.TENANT_ADMIN) && !roles.contains(Role.TENANT_ADMIN)
-                && userRepository.countActiveAdminsExcludingUser(tenantContext.currentTenantId(), user.id()) == 0) {
-            throw new LastAdminException();
+        if (user.isActive() && user.hasRole(Role.TENANT_ADMIN) && !roles.contains(Role.TENANT_ADMIN)) {
+            // El bloqueo previo serializa a los administradores activos del tenant:
+            // sin el, dos degradaciones simultaneas pueden contarse la una a la otra
+            // como "todavia queda un admin" y dejar el tenant sin ninguno.
+            userRepository.lockActiveAdmins(tenantContext.currentTenantId());
+            if (userRepository.countActiveAdminsExcludingUser(tenantContext.currentTenantId(), user.id()) == 0) {
+                throw new LastAdminException();
+            }
         }
         user.assignRoles(roles, clock);
         User saved = userRepository.save(user);
