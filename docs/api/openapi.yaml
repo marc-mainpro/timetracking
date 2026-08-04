@@ -3,7 +3,7 @@ info:
   title: OpenAPI definition
   version: v0
 servers:
-- url: http://localhost:18082
+- url: http://localhost:8080
   description: Generated server url
 paths:
   /api/v1/employees/{employeeId}:
@@ -74,6 +74,66 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/EmployeeResponse'
+  /api/v1/admin/calendars/{calendarId}:
+    get:
+      tags:
+      - Admin - Calendars
+      summary: Consulta el detalle de un calendario
+      operationId: get_1
+      parameters:
+      - name: calendarId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CalendarDetailResponse'
+    put:
+      tags:
+      - Admin - Calendars
+      summary: 'Edita un calendario: sustituye reglas, festivos y jornadas especiales'
+      operationId: update_1
+      parameters:
+      - name: calendarId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveCalendarRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CalendarDetailResponse'
+    delete:
+      tags:
+      - Admin - Calendars
+      summary: Archiva un calendario (borrado logico)
+      operationId: archive
+      parameters:
+      - name: calendarId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
   /api/v1/workdays/{workdayId}/corrections:
     post:
       tags:
@@ -147,6 +207,63 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/WorkdayResponse'
+  /api/v1/public/tenant-registrations:
+    post:
+      tags:
+      - Public - Tenant registrations
+      summary: Solicita el alta de una organización (RF-REG-001)
+      operationId: request_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantRegistrationRequestBody'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TenantRegistrationAcceptedResponse'
+  /api/v1/public/tenant-registrations/verify-email:
+    post:
+      tags:
+      - Public - Tenant registrations
+      summary: Confirma la dirección de correo de una solicitud (RF-REG-004)
+      operationId: verifyEmail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRegistrationEmailRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TenantRegistrationAcceptedResponse'
+  /api/v1/public/tenant-registrations/resend-verification:
+    post:
+      tags:
+      - Public - Tenant registrations
+      summary: Reenvía el correo de verificación de una solicitud (RF-REG-004)
+      operationId: resendVerification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendVerificationRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TenantRegistrationAcceptedResponse'
   /api/v1/platform/tenants:
     get:
       tags:
@@ -252,7 +369,7 @@ paths:
       tags:
       - Platform - Tenants
       summary: Archiva un tenant de forma permanente
-      operationId: archive
+      operationId: archive_1
       parameters:
       - name: tenantId
         in: path
@@ -292,6 +409,52 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/PlatformTenantDetailResponse'
+  /api/v1/platform/registrations/{registrationId}/reject:
+    post:
+      tags:
+      - Platform - Tenant registrations
+      summary: Rechaza una solicitud indicando el motivo
+      operationId: reject
+      parameters:
+      - name: registrationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectRegistrationRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TenantRegistrationResponse'
+  /api/v1/platform/registrations/{registrationId}/approve:
+    post:
+      tags:
+      - Platform - Tenant registrations
+      summary: Aprueba una solicitud y crea el tenant en estado PENDING
+      operationId: approve
+      parameters:
+      - name: registrationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TenantRegistrationResponse'
   /api/v1/employees:
     get:
       tags:
@@ -348,7 +511,7 @@ paths:
     post:
       tags:
       - Corrections
-      operationId: reject
+      operationId: reject_1
       parameters:
       - name: correctionId
         in: path
@@ -373,7 +536,7 @@ paths:
     post:
       tags:
       - Corrections
-      operationId: approve
+      operationId: approve_1
       parameters:
       - name: correctionId
         in: path
@@ -412,6 +575,7 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/RegisterTenantResponse'
+      deprecated: true
   /api/v1/auth/refresh:
     post:
       tags:
@@ -465,6 +629,115 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/AuthTokenResponse'
+  /api/v1/admin/calendars:
+    get:
+      tags:
+      - Admin - Calendars
+      summary: Lista los calendarios del tenant, con filtro opcional por estado
+      operationId: list_2
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PagedCalendarsResponse'
+    post:
+      tags:
+      - Admin - Calendars
+      summary: Crea un calendario laboral
+      operationId: create_2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveCalendarRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CalendarDetailResponse'
+  /api/v1/admin/calendar-assignments:
+    get:
+      tags:
+      - Admin - Calendar assignments
+      summary: Lista las asignaciones del tenant, con filtro opcional por calendario
+      operationId: list_3
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: calendarId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PagedCalendarAssignmentsResponse'
+    post:
+      tags:
+      - Admin - Calendar assignments
+      summary: Asigna un calendario a todo el tenant, a un equipo o a un empleado
+      operationId: assign
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignCalendarRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CalendarAssignmentResponse'
   /api/v1/employees/{employeeId}/deactivate:
     patch:
       tags:
@@ -549,7 +822,7 @@ paths:
     get:
       tags:
       - Workdays
-      operationId: get_1
+      operationId: get_2
       parameters:
       - name: workdayId
         in: path
@@ -666,7 +939,7 @@ paths:
       tags:
       - Platform - Tenants
       summary: Consulta el detalle de un tenant
-      operationId: get_2
+      operationId: get_3
       parameters:
       - name: tenantId
         in: path
@@ -681,11 +954,47 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/PlatformTenantDetailResponse'
+  /api/v1/platform/registrations:
+    get:
+      tags:
+      - Platform - Tenant registrations
+      summary: Lista las solicitudes de alta, con filtro opcional por estado
+      operationId: list_4
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PagedTenantRegistrationsResponse'
   /api/v1/platform/audit:
     get:
       tags:
       - Platform - Audit
-      operationId: list_2
+      operationId: list_5
       parameters:
       - name: page
         in: query
@@ -732,7 +1041,7 @@ paths:
     get:
       tags:
       - Corrections
-      operationId: list_3
+      operationId: list_6
       parameters:
       - name: page
         in: query
@@ -767,7 +1076,7 @@ paths:
     get:
       tags:
       - Corrections
-      operationId: get_3
+      operationId: get_4
       parameters:
       - name: correctionId
         in: path
@@ -786,7 +1095,7 @@ paths:
     get:
       tags:
       - Admin Workdays
-      operationId: list_4
+      operationId: list_7
       parameters:
       - name: page
         in: query
@@ -834,7 +1143,7 @@ paths:
     get:
       tags:
       - Admin Workdays
-      operationId: get_4
+      operationId: get_5
       parameters:
       - name: workdayId
         in: path
@@ -849,11 +1158,43 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/WorkdayResponse'
+  /api/v1/admin/calendar-assignments/effective:
+    get:
+      tags:
+      - Admin - Calendar assignments
+      summary: Resuelve el calendario efectivo de un empleado en una fecha
+      operationId: effective
+      parameters:
+      - name: employeeId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: teamId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: date
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EffectiveCalendarResponse'
   /api/v1/admin/audit-events:
     get:
       tags:
       - Audit
-      operationId: list_5
+      operationId: list_8
       parameters:
       - name: page
         in: query
@@ -896,6 +1237,22 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/PagedAuditEventsResponse'
+  /api/v1/admin/calendar-assignments/{assignmentId}:
+    delete:
+      tags:
+      - Admin - Calendar assignments
+      summary: Retira una asignacion de calendario
+      operationId: remove
+      parameters:
+      - name: assignmentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
 components:
   schemas:
     UpdateEmployeeRequest:
@@ -941,6 +1298,145 @@ components:
             type: string
           minItems: 1
           uniqueItems: true
+    DayRulePayload:
+      type: object
+      description: 'Regla semanal: si el dia de la semana es laborable y cuantos minutos se esperan'
+      properties:
+        dayOfWeek:
+          type: string
+          enum:
+          - MONDAY
+          - TUESDAY
+          - WEDNESDAY
+          - THURSDAY
+          - FRIDAY
+          - SATURDAY
+          - SUNDAY
+          example: MONDAY
+        working:
+          type: boolean
+        expectedMinutes:
+          type: integer
+          format: int32
+          example: 480
+          maximum: 1440
+          minimum: 0
+      required:
+      - dayOfWeek
+    HolidayPayload:
+      type: object
+      description: Festivo en una fecha local del calendario
+      properties:
+        date:
+          type: string
+          format: date
+          example: '2026-01-06'
+        name:
+          type: string
+          example: Reyes
+          maxLength: 120
+          minLength: 0
+      required:
+      - date
+    SaveCalendarRequest:
+      type: object
+      description: Estado completo de un calendario laboral
+      properties:
+        name:
+          type: string
+          example: Calendario general
+          maxLength: 120
+          minLength: 0
+        timezone:
+          type: string
+          description: Zona horaria IANA; por defecto la configurada
+          example: Europe/Madrid
+          maxLength: 60
+          minLength: 0
+        validFrom:
+          type: string
+          format: date
+          example: '2026-01-01'
+        validTo:
+          type: string
+          format: date
+          description: Fin de vigencia inclusivo; null = indefinida
+          example: '2026-12-31'
+        dayRules:
+          type: array
+          items:
+            $ref: '#/components/schemas/DayRulePayload'
+        holidays:
+          type: array
+          items:
+            $ref: '#/components/schemas/HolidayPayload'
+        specialDays:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecialDayPayload'
+      required:
+      - validFrom
+    SpecialDayPayload:
+      type: object
+      description: Jornada especial que sustituye la regla semanal en una fecha concreta
+      properties:
+        date:
+          type: string
+          format: date
+          example: '2026-12-24'
+        name:
+          type: string
+          example: Jornada intensiva de Nochebuena
+          maxLength: 120
+          minLength: 0
+        expectedMinutes:
+          type: integer
+          format: int32
+          example: 300
+          maximum: 1440
+          minimum: 0
+      required:
+      - date
+    CalendarDetailResponse:
+      type: object
+      description: Detalle de un calendario laboral
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        timezone:
+          type: string
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+        status:
+          type: string
+        dayRules:
+          type: array
+          items:
+            $ref: '#/components/schemas/DayRulePayload'
+        holidays:
+          type: array
+          items:
+            $ref: '#/components/schemas/HolidayPayload'
+        specialDays:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecialDayPayload'
+        version:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     CorrectionRequestDto:
       type: object
       properties:
@@ -1067,6 +1563,53 @@ components:
         workedDuration:
           type: string
           example: PT2H30M
+    TenantRegistrationRequestBody:
+      type: object
+      properties:
+        companyName:
+          type: string
+          maxLength: 200
+          minLength: 0
+        timezone:
+          type: string
+          minLength: 1
+        firstName:
+          type: string
+          maxLength: 200
+          minLength: 0
+        lastName:
+          type: string
+          maxLength: 200
+          minLength: 0
+        email:
+          type: string
+          maxLength: 255
+          minLength: 0
+        password:
+          type: string
+          maxLength: 200
+          minLength: 10
+        acceptTerms:
+          type: boolean
+    TenantRegistrationAcceptedResponse:
+      type: object
+      properties:
+        message:
+          type: string
+    VerifyRegistrationEmailRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          maxLength: 200
+          minLength: 0
+    ResendVerificationRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          maxLength: 255
+          minLength: 0
     RegisterTenantRequest:
       type: object
       properties:
@@ -1141,6 +1684,47 @@ components:
           type: string
           maxLength: 500
           minLength: 0
+    RejectRegistrationRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+          minLength: 0
+    TenantRegistrationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        companyName:
+          type: string
+        ownerFirstName:
+          type: string
+        ownerLastName:
+          type: string
+        email:
+          type: string
+        timezone:
+          type: string
+        status:
+          type: string
+        source:
+          type: string
+        decisionReason:
+          type: string
+        createdTenantId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        verifiedAt:
+          type: string
+          format: date-time
+        decidedAt:
+          type: string
+          format: date-time
     CreateEmployeeRequest:
       type: object
       properties:
@@ -1194,6 +1778,45 @@ components:
         password:
           type: string
           minLength: 1
+    AssignCalendarRequest:
+      type: object
+      description: Asignacion de un calendario a un ambito
+      properties:
+        calendarId:
+          type: string
+          format: uuid
+        scope:
+          type: string
+          enum:
+          - TENANT
+          - TEAM
+          - EMPLOYEE
+          example: EMPLOYEE
+        targetId:
+          type: string
+          format: uuid
+          description: Equipo o empleado destinatario; null en ambito TENANT
+      required:
+      - calendarId
+      - scope
+    CalendarAssignmentResponse:
+      type: object
+      description: Asignacion de calendario
+      properties:
+        id:
+          type: string
+          format: uuid
+        calendarId:
+          type: string
+          format: uuid
+        scope:
+          type: string
+        targetId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
     PagedResponseWorkdayResponse:
       type: object
       properties:
@@ -1295,6 +1918,25 @@ components:
         suspendedAt:
           type: string
           format: date-time
+    PagedTenantRegistrationsResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantRegistrationResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
     AuditEventResponse:
       type: object
       properties:
@@ -1381,3 +2023,95 @@ components:
         totalPages:
           type: integer
           format: int32
+    CalendarSummaryResponse:
+      type: object
+      description: Resumen de un calendario laboral
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        timezone:
+          type: string
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+        status:
+          type: string
+        holidayCount:
+          type: integer
+          format: int32
+        specialDayCount:
+          type: integer
+          format: int32
+    PagedCalendarsResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CalendarSummaryResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    PagedCalendarAssignmentsResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CalendarAssignmentResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    EffectiveCalendarResponse:
+      type: object
+      description: Calendario que rige para un empleado en una fecha, con el dia ya evaluado
+      properties:
+        calendarId:
+          type: string
+          format: uuid
+        calendarName:
+          type: string
+        timezone:
+          type: string
+        assignmentId:
+          type: string
+          format: uuid
+        scope:
+          type: string
+        targetId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        working:
+          type: boolean
+        expectedMinutes:
+          type: integer
+          format: int32
+        source:
+          type: string

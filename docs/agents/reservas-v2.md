@@ -8,6 +8,14 @@ número de migración o reescribirían el mismo fichero compartido.
 Léelo junto a `AGENTS.md` (reglas de arquitectura) y
 `tareas-dependencias-v2-control-horario.md` (alcance de cada tarea).
 
+> **Antes de escribir nada, comprueba tu base.** En la Ola 1, tres de cinco
+> worktrees se crearon a partir de `main` en lugar de la rama de la ola, y en esa
+> base no existen los puntos de contribución que este documento te obliga a usar.
+> Ejecuta `git log --oneline -3` y confirma que ves los commits de la Ola 0
+> (`refactor: convierte en puntos de contribución...` y `feat(notification):
+> puerto de correo...`). Si no están, haz `git reset --hard` a la rama de la ola
+> antes de empezar y dilo en tu `HANDOFF.md`.
+
 ---
 
 ## 1. Reserva de migraciones Flyway
@@ -18,9 +26,9 @@ agente de tu misma ola.
 
 | Ola | Agente | Épica | Bloque |
 |---|---|---|---|
-| 1 | A1 | T53 registro público | V12–V13 |
-| 1 | A2 | T30-03/04 rate limiting y bloqueo de cuentas | V14–V15 |
-| 1 | A3a | T70 calendarios laborales | V16–V17 |
+| 1 | A1 | T53 registro público | V12–V13 (usada V12; **V13 libre**) |
+| 1 | A2 | T30-03/04 rate limiting y bloqueo de cuentas | V14–V15 (usada V14; **V15 libre**) |
+| 1 | A3a | T70 calendarios laborales | V16–V17 (usada V16; **V17 libre**) |
 | 1 | A4 | T30-05 CI, T150 backups | — |
 | 1 | A5 | T140 observabilidad | — |
 | 2 | B1 | T60 sesiones y recuperación de contraseña | V18–V19 |
@@ -36,17 +44,31 @@ Los huecos sin usar son aceptables: Flyway no exige numeración contigua.
 
 ## 2. Reserva de ADR
 
-| Rango | Ola |
-|---|---|
-| 0011–0012 | Ola 0 (ya usados: contribución entre módulos, envío de correo) |
-| 0013–0017 | Ola 1 |
-| 0018–0021 | Ola 2 |
-| 0022–0023 | Ola 3 |
-| 0024+ | Olas 4–5 |
+**Número exacto por agente, no rango.** En la Ola 1 se reservó un rango por ola y
+los cinco agentes eligieron `ADR-0013`: el agente principal tuvo que renumerar
+cuatro ADR y sus referencias en código, migraciones y documentación. Un rango
+compartido no es una reserva.
 
-Elige el número dentro de tu rango y **no renumeres ADRs ajenos**. Formato: el de
-`ADR-0010`, en castellano, con secciones Contexto y problema / Decisión /
-Consecuencias / Alternativas descartadas.
+| ADR | Agente | Tema |
+|---|---|---|
+| 0011 | Ola 0 | Puntos de contribución entre módulos |
+| 0012 | Ola 0 | Envío de correo fuera de la transacción |
+| 0013 | A4 | Estrategia de backup y retención |
+| 0014 | A2 | Bloqueo de cuenta y rate limiting por patrón |
+| 0015 | A5 | Logs estructurados y observabilidad |
+| 0016 | A1 | Solicitud de alta separada del tenant |
+| 0017 | A3a | Calendarios laborales y resolución por ámbito |
+| 0018 | B1 | Sesiones y recuperación de contraseña |
+| 0019 | B2 | Reglas horarias |
+| 0020 | B3 | Turnos |
+| 0021 | B4 | Notificaciones |
+| 0022 | C1 | Ausencias |
+| 0023 | C2 | Integración del motor horario |
+
+Usa **solo** el tuyo. Si necesitas un segundo ADR, pídelo; no cojas el siguiente
+libre. **No renumeres ADR ajenos.** Formato: el de `ADR-0010`, en castellano, con
+secciones Contexto y problema / Decisión / Consecuencias / Alternativas
+descartadas.
 
 ## 3. Reserva de puertos (docker-compose)
 
