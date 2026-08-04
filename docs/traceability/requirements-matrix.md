@@ -35,6 +35,21 @@ sesiones, calendarios, ausencias, turnos, informes, notificaciones).
 | RF-AUD-001 Auditoría de plataforma | T130-03 | `ChangeTenantLifecycleUseCase` (registra), `PlatformAuditController` | `GET /api/v1/platform/audit` | `ChangeTenantLifecycleUseCaseTest`, `PlatformTenantControllerIntegrationTest` |
 | RF-AUD-003 Contenido (estado anterior/posterior, motivo) | T130-03 | metadata de `AuditRecorder` | — | `ChangeTenantLifecycleUseCaseTest` |
 
+## Seguridad de autenticación (RS-007, RS-008, RF-USR-008)
+
+| Requisito | Tarea | Caso de uso / componente | Endpoint | Prueba |
+|---|---|---|---|---|
+| RF-USR-008 Bloqueo temporal tras intentos fallidos | T30-04 | `AccountLockout` (agregado), `AccountLockoutService`, `AuthenticateUserUseCase` | `POST /api/v1/auth/login` (401 `ACCOUNT_LOCKED`) | `AccountLockoutTest`, `AccountLockoutServiceTest`, `AccountLockoutIntegrationTest` |
+| RS-007 Rate limiting en endpoints sensibles | T30-03 | `RateLimitFilter`, `RateLimitProperties`, `config/account-lockout.yml` | `POST /api/v1/auth/{login,register,refresh}`, `/password/**`, `/verification/**` (429 `RATE_LIMIT_EXCEEDED`) | `RateLimitPropertiesTest`, `RateLimitFilterIntegrationTest`, `AuthSecurityIntegrationTest` |
+| RS-008 Umbral y duración configurables | T30-04 | `AccountLockoutPolicy` (`auth.account-lockout.*`) | — | `AccountLockoutServiceTest`, `AccountLockoutIntegrationTest` |
+| RS-008 Reinicio tras autenticación correcta | T30-04 | `AccountLockout.registerSuccess`, `AccountLockoutService.registerSuccessfulAttempt` | — | `AccountLockoutTest`, `AccountLockoutIntegrationTest#aSuccessfulLoginResetsTheFailureCounter` |
+| RS-008 Auditoría del bloqueo | T30-04 | `AuditRecorder` con tenant/actor explícitos (`LOGIN_FAILED`, `ACCOUNT_LOCKED`, `LOGIN_ATTEMPT_WHILE_LOCKED`) | — | `AccountLockoutIntegrationTest#auditOfAFailedLoginIsRecordedUnderTheTenantOfTheAccount` |
+| RS-008 Anti-enumeración del bloqueo | T30-04 | `AuthenticateUserUseCase` (contraseña comprobada antes de decidir la respuesta) | `POST /api/v1/auth/login` | `AccountLockoutIntegrationTest#lockedAccountIsIndistinguishableFromAnUnknownAccount` |
+| RS-007/RS-008 Aislamiento entre tenants (RT-003) | T30-04 | `AccountLockoutRepository` tenant-scoped | — | `AccountLockoutIntegrationTest#lockingAnAccountDoesNotAffectAccountsOfAnotherTenant` |
+| RS-008 Aplicación por rol (RT-004) | T30-04 | `AccountLockoutService` | — | `AccountLockoutIntegrationTest#lockoutAppliesToTenantAdminsToo` |
+| T140 Métricas de autenticación | T30-04 | `AuthenticationMetrics` (`auth.login.failed`, `auth.login.succeeded`, `auth.accounts.locked`) | `GET /actuator/metrics` | `AccountLockoutIntegrationTest#failedAndLockedCountersAreExposedAsMetrics` |
+| RS-007/RS-008 Mensaje al usuario | T30-03/04 | `ErrorMessagesService` (`ACCOUNT_LOCKED`, `RATE_LIMIT_EXCEEDED`) | — | `error-messages.service.spec`, `login.component.spec` |
+
 ## Frontend de plataforma
 
 | Requisito | Tarea | Componente | Prueba |
