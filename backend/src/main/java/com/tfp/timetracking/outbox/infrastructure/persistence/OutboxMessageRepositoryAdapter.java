@@ -68,4 +68,9 @@ public class OutboxMessageRepositoryAdapter implements OutboxMessageRepository {
     public long countPending() {
         return jpaRepository.countPending();
     }
+
+    @Override
+    public long countFailed() {
+        return jpaRepository.countFailed();
+    }
 }

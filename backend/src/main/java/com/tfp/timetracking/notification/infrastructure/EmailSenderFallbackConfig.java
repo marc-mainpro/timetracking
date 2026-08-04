@@ -1,6 +1,7 @@
 package com.tfp.timetracking.notification.infrastructure;
 
 import com.tfp.timetracking.notification.application.EmailSender;
+import com.tfp.timetracking.notification.application.NotificationMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -27,10 +28,16 @@ public class EmailSenderFallbackConfig {
 
     @Bean
     @ConditionalOnMissingBean(EmailSender.class)
-    public EmailSender loggingEmailSender() {
-        return message -> log.info(
-                "Correo NO enviado (mail.enabled=false). Destinatario: {}, asunto: '{}'",
-                message.to(),
-                message.subject());
+    public EmailSender loggingEmailSender(NotificationMetrics metrics) {
+        return message -> {
+            // Se cuenta como "skipped", no como fallo: no es un error, pero
+            // tampoco es un envio, y confundir ambos casos hace que un entorno
+            // mal configurado parezca sano (T140-04).
+            metrics.recordSkipped();
+            log.info(
+                    "Correo NO enviado (mail.enabled=false). Destinatario: {}, asunto: '{}'",
+                    message.to(),
+                    message.subject());
+        };
     }
 }

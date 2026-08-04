@@ -73,4 +73,7 @@ interface OutboxMessageJpaRepository extends JpaRepository<OutboxMessageJpaEntit
 
     @Query("SELECT COUNT(m) FROM OutboxMessageJpaEntity m WHERE m.status IN ('PENDING', 'PROCESSING')")
     long countPending();
+
+    @Query("SELECT COUNT(m) FROM OutboxMessageJpaEntity m WHERE m.status = 'FAILED'")
+    long countFailed();
 }
