@@ -4,6 +4,17 @@ on:
   push:
     branches: [main]
   pull_request:
+  # El escaneo de dependencias tambien corre semanalmente: una dependencia sin
+  # cambios puede volverse vulnerable sin que nadie toque el repositorio.
+  schedule:
+    - cron: '17 4 * * 1'
+
+# Permisos minimos para todo el workflow (T30-05). Ningun job publica
+# resultados, comenta PRs ni sube paquetes, asi que basta con leer el codigo.
+# Si algun job necesitara mas (p. ej. `security-events: write` para subir SARIF
+# a code scanning), se declara a nivel de ese job, nunca aqui.
+permissions:
+  contents: read
 
 jobs:
   backend:
@@ -83,3 +94,164 @@ jobs:
 
       - name: Build frontend image
         run: docker build -t timetracking-frontend:ci ./frontend
+
+  # ---------------------------------------------------------------------------
+  # T30-05 — Escaneo de secretos y dependencias (RS-015, RS-016).
+  # Politica de severidad y tramitacion de excepciones:
+  # docs/security/dependency-scanning-policy.md
+  # ---------------------------------------------------------------------------
+
+  secret-scan:
+    name: Secretos (gitleaks)
+    runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      # Checksum del tarball oficial. Sin el, un repositorio de releases
+      # comprometido inyectaria un binario arbitrario en la CI.
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Historia completa: un secreto borrado en el commit siguiente sigue
+          # estando comprometido y debe seguir apareciendo.
+          fetch-depth: 0
+
+      - name: Install gitleaks
+        run: |
+          set -euo pipefail
+          curl -sSLo gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum --check --status
+          tar -xzf gitleaks.tar.gz gitleaks
+          sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      - name: Scan git history
+        run: |
+          gitleaks git . \
+            --config .gitleaks.toml \
+            --redact \
+            --no-banner \
+            --report-format sarif \
+            --report-path gitleaks-report.sarif
+
+      - name: Upload gitleaks report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: gitleaks-report.sarif
+          if-no-files-found: warn
+
+  frontend-dependencies:
+    name: Dependencias frontend (npm audit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # Informe completo, sin filtrar, para poder revisarlo en el artefacto
+      # aunque el gate deje pasar el build por excepciones aprobadas.
+      - name: npm audit (informe)
+        working-directory: frontend
+        run: npm audit --audit-level=high || true
+
+      # El gate falla ante cualquier vulnerabilidad high/critical que no este
+      # en scripts/security/npm-audit-allowlist.txt, y tambien si una excepcion
+      # aprobada ha superado su fecha de revision.
+      - name: npm audit (gate high/critical)
+        run: scripts/security/npm-audit-gate.sh
+
+      - name: Upload npm audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: security-reports/
+          if-no-files-found: warn
+
+  backend-dependencies:
+    name: Dependencias backend (OWASP dependency-check)
+    runs-on: ubuntu-latest
+    env:
+      # El plugin NO esta declarado en backend/pom.xml (fichero reservado): se
+      # invoca por coordenadas para no penalizar el `mvn verify` local, que es
+      # el comando de trabajo diario. Ver HANDOFF.md para el <profile>
+      # equivalente si se prefiere declararlo en el pom.
+      DEPENDENCY_CHECK_VERSION: 13.0.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      # La descarga de la base NVD es el coste real del analisis (varios
+      # cientos de MB). Se cachea entre ejecuciones y solo se actualiza el
+      # delta; sin cache cada build tardaria decenas de minutos.
+      - name: Cache NVD database
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: nvd-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            nvd-${{ runner.os }}-
+
+      # Sin NVD_API_KEY la API del NIST limita a ~5 peticiones cada 30 s y la
+      # primera sincronizacion no termina en un tiempo razonable. Se comprueba
+      # aqui para dar un mensaje claro en vez de un timeout opaco.
+      - name: Check NVD API key
+        id: nvd
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          if [ -n "${NVD_API_KEY}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            msg="Se omite OWASP dependency-check: da de alta el secreto"
+            msg="$msg NVD_API_KEY (docs/security/dependency-scanning-policy.md)."
+            echo "::warning title=NVD_API_KEY no configurada::$msg"
+          fi
+
+      # failBuildOnCVSS=7 corresponde al umbral "high" de CVSS v3, alineado con
+      # el gate de npm audit. Las excepciones se declaran en
+      # backend/dependency-check-suppressions.xml, nunca bajando el umbral.
+      - name: OWASP dependency-check
+        if: steps.nvd.outputs.available == 'true'
+        working-directory: backend
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          mvn -B org.owasp:dependency-check-maven:${DEPENDENCY_CHECK_VERSION}:check \
+            -DnvdApiKey="${NVD_API_KEY}" \
+            -DfailBuildOnCVSS=7 \
+            -DsuppressionFiles=dependency-check-suppressions.xml \
+            -Dformats=HTML,JSON \
+            -DassemblyAnalyzerEnabled=false \
+            -DossindexAnalyzerEnabled=false
+
+      - name: Upload dependency-check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: backend/target/dependency-check-report.*
+          if-no-files-found: warn

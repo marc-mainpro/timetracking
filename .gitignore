@@ -33,3 +33,9 @@ Thumbs.db
 .classpath
 .project
 .settings/
+
+# Informes de escaneo de seguridad (T30-05)
+security-reports/
+
+# Backups locales de PostgreSQL (T150)
+backups/

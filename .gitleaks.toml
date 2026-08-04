@@ -1,0 +1,51 @@
+# Configuracion de gitleaks para el escaneo de secretos en CI (T30-05, RS-016).
+#
+# Politica: se parte del conjunto de reglas por defecto de gitleaks y solo se
+# excluyen valores *placeholder* concretos, identificados por su literal exacto.
+# Esta prohibido excluir ficheros, directorios de codigo, extensiones o reglas
+# completas: una exclusion amplia convierte el escaner en decorativo.
+#
+# Se excluye el literal y no la ruta a proposito: si manana alguien commitea un
+# JWT_SECRET real en .env.example, su valor no coincidira con el placeholder y
+# el escaner seguira fallando.
+#
+# Toda entrada nueva de allowlist necesita:
+#   1. El literal exacto (nada de comodines ni de rutas completas).
+#   2. Justificacion de por que el valor no es un secreto real.
+#   3. Aprobacion segun docs/security/dependency-scanning-policy.md.
+#
+# Version de gitleaks soportada: >= 8.30.0 (sintaxis [[allowlists]]).
+
+title = "timetracking-gitleaks"
+
+[extend]
+useDefault = true
+
+# 1) Placeholders de secretos en plantillas y en el perfil de test.
+#
+#    - "replace-with-at-least-32-bytes-secret": valor de relleno de JWT_SECRET
+#      en .env.example y backend/.env.example. El secreto real solo existe en
+#      el .env local o en el gestor de secretos del entorno; .env esta en
+#      .gitignore.
+#    - "test-jwt-secret-key-with-at-least-32-bytes": secreto JWT fijo del perfil
+#      de test del backend (application-test.yml). Es publico por diseno para
+#      que la suite sea reproducible y no da acceso a ningun entorno real.
+[[allowlists]]
+description = "Placeholders de JWT_SECRET en plantillas y perfil de test"
+regexTarget = "secret"
+regexes = [
+  '''^replace-with-at-least-32-bytes-secret$''',
+  '''^test-jwt-secret-key-with-at-least-32-bytes$''',
+]
+
+# 2) Artefactos de build y dependencias descargadas: no son codigo fuente, no
+#    se versionan (estan en .gitignore) y solo aparecen al escanear el arbol de
+#    trabajo en local. Se excluyen para que el escaneo local no tarde de mas.
+[[allowlists]]
+description = "Artefactos de build y dependencias no versionadas"
+paths = [
+  '''(^|/)node_modules/''',
+  '''(^|/)target/''',
+  '''(^|/)dist/''',
+  '''(^|/)coverage/''',
+]

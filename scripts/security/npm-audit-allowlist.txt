@@ -1,0 +1,45 @@
+# Excepciones aceptadas de `npm audit` (T30-05, RS-015).
+#
+# Formato (separador `|`, sin espacios alrededor):
+#   GHSA-id|paquete|ambito|fecha-revision(YYYY-MM-DD)|motivo
+#
+# Reglas:
+#   - Una linea por advisory. No se admiten comodines ni exclusiones por
+#     paquete o por severidad: cada excepcion es nominal y trazable.
+#   - `ambito` es `runtime` (llega al navegador) o `build` (solo herramienta de
+#     construccion/test; no se publica en la imagen del frontend).
+#   - Pasada la `fecha-revision` la excepcion CADUCA y el gate falla aunque el
+#     advisory siga en la lista. Es intencionado: obliga a revisarla.
+#   - Aprobacion: ver docs/security/dependency-scanning-policy.md.
+#
+# Estado a 2026-08-04: 24 advisories high/critical, ninguno resoluble sin tocar
+# frontend/package.json o frontend/package-lock.json, que son ficheros
+# reservados para el agente principal (ver HANDOFF.md).
+
+# --- Cadena Angular 19: unico fix es actualizar a Angular 21 (breaking) ---
+GHSA-39pv-4j6c-2g6v|@angular/common|runtime|2026-11-04|Solo se corrige con Angular 21 (breaking). HttpTransferCache no se usa: la app es SPA sin SSR ni hidratacion, por lo que el vector no es alcanzable.
+GHSA-jhpw-976m-542j|@angular/common|runtime|2026-11-04|Solo se corrige con Angular 21 (breaking). Mismo motivo: sin SSR ni HttpTransferCache.
+GHSA-48r7-hpm6-gfxm|@angular/common|runtime|2026-11-04|Solo se corrige con Angular 21 (breaking). DoS por OOM en formatDate con formato controlado por el atacante; en la app los formatos son literales del codigo.
+GHSA-rgjc-h3x7-9mwg|@angular/core|runtime|2026-11-04|Solo se corrige con Angular 21 (breaking). Requiere hidratacion de cliente, que la app no activa.
+GHSA-jj27-h5hq-8x99|@angular/core|runtime|2026-11-04|Solo se corrige con Angular 21 (breaking). Requiere i18n con traducciones no confiables; la app no usa @angular/localize.
+
+# --- Cadena de build/test: no se empaqueta en la imagen del frontend ---
+GHSA-mh99-v99m-4gvg|brace-expansion|build|2026-11-04|Transitiva de eslint/typescript-eslint. Fix no breaking disponible via `npm audit fix`: pendiente de que el agente propietario del lockfile lo aplique (HANDOFF.md).
+GHSA-rgw5-rvv9-x895|brace-expansion|build|2026-11-04|Idem GHSA-mh99-v99m-4gvg.
+GHSA-7p8r-x3mc-p8w7|fast-uri|build|2026-11-04|Transitiva de la cadena de build. Fix no breaking via `npm audit fix`: pendiente del propietario del lockfile.
+GHSA-v2hh-gcrm-f6hx|fast-uri|build|2026-11-04|Idem GHSA-7p8r-x3mc-p8w7.
+GHSA-mwp4-54f8-5fhr|ip-address|build|2026-11-04|Transitiva de la cadena de build. Fix no breaking via `npm audit fix`: pendiente del propietario del lockfile.
+GHSA-gcq2-9pq2-cxqm|http-proxy-middleware|build|2026-11-04|Solo afecta al dev-server de Angular, que no se ejecuta en produccion ni en CI.
+GHSA-fx2h-pf6j-xcff|vite|build|2026-11-04|Solo afecta al dev-server sobre Windows. Fix exige @angular-devkit/build-angular 21 (breaking).
+GHSA-x9g3-xrwr-cwfg|piscina|build|2026-11-04|Transitiva de @angular/build. Fix exige @angular-devkit/build-angular 21 (breaking).
+GHSA-r28c-9q8g-f849|postcss|build|2026-11-04|Lectura de ficheros .map en tiempo de build con sourceMappingURL controlado; las fuentes del build son del propio repo. Fix exige devkit 21 (breaking).
+GHSA-5c6j-r48x-rmvq|serialize-javascript|build|2026-11-04|Transitiva de copy-webpack-plugin en la cadena de build. Fix exige devkit 21 (breaking).
+GHSA-52v5-jr5w-gjxr|sigstore|build|2026-11-04|Transitiva de @angular/cli (verificacion de firmas npm). Fix exige @angular/cli 21 (breaking).
+GHSA-23hp-3jrh-7fpw|tar|build|2026-11-04|Transitiva de @angular/cli y node-gyp. Solo procesa archivos descargados del registry npm. Fix exige @angular/cli 21 (breaking).
+GHSA-34x7-hfp2-rc4v|tar|build|2026-11-04|Idem GHSA-23hp-3jrh-7fpw.
+GHSA-83g3-92jg-28cx|tar|build|2026-11-04|Idem GHSA-23hp-3jrh-7fpw.
+GHSA-8qq5-rm4j-mr97|tar|build|2026-11-04|Idem GHSA-23hp-3jrh-7fpw.
+GHSA-8x88-c5mf-7j5w|tar|build|2026-11-04|Idem GHSA-23hp-3jrh-7fpw.
+GHSA-9ppj-qmqm-q256|tar|build|2026-11-04|Idem GHSA-23hp-3jrh-7fpw.
+GHSA-qffp-2rhf-9h96|tar|build|2026-11-04|Idem GHSA-23hp-3jrh-7fpw.
+GHSA-r6q2-hw4h-h46w|tar|build|2026-11-04|Idem GHSA-23hp-3jrh-7fpw.
