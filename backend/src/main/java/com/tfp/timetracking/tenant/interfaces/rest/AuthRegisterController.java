@@ -16,15 +16,26 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * {@code POST /api/v1/auth/register}: registro público de una organización.
+ * {@code POST /api/v1/auth/register}: alta directa de una organización,
+ * <b>heredada del MVP y en desuso</b> (ADR-0013).
  *
- * <p>Deshabilitado por defecto (RF-TEN-010): la creación de tenants es una
- * operación de plataforma reservada al {@code PLATFORM_ADMIN}
- * ({@code POST /api/v1/platform/tenants}). Este endpoint solo responde cuando
- * {@code registration.public.enabled=true}; en caso contrario devuelve 403. Se
- * mantiene tras una bandera de configuración para poder reactivar el alta
- * autoservicio sin cambios de código si el producto lo requiere.
+ * <p>Crea el tenant ya {@code ACTIVE} en un solo paso, que es justo lo que el
+ * diseño §7.3 y el criterio T53-03 descartan para el alta pública. El flujo
+ * público válido en la V2 es
+ * {@code POST /api/v1/public/tenant-registrations}: crea una solicitud, exige
+ * verificación de correo y deja la creación del tenant —siempre en
+ * {@code PENDING}— en manos del {@code PLATFORM_ADMIN}.
+ *
+ * <p>Se conserva porque la batería de tests de todos los módulos arranca sus
+ * tenants por aquí ({@code TestTenantFactory}) y migrarla es un cambio
+ * transversal que no corresponde a esta épica; queda documentado en el
+ * {@code HANDOFF.md} como deuda a retirar. Sigue deshabilitado por defecto
+ * (RF-TEN-010): con {@code registration.public.enabled=false} responde 403.
+ *
+ * @deprecated usar {@code POST /api/v1/public/tenant-registrations} (T53-03) o,
+ *     para el alta manual, {@code POST /api/v1/platform/tenants} (RF-TEN-003).
  */
+@Deprecated(since = "V2")
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthRegisterController {

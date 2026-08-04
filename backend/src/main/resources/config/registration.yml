@@ -1,0 +1,35 @@
+# Registro público de tenants (épica T53, RF-REG-001..006, RF-TEN-010).
+#
+# El alta pública crea una SOLICITUD (tenant_registration), no un tenant. El
+# tenant solo nace —y nace en estado PENDING— cuando un PLATFORM_ADMIN aprueba
+# la solicitud (T53-03, diseño §7.3).
+#
+# registration.public.enabled sigue apagado por defecto: con el flag en false
+# los endpoints públicos de alta responden 403 y la única vía de creación es
+# POST /api/v1/platform/tenants (RF-TEN-003, ADR-0010).
+registration:
+  public:
+    enabled: ${PUBLIC_REGISTRATION_ENABLED:false}
+
+  # Verificación de correo (RF-REG-004, T53-05). Del token solo se almacena su
+  # hash; el valor en claro viaja una única vez, dentro del correo.
+  verification:
+    token-ttl: ${REGISTRATION_TOKEN_TTL:PT24H}
+    max-resends: ${REGISTRATION_MAX_RESENDS:3}
+
+  # Protección contra abuso (RF-REG-003). Se cuentan las solicitudes creadas
+  # dentro de la ventana; al superar el límite la solicitud se descarta en
+  # silencio y la respuesta sigue siendo la misma (RF-REG-005).
+  throttle:
+    window: ${REGISTRATION_THROTTLE_WINDOW:PT1H}
+    max-per-ip: ${REGISTRATION_MAX_PER_IP:5}
+    max-per-email: ${REGISTRATION_MAX_PER_EMAIL:3}
+
+  # Enlace que se incluye en el correo de verificación; %s se sustituye por el
+  # token. Debe apuntar al frontend público, no al backend.
+  verification-url-template: ${REGISTRATION_VERIFICATION_URL:http://localhost:4200/registro/verificar?token=%s}
+
+  # Secreto que hace no invertible el hash de la IP de origen. Vacío = se genera
+  # uno aleatorio en cada arranque (los recuentos por IP no sobreviven a un
+  # reinicio). En producción debe fijarse por entorno.
+  ip-hash-pepper: ${REGISTRATION_IP_HASH_PEPPER:}
