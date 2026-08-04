@@ -51,4 +51,12 @@ public interface OutboxMessageRepository {
      * (T703, metricas Micrometer).
      */
     long countPending();
+
+    /**
+     * Cuenta los mensajes {@code FAILED} (intentos agotados). A diferencia del
+     * backlog {@code PENDING}, que se drena solo, un {@code FAILED} no se
+     * reintenta nunca mas sin intervencion: por eso alimenta el health check
+     * operativo del outbox (T140-03) y no solo un gauge informativo.
+     */
+    long countFailed();
 }

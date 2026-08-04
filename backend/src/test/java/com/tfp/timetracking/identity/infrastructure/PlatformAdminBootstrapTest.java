@@ -88,11 +88,6 @@ class PlatformAdminBootstrapTest {
         }
 
         @Override
-        public void lockActiveAdmins(UUID tenantId) {
-            // Doble en memoria y sin concurrencia: no hay filas que bloquear.
-        }
-
-        @Override
         public java.util.Optional<User> findById(UUID tenantId, UUID id) {
             return java.util.Optional.empty();
         }
@@ -116,6 +111,11 @@ class PlatformAdminBootstrapTest {
         public com.tfp.timetracking.shared.domain.PagedResult<User> findByTenant(
                 UUID tenantId, com.tfp.timetracking.identity.domain.UserStatus status, int page, int size) {
             return null;
+        }
+
+        @Override
+        public void lockActiveAdmins(UUID tenantId) {
+            // Sin concurrencia en memoria: no hay filas que bloquear.
         }
 
         @Override

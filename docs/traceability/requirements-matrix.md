@@ -56,11 +56,26 @@ sesiones, calendarios, ausencias, turnos, informes, notificaciones).
 |---|---|---|---|
 | Panel de plataforma (RF-TEN-001..008 UI) | T50-06 | `PlatformTenantsComponent`, `PlatformTenantsService`, `roleGuard(['PLATFORM_ADMIN'])` | `platform-tenants.service.spec`, `platform-tenants.component.spec`, `auth.guard.spec` |
 
+## Observabilidad (RNF-019, RNF-020, RO-001..003, RS-014)
+
+| Requisito | Tarea | Caso de uso / componente | Endpoint | Pruebas |
+|---|---|---|---|---|
+| RNF-019 Logs estructurados | T140-01 | `logging.structured.format.console=ecs` en `config/observability.yml` | — | `StructuredLoggingIntegrationTest` |
+| RNF-020 Correlation ID por petición | T140-02 | `CorrelationIdFilter`, `ObservabilityContext` | cabecera `X-Correlation-Id` en toda respuesta | `StructuredLoggingIntegrationTest`, `ObservabilityContextTest` |
+| RO-001 Health checks | T140-03 | `ping`/`db` (Actuator), `OutboxHealthIndicator`, `MailHealthIndicator` | `GET /actuator/health`, `/actuator/health/operations` | `HealthEndpointIntegrationTest`, `OutboxHealthIndicatorTest`, `MailHealthIndicatorTest` |
+| RO-002 Campos del log (timestamp, nivel, correlación, tenant, usuario, caso de uso, resultado) | T140-01 | `RequestObservabilityInterceptor`, `ScheduledJobRunner` | — | `StructuredLoggingIntegrationTest`, `RequestObservabilityInterceptorTest` |
+| RO-003 Métricas de peticiones, errores y latencia | T140-04 | `http.server.requests` (Actuator) + configuración de percentiles | `GET /actuator/metrics` | `HealthEndpointIntegrationTest` (contexto), `ApplicationSmokeTest` |
+| RO-003 Métricas de Outbox | T140-04 | `OutboxMetrics` (incluye gauge `outbox.messages.dead`) | `GET /actuator/metrics` | `OutboxGuaranteesIntegrationTest` |
+| RO-003 Métricas de notificaciones | T140-04 | `NotificationMetrics` | `GET /actuator/metrics` | `NotificationMetricsTest`, `SmtpEmailSenderTest` |
+| RO-003 Métricas de jobs | T140-04 | `ScheduledJobRunner` (`jobs.executions`, `jobs.duration`) | `GET /actuator/metrics` | `ScheduledJobRunnerTest`, `OutboxJobsCorrelationTest` |
+| RS-014 Sin contraseñas, tokens ni cookies en logs | T140-01 | esquema de log cerrado en `ObservabilityContext` | — | `NoSecretsInLogsTest`, `StructuredLoggingIntegrationTest`, `ObservabilityContextTest` |
+
 ## Documentación
 
 | Artefacto | Tarea | Ubicación |
 |---|---|---|
 | ADR ciclo de vida + plataforma | — | `docs/adr/ADR-0010-...md` |
+| ADR logs estructurados y observabilidad | T140 | `docs/adr/ADR-0015-logs-estructurados-y-observabilidad.md` |
 | Catálogo de eventos `tenant.*.v1` | — | `docs/integration/event-catalog.md` |
 | OpenAPI `/api/v1/platform/**` | — | `docs/api/openapi.yaml` |
 | Reglas del agente V2 | T00-03 | `AGENTS.md` |

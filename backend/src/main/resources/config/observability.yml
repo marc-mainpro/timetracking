@@ -1,0 +1,115 @@
+# Observabilidad (épica T140, ADR-0015).
+#
+# Importado por `spring.config.import` desde application.yml. Ojo con la
+# precedencia: las propiedades de un fichero importado tienen MENOS prioridad
+# que las del documento que declara el import, así que este fichero NO puede
+# sobrescribir nada que application.yml ya fije. En concreto NO puede cambiar
+# `management.endpoint.health.show-details: never`; por eso el detalle de los
+# health checks se publica en un grupo aparte (ver más abajo).
+
+# ---------------------------------------------------------------------------
+# Logs estructurados (T140-01, RNF-019, RO-002)
+# ---------------------------------------------------------------------------
+# Spring Boot 3.4+ trae formateadores estructurados de serie, sin añadir
+# dependencias (no se puede tocar el pom.xml). Se elige ECS porque vuelca el
+# MDC entero como campos de primer nivel del JSON: `correlationId`, `tenantId`,
+# `userId`, `useCase` y `result` salen consultables sin parsear el mensaje.
+#
+# El valor por defecto es JSON, es decir, producción por defecto: un despliegue
+# que se olvide de configurar el formato queda observable, en vez de descubrirlo
+# durante el primer incidente. Los perfiles `local` y `test` lo desactivan más
+# abajo y usan un patrón legible.
+#
+# LOG_STRUCTURED_FORMAT permite forzar el formato en cualquier entorno
+# (`ecs`, `logstash`, `gelf`, o vacío para texto plano).
+logging:
+  structured:
+    format:
+      console: ${LOG_STRUCTURED_FORMAT:ecs}
+
+# ---------------------------------------------------------------------------
+# Métricas (T140-04, RO-003)
+# ---------------------------------------------------------------------------
+# Peticiones, errores y latencia salen del timer `http.server.requests` que
+# Actuator instrumenta de serie (tags `uri`, `method`, `status`, `outcome`):
+# no hace falta código propio, solo pedir el histograma y los percentiles.
+#
+# No hay exporter Prometheus: `micrometer-registry-prometheus` no está en el
+# pom y no se pueden añadir dependencias (ver HANDOFF.md). Las métricas se
+# consultan por `/actuator/metrics`, que exige autenticación.
+management:
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5, 0.95, 0.99
+      slo:
+        http.server.requests: 100ms, 300ms, 1s
+  observations:
+    key-values:
+      application: timetracking
+
+  # -------------------------------------------------------------------------
+  # Health checks (T140-03, RO-001)
+  # -------------------------------------------------------------------------
+  # `/actuator/health` es público (lo consulta el healthcheck de Docker antes
+  # de que exista ninguna credencial) y application.yml lo deja en
+  # `show-details: never`. Ese endpoint sigue devolviendo solo el estado
+  # agregado.
+  #
+  # El detalle se publica en un grupo propio, `/actuator/health/operations`,
+  # con `show-details: when-authorized`: un anónimo recibe únicamente
+  # `{"status":...}` y solo un TENANT_ADMIN o un PLATFORM_ADMIN autenticado ve
+  # umbrales, host SMTP y tamaño del backlog. Así el detalle deja de ser
+  # información pública sin necesidad de tocar application.yml ni la lista de
+  # endpoints públicos.
+  endpoint:
+    health:
+      group:
+        operations:
+          include: "*"
+          show-details: when-authorized
+          roles: TENANT_ADMIN, PLATFORM_ADMIN
+        # Sondas de arranque/tráfico para un orquestador: solo lo que hace
+        # inservible a la aplicación. El outbox y el correo quedan fuera a
+        # propósito (ver ADR-0015).
+        liveness:
+          include: ping
+        readiness:
+          include: db
+
+      # Estado propio DEGRADED (ADR-0015): entre OUT_OF_SERVICE y UP en el
+      # orden de severidad, pero mapeado a HTTP 200. Permite que un backlog de
+      # outbox o un SMTP caído se vean en la sonda sin que el orquestador
+      # recicle un contenedor que atiende peticiones con normalidad.
+      status:
+        order: DOWN, OUT_OF_SERVICE, DEGRADED, UP, UNKNOWN
+        http-mapping:
+          DEGRADED: 200
+
+# ---------------------------------------------------------------------------
+# Umbrales propios
+# ---------------------------------------------------------------------------
+observability:
+  outbox:
+    # Backlog (PENDING + PROCESSING) por encima del cual el health check del
+    # outbox pasa a DEGRADED. Con `outbox.batch-size: 50` cada 5 s, 1000
+    # mensajes son ~100 s de cola: por debajo de eso es un pico normal.
+    pending-threshold: ${OBSERVABILITY_OUTBOX_PENDING_THRESHOLD:1000}
+
+---
+# Desarrollo local y tests: patrón legible en consola, no JSON. Un humano
+# depurando necesita leer la línea; una máquina agregando necesita el JSON.
+# Los mismos campos de RO-002 aparecen entre corchetes.
+spring:
+  config:
+    activate:
+      on-profile: local | test
+
+logging:
+  structured:
+    format:
+      console: ${LOG_STRUCTURED_FORMAT:}
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5p [cid=%X{correlationId:-} tenant=%X{tenantId:-} user=%X{userId:-} useCase=%X{useCase:-} result=%X{result:-}] %-40.40logger{39} : %m%n%wEx"

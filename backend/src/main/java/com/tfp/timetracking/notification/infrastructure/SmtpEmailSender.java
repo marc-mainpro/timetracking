@@ -3,6 +3,7 @@ package com.tfp.timetracking.notification.infrastructure;
 import com.tfp.timetracking.notification.application.EmailDeliveryException;
 import com.tfp.timetracking.notification.application.EmailMessage;
 import com.tfp.timetracking.notification.application.EmailSender;
+import com.tfp.timetracking.notification.application.NotificationMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,10 +32,13 @@ public class SmtpEmailSender implements EmailSender {
 
     private final JavaMailSender javaMailSender;
     private final String from;
+    private final NotificationMetrics metrics;
 
-    public SmtpEmailSender(JavaMailSender javaMailSender, @Value("${mail.from}") String from) {
+    public SmtpEmailSender(
+            JavaMailSender javaMailSender, @Value("${mail.from}") String from, NotificationMetrics metrics) {
         this.javaMailSender = javaMailSender;
         this.from = from;
+        this.metrics = metrics;
     }
 
     @Override
@@ -46,8 +50,10 @@ public class SmtpEmailSender implements EmailSender {
         mail.setText(message.body());
         try {
             javaMailSender.send(mail);
+            metrics.recordSent();
             log.info("Correo enviado a {} con asunto '{}'", message.to(), message.subject());
         } catch (MailException e) {
+            metrics.recordFailed();
             throw new EmailDeliveryException(
                     "No se pudo enviar el correo con asunto '" + message.subject() + "'", e);
         }

@@ -19,6 +19,10 @@ import org.springframework.stereotype.Component;
  *       programaron un reintento (no agotaron los intentos).
  *   <li>{@code outbox.messages.pending} (gauge): mensajes en {@code PENDING}
  *       o {@code PROCESSING} en este momento (backlog).
+ *   <li>{@code outbox.messages.dead} (gauge, T140-04): mensajes en
+ *       {@code FAILED} ahora mismo. El contador {@code outbox.messages.failed}
+ *       solo dice cuantos fallaron desde el arranque; este gauge dice cuantos
+ *       siguen atascados esperando intervencion, que es lo que se alerta.
  *   <li>{@code outbox.publish.duration} (timer): duracion de cada llamada al
  *       puerto {@link IntegrationEventPublisher}.
  * </ul>
@@ -45,6 +49,7 @@ public class OutboxMetrics {
                 .description("Duracion de cada intento de publicacion de un mensaje de outbox")
                 .register(registry);
         registry.gauge("outbox.messages.pending", repository, OutboxMessageRepository::countPending);
+        registry.gauge("outbox.messages.dead", repository, OutboxMessageRepository::countFailed);
     }
 
     void recordPublished() {

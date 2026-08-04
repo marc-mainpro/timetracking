@@ -1,6 +1,7 @@
 package com.tfp.timetracking.outbox.infrastructure;
 
 import com.tfp.timetracking.outbox.application.PublishPendingOutboxMessages;
+import com.tfp.timetracking.shared.application.ScheduledJobRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -29,19 +30,33 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(prefix = "outbox", name = "scheduler-enabled", havingValue = "true", matchIfMissing = true)
 public class OutboxPublisherJob {
 
+    /** Nombre estable del job: tag {@code job} de las metricas y sufijo del {@code useCase}. */
+    public static final String JOB_NAME = "outbox-publisher";
+
     private static final Logger log = LoggerFactory.getLogger(OutboxPublisherJob.class);
 
     private final PublishPendingOutboxMessages publishPendingOutboxMessages;
+    private final ScheduledJobRunner scheduledJobRunner;
 
-    public OutboxPublisherJob(PublishPendingOutboxMessages publishPendingOutboxMessages) {
+    public OutboxPublisherJob(
+            PublishPendingOutboxMessages publishPendingOutboxMessages, ScheduledJobRunner scheduledJobRunner) {
         this.publishPendingOutboxMessages = publishPendingOutboxMessages;
+        this.scheduledJobRunner = scheduledJobRunner;
     }
 
+    /**
+     * Cada tanda se ejecuta dentro de {@link ScheduledJobRunner} (T140-02): sin
+     * el, las lineas del publicador salian sin {@code correlationId} —no nacen
+     * de ninguna peticion HTTP, asi que {@code CorrelationIdFilter} nunca corre—
+     * y no habia forma de agrupar en una traza lo que hizo una tanda concreta.
+     */
     @Scheduled(fixedDelayString = "${outbox.poll-interval:PT5S}")
     public void publishPending() {
-        int claimed = publishPendingOutboxMessages.publishBatch();
-        if (claimed > 0) {
-            log.debug("outbox.publisher.batch claimed={}", claimed);
-        }
+        scheduledJobRunner.run(JOB_NAME, () -> {
+            int claimed = publishPendingOutboxMessages.publishBatch();
+            if (claimed > 0) {
+                log.debug("outbox.publisher.batch claimed={}", claimed);
+            }
+        });
     }
 }
