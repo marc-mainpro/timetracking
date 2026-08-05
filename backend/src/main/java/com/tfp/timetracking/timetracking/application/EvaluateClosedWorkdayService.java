@@ -45,8 +45,10 @@ public class EvaluateClosedWorkdayService {
                 rawEvaluation.employeeId(),
                 rawEvaluation.expectedDuration(),
                 rawEvaluation.workedDuration(),
+                rawEvaluation.effectiveWorkedDuration(),
                 rawEvaluation.pausedDuration(),
                 rawEvaluation.overtimeDuration(),
+                rawEvaluation.deviationDuration(),
                 rawEvaluation.anomalies(),
                 () -> java.time.Instant.now(),
                 java.util.UUID::randomUUID);
