@@ -70,8 +70,10 @@ public class WorkdayRestMapper {
         return new WorkdayEvaluationResponse(
                 evaluation.expectedDuration(),
                 evaluation.workedDuration(),
+                evaluation.effectiveWorkedDuration(),
                 evaluation.pausedDuration(),
                 evaluation.overtimeDuration(),
+                evaluation.deviationDuration(),
                 evaluation.anomalies().stream().map(Enum::name).toList());
     }
 }

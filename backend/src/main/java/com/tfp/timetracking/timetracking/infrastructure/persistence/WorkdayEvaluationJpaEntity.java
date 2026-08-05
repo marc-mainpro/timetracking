@@ -27,11 +27,17 @@ public class WorkdayEvaluationJpaEntity {
     @Column(name = "worked_minutes", nullable = false)
     private long workedMinutes;
 
+    @Column(name = "effective_worked_minutes", nullable = false)
+    private long effectiveWorkedMinutes;
+
     @Column(name = "paused_minutes", nullable = false)
     private long pausedMinutes;
 
     @Column(name = "overtime_minutes", nullable = false)
     private long overtimeMinutes;
+
+    @Column(name = "deviation_minutes", nullable = false)
+    private long deviationMinutes;
 
     @Column(name = "anomalies", nullable = false, length = 300)
     private String anomalies;
@@ -47,8 +53,10 @@ public class WorkdayEvaluationJpaEntity {
             UUID employeeId,
             long expectedMinutes,
             long workedMinutes,
+            long effectiveWorkedMinutes,
             long pausedMinutes,
             long overtimeMinutes,
+            long deviationMinutes,
             String anomalies,
             Instant evaluatedAt) {
         this.workdayId = workdayId;
@@ -56,8 +64,10 @@ public class WorkdayEvaluationJpaEntity {
         this.employeeId = employeeId;
         this.expectedMinutes = expectedMinutes;
         this.workedMinutes = workedMinutes;
+        this.effectiveWorkedMinutes = effectiveWorkedMinutes;
         this.pausedMinutes = pausedMinutes;
         this.overtimeMinutes = overtimeMinutes;
+        this.deviationMinutes = deviationMinutes;
         this.anomalies = anomalies;
         this.evaluatedAt = evaluatedAt;
     }
@@ -67,8 +77,10 @@ public class WorkdayEvaluationJpaEntity {
     public UUID getEmployeeId() { return employeeId; }
     public long getExpectedMinutes() { return expectedMinutes; }
     public long getWorkedMinutes() { return workedMinutes; }
+    public long getEffectiveWorkedMinutes() { return effectiveWorkedMinutes; }
     public long getPausedMinutes() { return pausedMinutes; }
     public long getOvertimeMinutes() { return overtimeMinutes; }
+    public long getDeviationMinutes() { return deviationMinutes; }
     public String getAnomalies() { return anomalies; }
     public Instant getEvaluatedAt() { return evaluatedAt; }
 }

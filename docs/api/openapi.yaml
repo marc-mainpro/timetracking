@@ -1680,12 +1680,18 @@ components:
         workedDuration:
           type: string
           example: PT8H30M
+        effectiveWorkedDuration:
+          type: string
+          example: PT8H15M
         pausedDuration:
           type: string
           example: PT30M
         overtimeDuration:
           type: string
           example: PT30M
+        deviationDuration:
+          type: string
+          example: PT0S
         anomalies:
           type: array
           items:
@@ -1963,6 +1969,14 @@ components:
           type: integer
           format: int32
           minimum: 0
+        roundingStepMinutes:
+          type: integer
+          format: int32
+          minimum: 1
+        toleranceMinutes:
+          type: integer
+          format: int32
+          minimum: 0
     HourlyRulesResponse:
       type: object
       properties:
@@ -1971,6 +1985,14 @@ components:
           format: int32
           nullable: true
         requiredBreakMinutes:
+          type: integer
+          format: int32
+          nullable: true
+        roundingStepMinutes:
+          type: integer
+          format: int32
+          nullable: true
+        toleranceMinutes:
           type: integer
           format: int32
           nullable: true

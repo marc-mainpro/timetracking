@@ -27,8 +27,10 @@ public class WorkdayEvaluationRepositoryAdapter implements WorkdayEvaluationRepo
                 evaluation.employeeId(),
                 evaluation.expectedDuration().toMinutes(),
                 evaluation.workedDuration().toMinutes(),
+                evaluation.effectiveWorkedDuration().toMinutes(),
                 evaluation.pausedDuration().toMinutes(),
                 evaluation.overtimeDuration().toMinutes(),
+                evaluation.deviationDuration().toMinutes(),
                 encode(evaluation.anomalies()),
                 evaluation.evaluatedAt()));
         return toDomain(saved);
@@ -46,8 +48,10 @@ public class WorkdayEvaluationRepositoryAdapter implements WorkdayEvaluationRepo
                 entity.getEmployeeId(),
                 Duration.ofMinutes(entity.getExpectedMinutes()),
                 Duration.ofMinutes(entity.getWorkedMinutes()),
+                Duration.ofMinutes(entity.getEffectiveWorkedMinutes()),
                 Duration.ofMinutes(entity.getPausedMinutes()),
                 Duration.ofMinutes(entity.getOvertimeMinutes()),
+                Duration.ofMinutes(entity.getDeviationMinutes()),
                 decode(entity.getAnomalies()),
                 entity.getEvaluatedAt());
     }

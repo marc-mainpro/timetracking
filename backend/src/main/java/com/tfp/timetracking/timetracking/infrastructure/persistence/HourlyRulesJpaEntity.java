@@ -20,15 +20,26 @@ public class HourlyRulesJpaEntity {
     @Column(name = "required_break_minutes")
     private Integer requiredBreakMinutes;
 
+    @Column(name = "rounding_step_minutes")
+    private Integer roundingStepMinutes;
+
+    @Column(name = "tolerance_minutes")
+    private Integer toleranceMinutes;
+
     protected HourlyRulesJpaEntity() {}
 
-    public HourlyRulesJpaEntity(UUID tenantId, Integer maxDailyWorkMinutes, Integer requiredBreakMinutes) {
+    public HourlyRulesJpaEntity(
+            UUID tenantId, Integer maxDailyWorkMinutes, Integer requiredBreakMinutes, Integer roundingStepMinutes, Integer toleranceMinutes) {
         this.tenantId = tenantId;
         this.maxDailyWorkMinutes = maxDailyWorkMinutes;
         this.requiredBreakMinutes = requiredBreakMinutes;
+        this.roundingStepMinutes = roundingStepMinutes;
+        this.toleranceMinutes = toleranceMinutes;
     }
 
     public UUID getTenantId() { return tenantId; }
     public Integer getMaxDailyWorkMinutes() { return maxDailyWorkMinutes; }
     public Integer getRequiredBreakMinutes() { return requiredBreakMinutes; }
+    public Integer getRoundingStepMinutes() { return roundingStepMinutes; }
+    public Integer getToleranceMinutes() { return toleranceMinutes; }
 }

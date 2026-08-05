@@ -17,8 +17,10 @@ public final class WorkdayEvaluation {
     private final UUID employeeId;
     private final Duration expectedDuration;
     private final Duration workedDuration;
+    private final Duration effectiveWorkedDuration;
     private final Duration pausedDuration;
     private final Duration overtimeDuration;
+    private final Duration deviationDuration;
     private final List<WorkdayAnomaly> anomalies;
     private final Instant evaluatedAt;
     private final List<Object> domainEvents = new ArrayList<>();
@@ -29,8 +31,10 @@ public final class WorkdayEvaluation {
             UUID employeeId,
             Duration expectedDuration,
             Duration workedDuration,
+            Duration effectiveWorkedDuration,
             Duration pausedDuration,
             Duration overtimeDuration,
+            Duration deviationDuration,
             List<WorkdayAnomaly> anomalies,
             Instant evaluatedAt) {
         this.workdayId = workdayId;
@@ -38,8 +42,10 @@ public final class WorkdayEvaluation {
         this.employeeId = employeeId;
         this.expectedDuration = expectedDuration;
         this.workedDuration = workedDuration;
+        this.effectiveWorkedDuration = effectiveWorkedDuration;
         this.pausedDuration = pausedDuration;
         this.overtimeDuration = overtimeDuration;
+        this.deviationDuration = deviationDuration;
         this.anomalies = anomalies;
         this.evaluatedAt = evaluatedAt;
     }
@@ -50,8 +56,10 @@ public final class WorkdayEvaluation {
             UUID employeeId,
             Duration expectedDuration,
             Duration workedDuration,
+            Duration effectiveWorkedDuration,
             Duration pausedDuration,
             Duration overtimeDuration,
+            Duration deviationDuration,
             List<WorkdayAnomaly> anomalies,
             Clock clock,
             IdGenerator idGenerator) {
@@ -63,8 +71,10 @@ public final class WorkdayEvaluation {
                 Objects.requireNonNull(employeeId, "employeeId no puede ser null"),
                 nonNullDuration(expectedDuration),
                 nonNullDuration(workedDuration),
+                nonNullDuration(effectiveWorkedDuration),
                 nonNullDuration(pausedDuration),
                 nonNullDuration(overtimeDuration),
+                nonNullDuration(deviationDuration),
                 List.copyOf(Objects.requireNonNull(anomalies, "anomalies no puede ser null")),
                 clock.now());
         if (!evaluation.anomalies.isEmpty()) {
@@ -76,7 +86,7 @@ public final class WorkdayEvaluation {
                     employeeId,
                     evaluation.anomalies.stream().map(Enum::name).toList(),
                     evaluation.expectedDuration.toMinutes(),
-                    evaluation.workedDuration.toMinutes(),
+                    evaluation.effectiveWorkedDuration.toMinutes(),
                     evaluation.pausedDuration.toMinutes(),
                     evaluation.overtimeDuration.toMinutes()));
         }
@@ -89,8 +99,10 @@ public final class WorkdayEvaluation {
             UUID employeeId,
             Duration expectedDuration,
             Duration workedDuration,
+            Duration effectiveWorkedDuration,
             Duration pausedDuration,
             Duration overtimeDuration,
+            Duration deviationDuration,
             List<WorkdayAnomaly> anomalies,
             Instant evaluatedAt) {
         return new WorkdayEvaluation(
@@ -99,8 +111,10 @@ public final class WorkdayEvaluation {
                 Objects.requireNonNull(employeeId, "employeeId no puede ser null"),
                 nonNullDuration(expectedDuration),
                 nonNullDuration(workedDuration),
+                nonNullDuration(effectiveWorkedDuration),
                 nonNullDuration(pausedDuration),
                 nonNullDuration(overtimeDuration),
+                nonNullDuration(deviationDuration),
                 List.copyOf(Objects.requireNonNull(anomalies, "anomalies no puede ser null")),
                 Objects.requireNonNull(evaluatedAt, "evaluatedAt no puede ser null"));
     }
@@ -120,8 +134,10 @@ public final class WorkdayEvaluation {
     public UUID employeeId() { return employeeId; }
     public Duration expectedDuration() { return expectedDuration; }
     public Duration workedDuration() { return workedDuration; }
+    public Duration effectiveWorkedDuration() { return effectiveWorkedDuration; }
     public Duration pausedDuration() { return pausedDuration; }
     public Duration overtimeDuration() { return overtimeDuration; }
+    public Duration deviationDuration() { return deviationDuration; }
     public List<WorkdayAnomaly> anomalies() { return anomalies; }
     public Instant evaluatedAt() { return evaluatedAt; }
 }

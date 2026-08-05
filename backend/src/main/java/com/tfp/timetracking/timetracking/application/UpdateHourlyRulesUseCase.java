@@ -19,9 +19,16 @@ public class UpdateHourlyRulesUseCase {
     }
 
     @Transactional
-    public HourlyRules update(Integer maxDailyWorkMinutes, Integer requiredBreakMinutes) {
+    public HourlyRules update(
+            Integer maxDailyWorkMinutes,
+            Integer requiredBreakMinutes,
+            Integer roundingStepMinutes,
+            Integer toleranceMinutes) {
         Duration maxDailyWork = maxDailyWorkMinutes != null ? Duration.ofMinutes(maxDailyWorkMinutes) : null;
         Duration requiredBreak = requiredBreakMinutes != null ? Duration.ofMinutes(requiredBreakMinutes) : null;
-        return hourlyRulesRepository.save(new HourlyRules(tenantContext.currentTenantId(), maxDailyWork, requiredBreak));
+        Duration roundingStep = roundingStepMinutes != null ? Duration.ofMinutes(roundingStepMinutes) : null;
+        Duration tolerance = toleranceMinutes != null ? Duration.ofMinutes(toleranceMinutes) : null;
+        return hourlyRulesRepository.save(
+                new HourlyRules(tenantContext.currentTenantId(), maxDailyWork, requiredBreak, roundingStep, tolerance));
     }
 }

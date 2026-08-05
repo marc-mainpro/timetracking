@@ -15,13 +15,20 @@ public final class WorkdayEvaluationEngine {
         Duration workedDuration = workedDuration(workday);
         Duration pausedDuration = pausedDuration(workday);
         Duration expectedDuration = effectiveCalendar != null ? effectiveCalendar.expectedHours() : Duration.ZERO;
-        Duration overtimeDuration = effectiveCalendar == null ? Duration.ZERO : positiveDifference(workedDuration, expectedDuration);
+        Duration effectiveWorkedDuration = applyRounding(workedDuration, hourlyRules);
+        Duration tolerance = hourlyRules != null && hourlyRules.tolerance() != null ? hourlyRules.tolerance() : Duration.ZERO;
+        Duration overtimeDuration = positiveDifference(effectiveWorkedDuration, expectedDuration.plus(tolerance));
+        Duration deviationDuration = positiveDifference(expectedDuration.minus(tolerance), effectiveWorkedDuration);
 
         List<WorkdayAnomaly> anomalies = new ArrayList<>();
-        if (hourlyRules != null && hourlyRules.maxDailyWork() != null && workedDuration.compareTo(hourlyRules.maxDailyWork()) > 0) {
+        if (hourlyRules != null
+                && hourlyRules.maxDailyWork() != null
+                && effectiveWorkedDuration.compareTo(hourlyRules.maxDailyWork().plus(tolerance)) > 0) {
             anomalies.add(WorkdayAnomaly.MAX_DAILY_WORK_EXCEEDED);
         }
-        if (hourlyRules != null && hourlyRules.requiredBreak() != null && pausedDuration.compareTo(hourlyRules.requiredBreak()) < 0) {
+        if (hourlyRules != null
+                && hourlyRules.requiredBreak() != null
+                && pausedDuration.compareTo(nonNegative(hourlyRules.requiredBreak().minus(tolerance))) < 0) {
             anomalies.add(WorkdayAnomaly.REQUIRED_BREAK_NOT_MET);
         }
 
@@ -31,8 +38,10 @@ public final class WorkdayEvaluationEngine {
                 workday.employeeId(),
                 expectedDuration,
                 workedDuration,
+                effectiveWorkedDuration,
                 pausedDuration,
                 overtimeDuration,
+                deviationDuration,
                 anomalies,
                 java.time.Instant.EPOCH);
     }
@@ -54,5 +63,19 @@ public final class WorkdayEvaluationEngine {
     private Duration positiveDifference(Duration left, Duration right) {
         Duration diff = left.minus(right);
         return diff.isNegative() ? Duration.ZERO : diff;
+    }
+
+    private Duration applyRounding(Duration workedDuration, HourlyRules hourlyRules) {
+        if (hourlyRules == null || hourlyRules.roundingStep() == null) {
+            return workedDuration;
+        }
+        long stepMinutes = hourlyRules.roundingStep().toMinutes();
+        long workedMinutes = workedDuration.toMinutes();
+        long roundedMinutes = Math.round((double) workedMinutes / stepMinutes) * stepMinutes;
+        return Duration.ofMinutes(roundedMinutes);
+    }
+
+    private Duration nonNegative(Duration duration) {
+        return duration.isNegative() ? Duration.ZERO : duration;
     }
 }

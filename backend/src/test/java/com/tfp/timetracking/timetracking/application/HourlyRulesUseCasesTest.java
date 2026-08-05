@@ -27,6 +27,8 @@ class HourlyRulesUseCasesTest {
         assertThat(rules.tenantId()).isEqualTo(tenantId);
         assertThat(rules.maxDailyWork()).isNull();
         assertThat(rules.requiredBreak()).isNull();
+        assertThat(rules.roundingStep()).isNull();
+        assertThat(rules.tolerance()).isNull();
     }
 
     @Test
@@ -37,11 +39,13 @@ class HourlyRulesUseCasesTest {
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(repository.save(any(HourlyRules.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        HourlyRules saved = new UpdateHourlyRulesUseCase(repository, tenantContext).update(480, 30);
+        HourlyRules saved = new UpdateHourlyRulesUseCase(repository, tenantContext).update(480, 30, 15, 5);
 
         assertThat(saved.tenantId()).isEqualTo(tenantId);
         assertThat(saved.maxDailyWork()).isEqualTo(Duration.ofHours(8));
         assertThat(saved.requiredBreak()).isEqualTo(Duration.ofMinutes(30));
+        assertThat(saved.roundingStep()).isEqualTo(Duration.ofMinutes(15));
+        assertThat(saved.tolerance()).isEqualTo(Duration.ofMinutes(5));
         verify(repository).save(any(HourlyRules.class));
     }
 }

@@ -58,22 +58,30 @@ class AdminHourlyRulesControllerIntegrationTest {
         mockMvc.perform(get("/api/v1/admin/hourly-rules").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.maxDailyWorkMinutes").value(org.hamcrest.Matchers.nullValue()))
-                .andExpect(jsonPath("$.requiredBreakMinutes").value(org.hamcrest.Matchers.nullValue()));
+                .andExpect(jsonPath("$.requiredBreakMinutes").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.roundingStepMinutes").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.toleranceMinutes").value(org.hamcrest.Matchers.nullValue()));
 
         mockMvc.perform(put("/api/v1/admin/hourly-rules")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "maxDailyWorkMinutes", 480,
-                                "requiredBreakMinutes", 30))))
+                                "requiredBreakMinutes", 30,
+                                "roundingStepMinutes", 15,
+                                "toleranceMinutes", 5))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.maxDailyWorkMinutes").value(480))
-                .andExpect(jsonPath("$.requiredBreakMinutes").value(30));
+                .andExpect(jsonPath("$.requiredBreakMinutes").value(30))
+                .andExpect(jsonPath("$.roundingStepMinutes").value(15))
+                .andExpect(jsonPath("$.toleranceMinutes").value(5));
 
         mockMvc.perform(get("/api/v1/admin/hourly-rules").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.maxDailyWorkMinutes").value(480))
-                .andExpect(jsonPath("$.requiredBreakMinutes").value(30));
+                .andExpect(jsonPath("$.requiredBreakMinutes").value(30))
+                .andExpect(jsonPath("$.roundingStepMinutes").value(15))
+                .andExpect(jsonPath("$.toleranceMinutes").value(5));
     }
 
     @Test
@@ -86,14 +94,18 @@ class AdminHourlyRulesControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "maxDailyWorkMinutes", 480,
-                                "requiredBreakMinutes", 30))))
+                                "requiredBreakMinutes", 30,
+                                "roundingStepMinutes", 15,
+                                "toleranceMinutes", 5))))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/admin/hourly-rules")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + second.admin().token()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.maxDailyWorkMinutes").value(org.hamcrest.Matchers.nullValue()))
-                .andExpect(jsonPath("$.requiredBreakMinutes").value(org.hamcrest.Matchers.nullValue()));
+                .andExpect(jsonPath("$.requiredBreakMinutes").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.roundingStepMinutes").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.toleranceMinutes").value(org.hamcrest.Matchers.nullValue()));
     }
 
     @Test
@@ -116,7 +128,9 @@ class AdminHourlyRulesControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "maxDailyWorkMinutes", 0,
-                                "requiredBreakMinutes", -1))))
+                                "requiredBreakMinutes", -1,
+                                "roundingStepMinutes", 0,
+                                "toleranceMinutes", -1))))
                 .andExpect(status().isBadRequest());
     }
 

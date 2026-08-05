@@ -41,6 +41,10 @@ public class AdminHourlyRulesController {
     @Operation(summary = "Sustituye las reglas horarias del tenant autenticado")
     public HourlyRulesResponse update(@Valid @RequestBody HourlyRulesRequest request) {
         return mapper.toResponse(
-                updateHourlyRulesUseCase.update(request.maxDailyWorkMinutes(), request.requiredBreakMinutes()));
+                updateHourlyRulesUseCase.update(
+                        request.maxDailyWorkMinutes(),
+                        request.requiredBreakMinutes(),
+                        request.roundingStepMinutes(),
+                        request.toleranceMinutes()));
     }
 }

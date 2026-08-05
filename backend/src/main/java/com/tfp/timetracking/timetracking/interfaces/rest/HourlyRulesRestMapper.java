@@ -9,6 +9,8 @@ public class HourlyRulesRestMapper {
     public HourlyRulesResponse toResponse(HourlyRules rules) {
         return new HourlyRulesResponse(
                 rules.maxDailyWork() != null ? Math.toIntExact(rules.maxDailyWork().toMinutes()) : null,
-                rules.requiredBreak() != null ? Math.toIntExact(rules.requiredBreak().toMinutes()) : null);
+                rules.requiredBreak() != null ? Math.toIntExact(rules.requiredBreak().toMinutes()) : null,
+                rules.roundingStep() != null ? Math.toIntExact(rules.roundingStep().toMinutes()) : null,
+                rules.tolerance() != null ? Math.toIntExact(rules.tolerance().toMinutes()) : null);
     }
 }

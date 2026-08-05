@@ -129,11 +129,15 @@ cerradas o ajustadas incluyen su `evaluation` si ya existe.
 
 `GET /api/v1/admin/hourly-rules`: devuelve la configuración horaria actual del
 tenant autenticado. Si aún no hay configuración persistida, responde `200` con
-`maxDailyWorkMinutes = null` y `requiredBreakMinutes = null`.
+`maxDailyWorkMinutes = null`, `requiredBreakMinutes = null`,
+`roundingStepMinutes = null` y `toleranceMinutes = null`.
 
 `PUT /api/v1/admin/hourly-rules`: sustituye la configuración horaria del tenant
-autenticado. Body: `{maxDailyWorkMinutes, requiredBreakMinutes}`. Ambos campos
-son opcionales; si llegan a `null`, esa restricción queda desactivada. Solo
+autenticado. Body: `{maxDailyWorkMinutes, requiredBreakMinutes,
+roundingStepMinutes, toleranceMinutes}`. Todos los campos son opcionales; si
+llegan a `null`, esa restricción queda desactivada. `roundingStepMinutes`
+redondea la duración neta al tramo más cercano y `toleranceMinutes` crea una
+ventana muerta para extras, desviaciones y anomalías marginales. Solo
 `TENANT_ADMIN`.
 
 `GET /api/v1/employees`: listado paginado de empleados del tenant del admin,

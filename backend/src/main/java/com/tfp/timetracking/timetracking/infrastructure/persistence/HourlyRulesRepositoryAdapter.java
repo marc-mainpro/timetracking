@@ -21,7 +21,9 @@ public class HourlyRulesRepositoryAdapter implements HourlyRulesRepository {
         HourlyRulesJpaEntity saved = jpaRepository.save(new HourlyRulesJpaEntity(
                 rules.tenantId(),
                 rules.maxDailyWork() != null ? Math.toIntExact(rules.maxDailyWork().toMinutes()) : null,
-                rules.requiredBreak() != null ? Math.toIntExact(rules.requiredBreak().toMinutes()) : null));
+                rules.requiredBreak() != null ? Math.toIntExact(rules.requiredBreak().toMinutes()) : null,
+                rules.roundingStep() != null ? Math.toIntExact(rules.roundingStep().toMinutes()) : null,
+                rules.tolerance() != null ? Math.toIntExact(rules.tolerance().toMinutes()) : null));
         return toDomain(saved);
     }
 
@@ -34,6 +36,8 @@ public class HourlyRulesRepositoryAdapter implements HourlyRulesRepository {
         return new HourlyRules(
                 entity.getTenantId(),
                 entity.getMaxDailyWorkMinutes() != null ? Duration.ofMinutes(entity.getMaxDailyWorkMinutes()) : null,
-                entity.getRequiredBreakMinutes() != null ? Duration.ofMinutes(entity.getRequiredBreakMinutes()) : null);
+                entity.getRequiredBreakMinutes() != null ? Duration.ofMinutes(entity.getRequiredBreakMinutes()) : null,
+                entity.getRoundingStepMinutes() != null ? Duration.ofMinutes(entity.getRoundingStepMinutes()) : null,
+                entity.getToleranceMinutes() != null ? Duration.ofMinutes(entity.getToleranceMinutes()) : null);
     }
 }
