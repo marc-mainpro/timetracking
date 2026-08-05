@@ -7,6 +7,7 @@ import com.tfp.timetracking.shared.domain.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -30,13 +31,14 @@ public class JwtAccessTokenGenerator implements AccessTokenGenerator {
     }
 
     @Override
-    public IssuedAccessToken generate(User user) {
+    public IssuedAccessToken generate(User user, UUID sessionId) {
         Instant issuedAt = clock.now();
         Instant expiresAt = issuedAt.plus(accessTokenTtl);
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .subject(user.id().toString())
                 .issuedAt(issuedAt)
                 .expiresAt(expiresAt)
+                .claim("sid", sessionId.toString())
                 .claim("tenantId", user.tenantId().toString())
                 .claim("roles", user.roles().stream().map(Enum::name).sorted().toList())
                 .build();

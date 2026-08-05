@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 class RefreshTokenTest {
 
     private static final Instant NOW = Instant.parse("2026-01-15T10:00:00Z");
+    private static final UUID SESSION_ID = UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd");
     private static final UUID USER_ID = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static final UUID TOKEN_ID = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
@@ -20,9 +21,10 @@ class RefreshTokenTest {
 
     @Test
     void issuesTokenWithExpectedLifecycle() {
-        RefreshToken refreshToken = RefreshToken.issue(USER_ID, "hash", NOW.plusSeconds(60), clock, idGenerator);
+        RefreshToken refreshToken = RefreshToken.issue(SESSION_ID, USER_ID, "hash", NOW.plusSeconds(60), clock, idGenerator);
 
         assertThat(refreshToken.id()).isEqualTo(TOKEN_ID);
+        assertThat(refreshToken.sessionId()).isEqualTo(SESSION_ID);
         assertThat(refreshToken.userId()).isEqualTo(USER_ID);
         assertThat(refreshToken.isRevoked()).isFalse();
         assertThat(refreshToken.isExpiredAt(NOW)).isFalse();
@@ -30,7 +32,7 @@ class RefreshTokenTest {
 
     @Test
     void rotateRevokesCurrentTokenAndLinksReplacement() {
-        RefreshToken refreshToken = RefreshToken.issue(USER_ID, "hash", NOW.plusSeconds(60), clock, idGenerator);
+        RefreshToken refreshToken = RefreshToken.issue(SESSION_ID, USER_ID, "hash", NOW.plusSeconds(60), clock, idGenerator);
         UUID replacementId = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
 
         refreshToken.rotateTo(replacementId, NOW.plusSeconds(5));
@@ -43,6 +45,6 @@ class RefreshTokenTest {
     @Test
     void rejectsNonFutureExpiry() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> RefreshToken.issue(USER_ID, "hash", NOW, clock, idGenerator));
+                .isThrownBy(() -> RefreshToken.issue(SESSION_ID, USER_ID, "hash", NOW, clock, idGenerator));
     }
 }

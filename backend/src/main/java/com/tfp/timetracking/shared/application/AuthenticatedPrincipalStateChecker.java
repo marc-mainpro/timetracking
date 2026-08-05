@@ -4,5 +4,9 @@ import java.util.UUID;
 
 public interface AuthenticatedPrincipalStateChecker {
 
-    void ensureActivePrincipal(UUID tenantId, UUID userId);
+    default void ensureActivePrincipal(UUID tenantId, UUID userId) {
+        ensureActivePrincipal(tenantId, userId, null);
+    }
+
+    void ensureActivePrincipal(UUID tenantId, UUID userId, UUID sessionId);
 }

@@ -10,6 +10,7 @@ final class RefreshTokenMapper {
         return new RefreshTokenJpaEntity(
                 refreshToken.id(),
                 refreshToken.userId(),
+                refreshToken.sessionId(),
                 refreshToken.tokenHash(),
                 refreshToken.expiresAt(),
                 refreshToken.revokedAt(),
@@ -20,6 +21,7 @@ final class RefreshTokenMapper {
     static RefreshToken toDomain(RefreshTokenJpaEntity entity) {
         return RefreshToken.reconstitute(
                 entity.getId(),
+                entity.getSessionId(),
                 entity.getUserId(),
                 entity.getTokenHash(),
                 entity.getExpiresAt(),

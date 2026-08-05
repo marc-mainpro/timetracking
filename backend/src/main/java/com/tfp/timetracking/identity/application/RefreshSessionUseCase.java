@@ -5,6 +5,8 @@ import com.tfp.timetracking.identity.domain.InvalidRefreshTokenException;
 import com.tfp.timetracking.identity.domain.RefreshToken;
 import com.tfp.timetracking.identity.domain.RefreshTokenRepository;
 import com.tfp.timetracking.identity.domain.RefreshTokenReuseDetectedException;
+import com.tfp.timetracking.identity.domain.Session;
+import com.tfp.timetracking.identity.domain.SessionRepository;
 import com.tfp.timetracking.identity.domain.TenantAccessRepository;
 import com.tfp.timetracking.identity.domain.TenantInactiveException;
 import com.tfp.timetracking.identity.domain.User;
@@ -26,6 +28,7 @@ public class RefreshSessionUseCase {
     private final RefreshTokenGenerator refreshTokenGenerator;
     private final AccessTokenGenerator accessTokenGenerator;
     private final UserRepository userRepository;
+    private final SessionRepository sessionRepository;
     private final TenantAccessRepository tenantAccessRepository;
     private final Clock clock;
     private final IdGenerator idGenerator;
@@ -37,6 +40,7 @@ public class RefreshSessionUseCase {
             RefreshTokenGenerator refreshTokenGenerator,
             AccessTokenGenerator accessTokenGenerator,
             UserRepository userRepository,
+            SessionRepository sessionRepository,
             TenantAccessRepository tenantAccessRepository,
             Clock clock,
             IdGenerator idGenerator,
@@ -46,6 +50,7 @@ public class RefreshSessionUseCase {
         this.refreshTokenGenerator = refreshTokenGenerator;
         this.accessTokenGenerator = accessTokenGenerator;
         this.userRepository = userRepository;
+        this.sessionRepository = sessionRepository;
         this.tenantAccessRepository = tenantAccessRepository;
         this.clock = clock;
         this.idGenerator = idGenerator;
@@ -60,7 +65,7 @@ public class RefreshSessionUseCase {
                 .orElseThrow(InvalidRefreshTokenException::new);
 
         if (currentToken.isRevoked()) {
-            revokeAllTokens(currentToken.userId());
+            revokeCompromisedSession(currentToken);
             throw new RefreshTokenReuseDetectedException();
         }
 
@@ -73,21 +78,61 @@ public class RefreshSessionUseCase {
 
         User user = userRepository.findById(currentToken.userId()).orElseThrow(InvalidCredentialsException::new);
         ensureTenantAndUserAreActive(user);
+        Session session = resolveSession(currentToken, user, now);
+        if (!session.isActiveAt(now)) {
+            session.revoke(now);
+            sessionRepository.save(session);
+            throw new InvalidRefreshTokenException();
+        }
 
         String newRawRefreshToken = refreshTokenGenerator.generate();
         RefreshToken replacement = RefreshToken.issue(
-                user.id(), refreshTokenHasher.hash(newRawRefreshToken), now.plus(refreshTokenTtl), clock, idGenerator);
+                session.id(), user.id(), refreshTokenHasher.hash(newRawRefreshToken), now.plus(refreshTokenTtl), clock, idGenerator);
         currentToken.rotateTo(replacement.id(), now);
+        session.touch(now, now.plus(refreshTokenTtl));
+        sessionRepository.save(session);
         refreshTokenRepository.save(currentToken);
         refreshTokenRepository.save(replacement);
 
-        IssuedAccessToken accessToken = accessTokenGenerator.generate(user);
+        IssuedAccessToken accessToken = accessTokenGenerator.generate(user, session.id());
         return new AuthenticatedSession(accessToken.value(), accessToken.expiresAt(), newRawRefreshToken);
+    }
+
+    private Session resolveSession(RefreshToken currentToken, User user, Instant now) {
+        if (currentToken.sessionId() == null) {
+            Session session = Session.start(user.id(), user.tenantId(), now.plus(refreshTokenTtl), clock, idGenerator);
+            return sessionRepository.save(session);
+        }
+        return sessionRepository.findById(currentToken.sessionId()).orElseThrow(InvalidRefreshTokenException::new);
+    }
+
+    private void revokeCompromisedSession(RefreshToken currentToken) {
+        if (currentToken.sessionId() == null) {
+            revokeAllTokens(currentToken.userId());
+            return;
+        }
+        revokeSession(currentToken.sessionId());
     }
 
     private void revokeAllTokens(java.util.UUID userId) {
         Instant now = clock.now();
         for (RefreshToken refreshToken : refreshTokenRepository.findByUserId(userId)) {
+            if (!refreshToken.isRevoked()) {
+                refreshToken.revoke(now);
+                refreshTokenRepository.save(refreshToken);
+            }
+        }
+    }
+
+    private void revokeSession(java.util.UUID sessionId) {
+        Instant now = clock.now();
+        sessionRepository.findById(sessionId).ifPresent(session -> {
+            if (!session.isRevoked()) {
+                session.revoke(now);
+                sessionRepository.save(session);
+            }
+        });
+        for (RefreshToken refreshToken : refreshTokenRepository.findBySessionId(sessionId)) {
             if (!refreshToken.isRevoked()) {
                 refreshToken.revoke(now);
                 refreshTokenRepository.save(refreshToken);

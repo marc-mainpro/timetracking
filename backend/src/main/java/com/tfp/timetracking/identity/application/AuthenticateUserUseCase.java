@@ -6,6 +6,8 @@ import com.tfp.timetracking.identity.domain.InvalidCredentialsException;
 import com.tfp.timetracking.identity.domain.PasswordHasher;
 import com.tfp.timetracking.identity.domain.RefreshToken;
 import com.tfp.timetracking.identity.domain.RefreshTokenRepository;
+import com.tfp.timetracking.identity.domain.Session;
+import com.tfp.timetracking.identity.domain.SessionRepository;
 import com.tfp.timetracking.identity.domain.TenantAccessRepository;
 import com.tfp.timetracking.identity.domain.TenantInactiveException;
 import com.tfp.timetracking.identity.domain.User;
@@ -14,6 +16,7 @@ import com.tfp.timetracking.identity.domain.UserRepository;
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.IdGenerator;
 import java.time.Duration;
+import java.time.Instant;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +28,7 @@ public class AuthenticateUserUseCase {
     private final TenantAccessRepository tenantAccessRepository;
     private final PasswordHasher passwordHasher;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final SessionRepository sessionRepository;
     private final AccessTokenGenerator accessTokenGenerator;
     private final RefreshTokenGenerator refreshTokenGenerator;
     private final RefreshTokenHasher refreshTokenHasher;
@@ -39,6 +43,7 @@ public class AuthenticateUserUseCase {
             TenantAccessRepository tenantAccessRepository,
             PasswordHasher passwordHasher,
             RefreshTokenRepository refreshTokenRepository,
+            SessionRepository sessionRepository,
             AccessTokenGenerator accessTokenGenerator,
             RefreshTokenGenerator refreshTokenGenerator,
             RefreshTokenHasher refreshTokenHasher,
@@ -53,6 +58,7 @@ public class AuthenticateUserUseCase {
         this.tenantAccessRepository = tenantAccessRepository;
         this.passwordHasher = passwordHasher;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.sessionRepository = sessionRepository;
         this.accessTokenGenerator = accessTokenGenerator;
         this.refreshTokenGenerator = refreshTokenGenerator;
         this.refreshTokenHasher = refreshTokenHasher;
@@ -116,12 +122,16 @@ public class AuthenticateUserUseCase {
     }
 
     AuthenticatedSession issueSession(User user) {
-        IssuedAccessToken accessToken = accessTokenGenerator.generate(user);
+        Instant expiresAt = clock.now().plus(refreshTokenTtl);
+        Session session = Session.start(user.id(), user.tenantId(), expiresAt, clock, idGenerator);
+        sessionRepository.save(session);
+        IssuedAccessToken accessToken = accessTokenGenerator.generate(user, session.id());
         String rawRefreshToken = refreshTokenGenerator.generate();
         RefreshToken refreshToken = RefreshToken.issue(
+                session.id(),
                 user.id(),
                 refreshTokenHasher.hash(rawRefreshToken),
-                clock.now().plus(refreshTokenTtl),
+                expiresAt,
                 clock,
                 idGenerator);
         refreshTokenRepository.save(refreshToken);

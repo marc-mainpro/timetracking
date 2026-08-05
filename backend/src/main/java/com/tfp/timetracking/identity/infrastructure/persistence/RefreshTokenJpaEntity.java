@@ -18,6 +18,9 @@ public class RefreshTokenJpaEntity {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
+    @Column(name = "session_id")
+    private UUID sessionId;
+
     @Column(name = "token_hash", nullable = false, length = 64)
     private String tokenHash;
 
@@ -38,6 +41,7 @@ public class RefreshTokenJpaEntity {
     public RefreshTokenJpaEntity(
             UUID id,
             UUID userId,
+            UUID sessionId,
             String tokenHash,
             Instant expiresAt,
             Instant revokedAt,
@@ -45,6 +49,7 @@ public class RefreshTokenJpaEntity {
             Instant createdAt) {
         this.id = id;
         this.userId = userId;
+        this.sessionId = sessionId;
         this.tokenHash = tokenHash;
         this.expiresAt = expiresAt;
         this.revokedAt = revokedAt;
@@ -62,6 +67,10 @@ public class RefreshTokenJpaEntity {
 
     public String getTokenHash() {
         return tokenHash;
+    }
+
+    public UUID getSessionId() {
+        return sessionId;
     }
 
     public Instant getExpiresAt() {

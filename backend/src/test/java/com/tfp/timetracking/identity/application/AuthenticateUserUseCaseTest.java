@@ -13,6 +13,8 @@ import com.tfp.timetracking.identity.domain.PasswordHasher;
 import com.tfp.timetracking.identity.domain.RefreshToken;
 import com.tfp.timetracking.identity.domain.RefreshTokenRepository;
 import com.tfp.timetracking.identity.domain.Role;
+import com.tfp.timetracking.identity.domain.Session;
+import com.tfp.timetracking.identity.domain.SessionRepository;
 import com.tfp.timetracking.identity.domain.TenantAccessRepository;
 import com.tfp.timetracking.identity.domain.TenantInactiveException;
 import com.tfp.timetracking.identity.domain.User;
@@ -37,6 +39,7 @@ class AuthenticateUserUseCaseTest {
     private final TenantAccessRepository tenantAccessRepository = org.mockito.Mockito.mock(TenantAccessRepository.class);
     private final PasswordHasher passwordHasher = org.mockito.Mockito.mock(PasswordHasher.class);
     private final RefreshTokenRepository refreshTokenRepository = org.mockito.Mockito.mock(RefreshTokenRepository.class);
+    private final SessionRepository sessionRepository = org.mockito.Mockito.mock(SessionRepository.class);
     private final AccessTokenGenerator accessTokenGenerator = org.mockito.Mockito.mock(AccessTokenGenerator.class);
     private final RefreshTokenGenerator refreshTokenGenerator = org.mockito.Mockito.mock(RefreshTokenGenerator.class);
     private final RefreshTokenHasher refreshTokenHasher = org.mockito.Mockito.mock(RefreshTokenHasher.class);
@@ -55,6 +58,7 @@ class AuthenticateUserUseCaseTest {
                 tenantAccessRepository,
                 passwordHasher,
                 refreshTokenRepository,
+                sessionRepository,
                 accessTokenGenerator,
                 refreshTokenGenerator,
                 refreshTokenHasher,
@@ -71,7 +75,9 @@ class AuthenticateUserUseCaseTest {
         when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.of(user));
         when(tenantAccessRepository.isActive(user.tenantId())).thenReturn(true);
         when(passwordHasher.matches("secret", "hash")).thenReturn(true);
-        when(accessTokenGenerator.generate(user)).thenReturn(new IssuedAccessToken("jwt", NOW.plusSeconds(900)));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(accessTokenGenerator.generate(any(User.class), any(UUID.class)))
+                .thenReturn(new IssuedAccessToken("jwt", NOW.plusSeconds(900)));
         when(refreshTokenGenerator.generate()).thenReturn("opaque-refresh");
         when(refreshTokenHasher.hash("opaque-refresh")).thenReturn("refresh-hash");
         when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -80,6 +86,7 @@ class AuthenticateUserUseCaseTest {
 
         assertThat(session.accessToken()).isEqualTo("jwt");
         assertThat(session.refreshToken()).isEqualTo("opaque-refresh");
+        verify(sessionRepository).save(any(Session.class));
         verify(refreshTokenRepository).save(any(RefreshToken.class));
     }
 
@@ -122,7 +129,9 @@ class AuthenticateUserUseCaseTest {
         when(tenantAccessRepository.isActive(user.tenantId())).thenReturn(true);
         when(passwordHasher.matches("secret", "hash")).thenReturn(true);
         when(accountLockoutService.isLocked(user)).thenReturn(false);
-        when(accessTokenGenerator.generate(user)).thenReturn(new IssuedAccessToken("jwt", NOW.plusSeconds(900)));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(accessTokenGenerator.generate(any(User.class), any(UUID.class)))
+                .thenReturn(new IssuedAccessToken("jwt", NOW.plusSeconds(900)));
         when(refreshTokenGenerator.generate()).thenReturn("opaque-refresh");
         when(refreshTokenHasher.hash("opaque-refresh")).thenReturn("refresh-hash");
         when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));

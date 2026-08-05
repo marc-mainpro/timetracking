@@ -22,6 +22,7 @@
 ## Seguridad
 
 - JWT + refresh rotatorio + logout: `AuthControllerIntegrationTest`.
+- Gestión de sesiones del usuario autenticado: `SessionControllerIntegrationTest`.
 - Rate limiting y hardening OWASP: `AuthSecurityIntegrationTest`,
   `docs/security/owasp-review.md`.
 - Ningún endpoint privado sin auth: `RouteAuthorizationIntegrationTest`.

@@ -9,5 +9,9 @@ public interface TenantContext {
 
     UUID currentUserId();
 
+    default UUID currentSessionId() {
+        return null;
+    }
+
     Set<String> currentRoles();
 }

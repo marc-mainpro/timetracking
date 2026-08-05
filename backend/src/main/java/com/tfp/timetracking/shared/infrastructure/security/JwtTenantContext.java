@@ -23,6 +23,12 @@ public class JwtTenantContext implements TenantContext {
     }
 
     @Override
+    public UUID currentSessionId() {
+        String sessionId = requireJwt().getClaimAsString("sid");
+        return sessionId != null ? UUID.fromString(sessionId) : null;
+    }
+
+    @Override
     public Set<String> currentRoles() {
         java.util.List<String> roles = requireJwt().getClaimAsStringList("roles");
         if (roles == null || roles.isEmpty()) {

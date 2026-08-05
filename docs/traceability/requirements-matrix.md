@@ -63,6 +63,7 @@ sesiones, calendarios, ausencias, turnos, informes, notificaciones).
 
 | Requisito | Tarea | Caso de uso / componente | Endpoint | Prueba |
 |---|---|---|---|---|
+| RF-USR-007 Gestión de sesiones | T60-01/T60-02/T60-04 | `Session`, `ListSessionsUseCase`, `RevokeSessionUseCase`, `RevokeAllSessionsUseCase`, `SessionController` | `GET /api/v1/auth/sessions`, `DELETE /api/v1/auth/sessions/{id}`, `DELETE /api/v1/auth/sessions` | `SessionTest`, `SessionControllerIntegrationTest`, `AuthControllerIntegrationTest` |
 | RF-USR-008 Bloqueo temporal tras intentos fallidos | T30-04 | `AccountLockout` (agregado), `AccountLockoutService`, `AuthenticateUserUseCase` | `POST /api/v1/auth/login` (401 `ACCOUNT_LOCKED`) | `AccountLockoutTest`, `AccountLockoutServiceTest`, `AccountLockoutIntegrationTest` |
 | RS-007 Rate limiting en endpoints sensibles | T30-03 | `RateLimitFilter`, `RateLimitProperties`, `config/account-lockout.yml` | `POST /api/v1/auth/{login,register,refresh}`, `/password/**`, `/verification/**` (429 `RATE_LIMIT_EXCEEDED`) | `RateLimitPropertiesTest`, `RateLimitFilterIntegrationTest`, `AuthSecurityIntegrationTest` |
 | RS-008 Umbral y duración configurables | T30-04 | `AccountLockoutPolicy` (`auth.account-lockout.*`) | — | `AccountLockoutServiceTest`, `AccountLockoutIntegrationTest` |

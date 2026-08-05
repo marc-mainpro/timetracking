@@ -12,6 +12,9 @@ repositorio como `docs/api/openapi.yaml`.
 | POST | `/api/v1/auth/login` | público | T204 |
 | POST | `/api/v1/auth/refresh` | público | T204 |
 | POST | `/api/v1/auth/logout` | Bearer JWT | T204 |
+| GET | `/api/v1/auth/sessions` | Bearer JWT | T60 |
+| DELETE | `/api/v1/auth/sessions/{sessionId}` | Bearer JWT | T60 |
+| DELETE | `/api/v1/auth/sessions` | Bearer JWT | T60 |
 | GET | `/api/v1/workdays/current` | `EMPLOYEE` | T403 |
 | POST | `/api/v1/workdays/start` | `EMPLOYEE` | T403 |
 | POST | `/api/v1/workdays/current/breaks/start` | `EMPLOYEE` | T403 |
@@ -61,6 +64,18 @@ e invalida la cadena activa del usuario.
 `POST /api/v1/auth/logout`: requiere Bearer JWT, revoca el refresh token de la
 cookie actual si existe y devuelve `204` limpiando la cookie.
 
+`GET /api/v1/auth/sessions`: lista las sesiones activas del usuario
+autenticado. Cada elemento incluye `id`, `createdAt`, `lastUsedAt`,
+`expiresAt` y el flag `current` para identificar la sesion desde la que se
+está operando.
+
+`DELETE /api/v1/auth/sessions/{sessionId}`: revoca una sesion concreta del
+usuario autenticado. Si revoca la sesion actual devuelve `204` y limpia la
+cookie `refresh_token`.
+
+`DELETE /api/v1/auth/sessions`: revoca todas las sesiones del usuario
+autenticado, incluida la actual, y devuelve `204` limpiando la cookie.
+
 `POST /api/v1/auth/register`: también está limitado por IP (`10 req/min` en
 configuración normal) y responde `429` con `RATE_LIMIT_EXCEEDED` cuando se
 supera la ventana. Si el email ya existe, el backend responde `409` sin
@@ -102,7 +117,7 @@ tenant responde `404`.
 
 `PATCH /api/v1/employees/{employeeId}/activate` y
 `PATCH /api/v1/employees/{employeeId}/deactivate`: activan o desactivan al
-empleado. Desactivar revoca sus refresh tokens.
+empleado. Desactivar revoca sus sesiones y refresh tokens.
 
 `PUT /api/v1/employees/{employeeId}/roles`: reemplaza los roles del empleado.
 No se permite dejar al tenant sin ningún `TENANT_ADMIN` activo (`409`
@@ -179,8 +194,8 @@ propaga a la respuesta y al campo `correlationId` de Problem Details. Si no,
 el backend genera uno por request.
 
 Errores de autenticación/sesión (`INVALID_CREDENTIALS`,
-`INVALID_REFRESH_TOKEN`, `REFRESH_TOKEN_REUSED`, `USER_INACTIVE`,
-`TENANT_INACTIVE`) responden HTTP 401.
+`INVALID_REFRESH_TOKEN`, `REFRESH_TOKEN_REUSED`, `SESSION_INACTIVE`,
+`USER_INACTIVE`, `TENANT_INACTIVE`) responden HTTP 401.
 
 Exceso de rate limit en endpoints públicos de autenticación responde HTTP 429
 con `errorCode = RATE_LIMIT_EXCEEDED`.
