@@ -2,6 +2,7 @@ package com.tfp.timetracking.timetracking.application.integration;
 
 import com.tfp.timetracking.shared.application.IntegrationEventMapper;
 import com.tfp.timetracking.shared.domain.IntegrationEvent;
+import com.tfp.timetracking.timetracking.domain.event.WorkdayAnomalyDetected;
 import com.tfp.timetracking.timetracking.domain.event.WorkdayClosed;
 import com.tfp.timetracking.timetracking.domain.event.WorkdayStarted;
 import java.util.Map;
@@ -67,6 +68,24 @@ public class TimeTrackingIntegrationEventMapper implements IntegrationEventMappe
                             "employeeId", event.employeeId(),
                             "startedAt", event.startedAt(),
                             "endedAt", event.endedAt())));
+        }
+        if (domainEvent instanceof WorkdayAnomalyDetected event) {
+            return Optional.of(new IntegrationEvent(
+                    event.eventId(),
+                    "time-tracking.workday-anomaly-detected.v1",
+                    1,
+                    event.occurredAt(),
+                    event.tenantId(),
+                    event.aggregateId(),
+                    AGGREGATE_TYPE,
+                    Map.of(
+                            "workdayId", event.aggregateId(),
+                            "employeeId", event.employeeId(),
+                            "anomalies", event.anomalies(),
+                            "expectedMinutes", event.expectedMinutes(),
+                            "workedMinutes", event.workedMinutes(),
+                            "pausedMinutes", event.pausedMinutes(),
+                            "overtimeMinutes", event.overtimeMinutes())));
         }
         // BreakStarted/BreakEnded: sin traduccion a integracion en el MVP (ver javadoc).
         return Optional.empty();

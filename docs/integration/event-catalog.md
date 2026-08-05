@@ -123,6 +123,37 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
 
 ## Tipos de evento
 
+### `time-tracking.workday-anomaly-detected.v1`
+
+- **Módulo productor:** `timetracking` (`timetracking.application.integration.TimeTrackingIntegrationEventMapper`).
+- **Disparador de negocio:** al cerrar una jornada o aprobar una corrección, la
+  evaluación horaria detecta alguna anomalía de reglas (`T72`).
+- **`aggregateId`:** id de la jornada evaluada.
+
+```json
+{
+  "eventId": "cbfdad45-9e43-4b32-b13f-1c3d567b9460",
+  "eventType": "time-tracking.workday-anomaly-detected.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-05T13:41:10Z",
+  "tenantId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+  "aggregateId": "52b41007-29f5-4f03-bd91-5561dbff4d62",
+  "payload": {
+    "workdayId": "52b41007-29f5-4f03-bd91-5561dbff4d62",
+    "employeeId": "af4cf18a-f94d-4636-bc79-c25c01c5f4c5",
+    "anomalies": ["MAX_DAILY_WORK_EXCEEDED", "REQUIRED_BREAK_NOT_MET"],
+    "expectedMinutes": 480,
+    "workedMinutes": 540,
+    "pausedMinutes": 15,
+    "overtimeMinutes": 60
+  }
+}
+```
+
+- **Notas:** el primer incremento de `T72` solo publica anomalías derivadas de
+  jornada máxima y descanso obligatorio. Redondeos y tolerancias quedan para
+  iteraciones posteriores.
+
 ### `identity.password-reset-requested.v1`
 
 - **Módulo productor:** `identity` (`identity.application.integration.PasswordResetIntegrationEventMapper`).

@@ -118,6 +118,15 @@ sesiones, calendarios, ausencias, turnos, informes, notificaciones).
 |---|---|---|---|
 | UI de calendarios (RF-CAL-001..006) | T70-05 | `AdminCalendarsComponent`, `CalendarsService`, `roleGuard(['TENANT_ADMIN'])` | `admin-calendars.component.spec`, `calendars.service.spec` |
 
+## Reglas horarias y evaluación de jornada (RF-TIM-011..014)
+
+| Requisito | Tarea | Caso de uso / componente | Endpoint | Prueba |
+|---|---|---|---|---|
+| RF-TIM-011 Horas extra | T72-01/T72-02 | `HourlyRules`, `WorkdayEvaluationEngine`, `EvaluateClosedWorkdayService` | — | `WorkdayEvaluationEngineTest` |
+| RF-TIM-013 Límites de jornada | T72-01/T72-02 | `HourlyRules.maxDailyWork`, `WorkdayAnomaly.MAX_DAILY_WORK_EXCEEDED` | — | `WorkdayEvaluationEngineTest` |
+| RF-TIM-014 Descansos obligatorios | T72-01/T72-02 | `HourlyRules.requiredBreak`, `WorkdayAnomaly.REQUIRED_BREAK_NOT_MET` | — | `WorkdayEvaluationEngineTest` |
+| Evaluación al cerrar/ajustar jornada | T72-03 | `EndWorkdayUseCase`, `ApproveCorrectionRequestUseCase`, `WorkdayEvaluationRepository` | — | `EndWorkdayUseCaseTest`, `ApproveCorrectionRequestUseCaseTest`, `FlywayWorkdayEvaluationMigrationIntegrationTest` |
+
 ## Documentación
 
 | Artefacto | Tarea | Ubicación |

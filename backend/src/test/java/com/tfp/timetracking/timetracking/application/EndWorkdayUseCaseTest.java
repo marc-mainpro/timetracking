@@ -22,15 +22,18 @@ class EndWorkdayUseCaseTest {
         WorkdayRepository repository = org.mockito.Mockito.mock(WorkdayRepository.class);
         TenantContext tenantContext = org.mockito.Mockito.mock(TenantContext.class);
         DomainEventPublisher publisher = org.mockito.Mockito.mock(DomainEventPublisher.class);
+        EvaluateClosedWorkdayService evaluateClosedWorkdayService = org.mockito.Mockito.mock(EvaluateClosedWorkdayService.class);
         Clock clock = () -> Instant.parse("2026-01-15T18:00:00Z");
         IdGenerator idGenerator = () -> UUID.randomUUID();
-        EndWorkdayUseCase useCase = new EndWorkdayUseCase(repository, tenantContext, clock, idGenerator, publisher);
+        EndWorkdayUseCase useCase =
+                new EndWorkdayUseCase(repository, tenantContext, clock, idGenerator, publisher, evaluateClosedWorkdayService);
         Workday workday = Workday.start(UUID.randomUUID(), UUID.randomUUID(), Instant.parse("2026-01-15T09:00:00Z"), idGenerator);
         workday.pullDomainEvents();
         when(tenantContext.currentTenantId()).thenReturn(workday.tenantId());
         when(tenantContext.currentUserId()).thenReturn(workday.employeeId());
         when(repository.findActiveByEmployee(workday.tenantId(), workday.employeeId())).thenReturn(java.util.Optional.of(workday));
         when(repository.save(any(Workday.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(evaluateClosedWorkdayService.evaluate(any(Workday.class))).thenReturn(List.of());
 
         useCase.endWorkday();
 

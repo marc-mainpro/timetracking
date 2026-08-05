@@ -8,6 +8,7 @@ import com.tfp.timetracking.shared.application.TenantContext;
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.DomainEventPublisher;
 import com.tfp.timetracking.shared.domain.IdGenerator;
+import com.tfp.timetracking.timetracking.application.EvaluateClosedWorkdayService;
 import com.tfp.timetracking.timetracking.domain.Workday;
 import com.tfp.timetracking.timetracking.domain.WorkdayRepository;
 import java.util.List;
@@ -24,6 +25,7 @@ public class ApproveCorrectionRequestUseCase {
     private final Clock clock;
     private final IdGenerator idGenerator;
     private final DomainEventPublisher domainEventPublisher;
+    private final EvaluateClosedWorkdayService evaluateClosedWorkdayService;
     private final AuditRecorder auditRecorder;
 
     public ApproveCorrectionRequestUseCase(
@@ -33,6 +35,7 @@ public class ApproveCorrectionRequestUseCase {
             Clock clock,
             IdGenerator idGenerator,
             DomainEventPublisher domainEventPublisher,
+            EvaluateClosedWorkdayService evaluateClosedWorkdayService,
             AuditRecorder auditRecorder) {
         this.correctionRequestRepository = correctionRequestRepository;
         this.workdayRepository = workdayRepository;
@@ -40,6 +43,7 @@ public class ApproveCorrectionRequestUseCase {
         this.clock = clock;
         this.idGenerator = idGenerator;
         this.domainEventPublisher = domainEventPublisher;
+        this.evaluateClosedWorkdayService = evaluateClosedWorkdayService;
         this.auditRecorder = auditRecorder;
     }
 
@@ -55,9 +59,11 @@ public class ApproveCorrectionRequestUseCase {
         workday.adjust(correction.proposedChanges().toWorkdayAdjustment(), clock.now(), idGenerator);
         correction.approve(actorUserId, command.resolutionComment(), clock.now(), idGenerator);
 
-        workdayRepository.save(workday);
+        Workday savedWorkday = workdayRepository.save(workday);
         CorrectionRequest saved = correctionRequestRepository.save(correction);
-        domainEventPublisher.publish(mergeEvents(workday.pullDomainEvents(), correction.pullDomainEvents()));
+        List<Object> events = mergeEvents(workday.pullDomainEvents(), correction.pullDomainEvents());
+        events.addAll(evaluateClosedWorkdayService.evaluate(savedWorkday));
+        domainEventPublisher.publish(events);
         auditRecorder.record(
                 "CORRECTION_APPROVED",
                 "CorrectionRequest",
