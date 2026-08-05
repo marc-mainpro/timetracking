@@ -123,6 +123,36 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
 
 ## Tipos de evento
 
+### `identity.password-reset-requested.v1`
+
+- **Módulo productor:** `identity` (`identity.application.integration.PasswordResetIntegrationEventMapper`).
+- **Disparador de negocio:** una solicitud de recuperación de contraseña
+  aceptada (`POST /api/v1/auth/password/forgot`) para una cuenta existente y
+  operativa.
+- **`aggregateId`:** id del token de recuperación creado.
+
+```json
+{
+  "eventId": "9d14e45f-ceea-4e6e-a2f4-2f6f7b7b1a99",
+  "eventType": "identity.password-reset-requested.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-05T10:00:00Z",
+  "tenantId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+  "aggregateId": "52b41007-29f5-4f03-bd91-5561dbff4d62",
+  "payload": {
+    "userId": "af4cf18a-f94d-4636-bc79-c25c01c5f4c5",
+    "email": "jane@example.com",
+    "firstName": "Jane",
+    "resetToken": "raw-token",
+    "expiresAt": "2026-08-05T11:00:00Z"
+  }
+}
+```
+
+- **Sensibilidad:** `payload.resetToken` es secreto de un solo uso. Puede viajar
+  en el outbox para que el correo se envíe fuera de la transacción (ADR-0012),
+  pero no debe registrarse en logs ni exponerse en respuestas HTTP.
+
 ### `tenant.registered.v1`
 
 - **Módulo productor:** `tenant` (`tenant.application.integration.TenantIntegrationEventMapper`).

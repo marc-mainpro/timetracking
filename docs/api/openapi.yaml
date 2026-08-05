@@ -636,6 +636,40 @@ paths:
           description: No Content
         '404':
           description: Not Found
+  /api/v1/auth/password/forgot:
+    post:
+      tags:
+      - Authentication
+      summary: Solicita un correo de recuperacion de contrasena
+      operationId: forgotPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordForgotRequest'
+        required: true
+      responses:
+        '202':
+          description: Accepted
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PasswordResetAcceptedResponse'
+  /api/v1/auth/password/reset:
+    post:
+      tags:
+      - Authentication
+      summary: Restablece la contrasena usando un token de un solo uso
+      operationId: resetPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+        required: true
+      responses:
+        '204':
+          description: No Content
   /api/v1/auth/logout:
     post:
       tags:
@@ -1840,6 +1874,32 @@ components:
         password:
           type: string
           minLength: 1
+    PasswordForgotRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          minLength: 1
+      required:
+      - email
+    PasswordResetRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+        newPassword:
+          type: string
+          minLength: 10
+          maxLength: 200
+      required:
+      - token
+      - newPassword
+    PasswordResetAcceptedResponse:
+      type: object
+      properties:
+        message:
+          type: string
     AssignCalendarRequest:
       type: object
       description: Asignacion de un calendario a un ambito

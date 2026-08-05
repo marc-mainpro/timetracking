@@ -13,6 +13,7 @@ spring:
       - optional:classpath:config/registration.yml
       - optional:classpath:config/sessions.yml
       - optional:classpath:config/account-lockout.yml
+      - optional:classpath:config/password-reset.yml
       - optional:classpath:config/mail.yml
       - optional:classpath:config/calendar.yml
       - optional:classpath:config/absence.yml

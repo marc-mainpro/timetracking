@@ -21,6 +21,8 @@ public class IdentityPublicEndpoints implements PublicEndpointsContributor {
     public List<PublicEndpoint> publicEndpoints() {
         return List.of(
                 PublicEndpoint.of(HttpMethod.POST, "/api/v1/auth/login"),
-                PublicEndpoint.of(HttpMethod.POST, "/api/v1/auth/refresh"));
+                PublicEndpoint.of(HttpMethod.POST, "/api/v1/auth/refresh"),
+                PublicEndpoint.of(HttpMethod.POST, "/api/v1/auth/password/forgot"),
+                PublicEndpoint.of(HttpMethod.POST, "/api/v1/auth/password/reset"));
     }
 }

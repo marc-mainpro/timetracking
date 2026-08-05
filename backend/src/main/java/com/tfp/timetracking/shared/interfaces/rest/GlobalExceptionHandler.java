@@ -74,6 +74,7 @@ public class GlobalExceptionHandler {
         return java.util.Set.of(
                         "ACCOUNT_LOCKED",
                         "INVALID_CREDENTIALS",
+                        "INVALID_PASSWORD_RESET_TOKEN",
                         "INVALID_REFRESH_TOKEN",
                         "REFRESH_TOKEN_REUSED",
                         "USER_INACTIVE",

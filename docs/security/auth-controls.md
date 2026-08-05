@@ -65,6 +65,10 @@ T30-04 (RF-USR-008, RS-008). Ver ADR-0014.
 - El refresh token se persiste hasheado con SHA-256.
 - La rotación es obligatoria y la reutilización invalida la cadena activa del
   usuario.
+- La recuperación de contraseña usa un token aleatorio de un solo uso,
+  persistido solo como hash SHA-256 en `password_reset_token`.
+- Confirmar el reset revoca todos los `refresh_token` del usuario para que las
+  sesiones previas no sigan vivas con la contrasena antigua.
 
 ## CSRF
 

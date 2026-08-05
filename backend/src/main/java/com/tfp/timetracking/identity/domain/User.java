@@ -166,6 +166,12 @@ public final class User {
         this.updatedAt = clock.now();
     }
 
+    public void changePassword(String passwordHash, Clock clock) {
+        Objects.requireNonNull(clock, "clock no puede ser null");
+        this.passwordHash = requireNonBlank(passwordHash, "La contrasena es obligatoria");
+        this.updatedAt = clock.now();
+    }
+
     public boolean hasRole(Role role) {
         Objects.requireNonNull(role, "role no puede ser null");
         return roles.contains(role);

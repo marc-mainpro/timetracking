@@ -15,6 +15,8 @@ repositorio como `docs/api/openapi.yaml`.
 | GET | `/api/v1/auth/sessions` | Bearer JWT | T60 |
 | DELETE | `/api/v1/auth/sessions/{sessionId}` | Bearer JWT | T60 |
 | DELETE | `/api/v1/auth/sessions` | Bearer JWT | T60 |
+| POST | `/api/v1/auth/password/forgot` | público | T60 |
+| POST | `/api/v1/auth/password/reset` | público | T60 |
 | GET | `/api/v1/workdays/current` | `EMPLOYEE` | T403 |
 | POST | `/api/v1/workdays/start` | `EMPLOYEE` | T403 |
 | POST | `/api/v1/workdays/current/breaks/start` | `EMPLOYEE` | T403 |
@@ -75,6 +77,17 @@ cookie `refresh_token`.
 
 `DELETE /api/v1/auth/sessions`: revoca todas las sesiones del usuario
 autenticado, incluida la actual, y devuelve `204` limpiando la cookie.
+
+`POST /api/v1/auth/password/forgot`: inicia la recuperacion de contrasena.
+Recibe `{email}` y siempre responde `202` con un mensaje neutro, exista o no
+la cuenta, para evitar enumeracion. Si la cuenta existe y esta operativa, el
+backend persiste un token de un solo uso hasheado y publica el evento
+`identity.password-reset-requested.v1` para que el correo salga por Outbox.
+
+`POST /api/v1/auth/password/reset`: consume `{token, newPassword}`. El token se
+busca por hash, caduca y solo puede usarse una vez. Si es valido, cambia la
+contrasena, marca el token como usado, revoca todos los `refresh_token` del
+usuario y limpia la cookie `refresh_token` con `204 No Content`.
 
 `POST /api/v1/auth/register`: también está limitado por IP (`10 req/min` en
 configuración normal) y responde `429` con `RATE_LIMIT_EXCEEDED` cuando se
@@ -195,7 +208,9 @@ el backend genera uno por request.
 
 Errores de autenticación/sesión (`INVALID_CREDENTIALS`,
 `INVALID_REFRESH_TOKEN`, `REFRESH_TOKEN_REUSED`, `SESSION_INACTIVE`,
-`USER_INACTIVE`, `TENANT_INACTIVE`) responden HTTP 401.
+`INVALID_PASSWORD_RESET_TOKEN`, `INVALID_REFRESH_TOKEN`,
+`REFRESH_TOKEN_REUSED`, `SESSION_INACTIVE`, `USER_INACTIVE`,
+`TENANT_INACTIVE`) responden HTTP 401.
 
 Exceso de rate limit en endpoints públicos de autenticación responde HTTP 429
 con `errorCode = RATE_LIMIT_EXCEEDED`.
