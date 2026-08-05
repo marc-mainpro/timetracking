@@ -813,6 +813,37 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/CalendarAssignmentResponse'
+  /api/v1/admin/hourly-rules:
+    get:
+      tags:
+      - Admin - Hourly rules
+      summary: Consulta las reglas horarias del tenant autenticado
+      operationId: getHourlyRules
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/HourlyRulesResponse'
+    put:
+      tags:
+      - Admin - Hourly rules
+      summary: Sustituye las reglas horarias del tenant autenticado
+      operationId: updateHourlyRules
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HourlyRulesRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/HourlyRulesResponse'
   /api/v1/employees/{employeeId}/deactivate:
     patch:
       tags:
@@ -1900,6 +1931,28 @@ components:
       properties:
         message:
           type: string
+    HourlyRulesRequest:
+      type: object
+      properties:
+        maxDailyWorkMinutes:
+          type: integer
+          format: int32
+          minimum: 1
+        requiredBreakMinutes:
+          type: integer
+          format: int32
+          minimum: 0
+    HourlyRulesResponse:
+      type: object
+      properties:
+        maxDailyWorkMinutes:
+          type: integer
+          format: int32
+          nullable: true
+        requiredBreakMinutes:
+          type: integer
+          format: int32
+          nullable: true
     AssignCalendarRequest:
       type: object
       description: Asignacion de un calendario a un ambito

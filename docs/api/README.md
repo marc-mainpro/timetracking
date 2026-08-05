@@ -26,6 +26,8 @@ repositorio como `docs/api/openapi.yaml`.
 | GET | `/api/v1/workdays/{workdayId}` | `EMPLOYEE` | T403 |
 | GET | `/api/v1/admin/workdays` | `TENANT_ADMIN` | T403 |
 | GET | `/api/v1/admin/workdays/{workdayId}` | `TENANT_ADMIN` | T403 |
+| GET | `/api/v1/admin/hourly-rules` | `TENANT_ADMIN` | T72 |
+| PUT | `/api/v1/admin/hourly-rules` | `TENANT_ADMIN` | T72 |
 | GET | `/api/v1/employees` | `TENANT_ADMIN` | T501 |
 | POST | `/api/v1/employees` | `TENANT_ADMIN` | T501 |
 | GET | `/api/v1/employees/{employeeId}` | `TENANT_ADMIN` | T501 |
@@ -117,6 +119,15 @@ empleado autenticado; si no, `404`.
 `GET /api/v1/admin/workdays` y `GET /api/v1/admin/workdays/{workdayId}`:
 listado y detalle para `TENANT_ADMIN`, siempre acotados al tenant del
 principal autenticado. Recursos de otro tenant responden `404`.
+
+`GET /api/v1/admin/hourly-rules`: devuelve la configuración horaria actual del
+tenant autenticado. Si aún no hay configuración persistida, responde `200` con
+`maxDailyWorkMinutes = null` y `requiredBreakMinutes = null`.
+
+`PUT /api/v1/admin/hourly-rules`: sustituye la configuración horaria del tenant
+autenticado. Body: `{maxDailyWorkMinutes, requiredBreakMinutes}`. Ambos campos
+son opcionales; si llegan a `null`, esa restricción queda desactivada. Solo
+`TENANT_ADMIN`.
 
 `GET /api/v1/employees`: listado paginado de empleados del tenant del admin,
 con filtro opcional `status`.

@@ -125,6 +125,7 @@ sesiones, calendarios, ausencias, turnos, informes, notificaciones).
 | RF-TIM-011 Horas extra | T72-01/T72-02 | `HourlyRules`, `WorkdayEvaluationEngine`, `EvaluateClosedWorkdayService` | — | `WorkdayEvaluationEngineTest` |
 | RF-TIM-013 Límites de jornada | T72-01/T72-02 | `HourlyRules.maxDailyWork`, `WorkdayAnomaly.MAX_DAILY_WORK_EXCEEDED` | — | `WorkdayEvaluationEngineTest` |
 | RF-TIM-014 Descansos obligatorios | T72-01/T72-02 | `HourlyRules.requiredBreak`, `WorkdayAnomaly.REQUIRED_BREAK_NOT_MET` | — | `WorkdayEvaluationEngineTest` |
+| Configuración admin de reglas horarias | T72-01 | `GetHourlyRulesUseCase`, `UpdateHourlyRulesUseCase`, `AdminHourlyRulesController` | `GET/PUT /api/v1/admin/hourly-rules` | `HourlyRulesUseCasesTest`, `AdminHourlyRulesControllerIntegrationTest` |
 | Evaluación al cerrar/ajustar jornada | T72-03 | `EndWorkdayUseCase`, `ApproveCorrectionRequestUseCase`, `WorkdayEvaluationRepository` | — | `EndWorkdayUseCaseTest`, `ApproveCorrectionRequestUseCaseTest`, `FlywayWorkdayEvaluationMigrationIntegrationTest` |
 
 ## Documentación
