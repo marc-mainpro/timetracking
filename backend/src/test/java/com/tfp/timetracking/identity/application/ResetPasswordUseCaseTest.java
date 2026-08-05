@@ -14,6 +14,8 @@ import com.tfp.timetracking.identity.domain.PasswordResetTokenRepository;
 import com.tfp.timetracking.identity.domain.RefreshToken;
 import com.tfp.timetracking.identity.domain.RefreshTokenRepository;
 import com.tfp.timetracking.identity.domain.Role;
+import com.tfp.timetracking.identity.domain.Session;
+import com.tfp.timetracking.identity.domain.SessionRepository;
 import com.tfp.timetracking.identity.domain.User;
 import com.tfp.timetracking.identity.domain.UserRepository;
 import com.tfp.timetracking.identity.domain.UserStatus;
@@ -34,6 +36,7 @@ class ResetPasswordUseCaseTest {
     private final UserRepository userRepository = org.mockito.Mockito.mock(UserRepository.class);
     private final PasswordHasher passwordHasher = org.mockito.Mockito.mock(PasswordHasher.class);
     private final RefreshTokenRepository refreshTokenRepository = org.mockito.Mockito.mock(RefreshTokenRepository.class);
+    private final SessionRepository sessionRepository = org.mockito.Mockito.mock(SessionRepository.class);
     private final AccountLockoutService accountLockoutService = org.mockito.Mockito.mock(AccountLockoutService.class);
     private final Clock clock = () -> NOW;
 
@@ -47,6 +50,7 @@ class ResetPasswordUseCaseTest {
                 userRepository,
                 passwordHasher,
                 refreshTokenRepository,
+                sessionRepository,
                 accountLockoutService,
                 clock);
     }
@@ -54,23 +58,36 @@ class ResetPasswordUseCaseTest {
     @Test
     void resetsPasswordConsumesTokenAndRevokesRefreshTokens() {
         User user = user();
+        Session session = Session.reconstitute(
+                UUID.fromString("33333333-3333-3333-3333-333333333333"),
+                user.id(),
+                user.tenantId(),
+                NOW.minusSeconds(300),
+                NOW.minusSeconds(30),
+                NOW.plusSeconds(3600),
+                null,
+                null,
+                null);
         PasswordResetToken token = PasswordResetToken.reconstitute(
                 UUID.randomUUID(), user.tenantId(), user.id(), "token-hash", NOW.plusSeconds(60), null, NOW.minusSeconds(30));
         RefreshToken refreshToken = RefreshToken.reconstitute(
-                UUID.randomUUID(), user.id(), "refresh-hash", NOW.plusSeconds(3600), null, null, NOW.minusSeconds(300));
+                UUID.randomUUID(), session.id(), user.id(), "refresh-hash", NOW.plusSeconds(3600), null, null, NOW.minusSeconds(300));
         when(passwordResetTokenGenerator.hash("raw-token")).thenReturn("token-hash");
         when(passwordResetTokenRepository.findByTokenHashForUpdate("token-hash")).thenReturn(java.util.Optional.of(token));
         when(userRepository.findById(user.tenantId(), user.id())).thenReturn(java.util.Optional.of(user));
         when(passwordHasher.hash("new-password-123")).thenReturn("new-password-hash");
+        when(sessionRepository.findByUserId(user.id())).thenReturn(List.of(session));
         when(refreshTokenRepository.findByUserId(user.id())).thenReturn(List.of(refreshToken));
 
         useCase.reset(new ResetPasswordCommand("raw-token", "new-password-123"));
 
         assertThat(token.usedAt()).isEqualTo(NOW);
         assertThat(user.passwordHash()).isEqualTo("new-password-hash");
+        assertThat(session.isRevoked()).isTrue();
         assertThat(refreshToken.isRevoked()).isTrue();
         verify(userRepository).save(user);
         verify(passwordResetTokenRepository).save(token);
+        verify(sessionRepository).save(session);
         verify(refreshTokenRepository).save(refreshToken);
         verify(accountLockoutService).registerSuccessfulAttempt(user);
     }

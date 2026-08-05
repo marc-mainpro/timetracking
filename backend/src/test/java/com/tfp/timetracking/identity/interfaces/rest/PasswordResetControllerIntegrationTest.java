@@ -2,6 +2,7 @@ package com.tfp.timetracking.identity.interfaces.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -109,6 +110,10 @@ class PasswordResetControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/auth/refresh").cookie(cookie(login.cookie())))
                 .andExpect(status().isUnauthorized());
 
+        mockMvc.perform(get("/api/v1/auth/sessions").header(HttpHeaders.AUTHORIZATION, "Bearer " + login.accessToken()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.errorCode").value("SESSION_INACTIVE"));
+
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
@@ -127,6 +132,7 @@ class PasswordResetControllerIntegrationTest {
                 "SELECT payload ->> 'resetToken' FROM outbox_message WHERE event_type = 'identity.password-reset-requested.v1' ORDER BY created_at DESC LIMIT 1",
                 String.class);
     }
+
 
     private RegisteredAdmin registerAdmin() throws Exception {
         long suffix = Instant.now().toEpochMilli();

@@ -7,6 +7,8 @@ import com.tfp.timetracking.identity.domain.PasswordResetTokenGenerator;
 import com.tfp.timetracking.identity.domain.PasswordResetTokenRepository;
 import com.tfp.timetracking.identity.domain.RefreshToken;
 import com.tfp.timetracking.identity.domain.RefreshTokenRepository;
+import com.tfp.timetracking.identity.domain.Session;
+import com.tfp.timetracking.identity.domain.SessionRepository;
 import com.tfp.timetracking.identity.domain.User;
 import com.tfp.timetracking.identity.domain.UserRepository;
 import com.tfp.timetracking.shared.domain.Clock;
@@ -22,6 +24,7 @@ public class ResetPasswordUseCase {
     private final UserRepository userRepository;
     private final PasswordHasher passwordHasher;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final SessionRepository sessionRepository;
     private final AccountLockoutService accountLockoutService;
     private final Clock clock;
 
@@ -31,6 +34,7 @@ public class ResetPasswordUseCase {
             UserRepository userRepository,
             PasswordHasher passwordHasher,
             RefreshTokenRepository refreshTokenRepository,
+            SessionRepository sessionRepository,
             AccountLockoutService accountLockoutService,
             Clock clock) {
         this.passwordResetTokenRepository = passwordResetTokenRepository;
@@ -38,6 +42,7 @@ public class ResetPasswordUseCase {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.sessionRepository = sessionRepository;
         this.accountLockoutService = accountLockoutService;
         this.clock = clock;
     }
@@ -58,6 +63,12 @@ public class ResetPasswordUseCase {
         user.changePassword(passwordHasher.hash(command.newPassword()), clock);
         userRepository.save(user);
         passwordResetTokenRepository.save(passwordResetToken);
+        for (Session session : sessionRepository.findByUserId(user.id())) {
+            if (!session.isRevoked()) {
+                session.revoke(now);
+                sessionRepository.save(session);
+            }
+        }
         for (RefreshToken refreshToken : refreshTokenRepository.findByUserId(user.id())) {
             if (!refreshToken.isRevoked()) {
                 refreshToken.revoke(now);
