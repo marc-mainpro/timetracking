@@ -21,11 +21,25 @@ import java.util.Objects;
  *                            {@code worked}/{@code paused}.
  */
 public record EmployeeDaySummary(
-        LocalDate day, Duration worked, Duration paused, int workdayCount, int adjustedWorkdayCount, int openWorkdays) {
+        LocalDate day,
+        Duration worked,
+        Duration paused,
+        Duration expected,
+        Duration effectiveWorked,
+        Duration overtime,
+        Duration deviation,
+        int workdayCount,
+        int adjustedWorkdayCount,
+        int openWorkdays,
+        int evaluatedWorkdayCount) {
 
     public EmployeeDaySummary {
         Objects.requireNonNull(day, "day no puede ser null");
         Objects.requireNonNull(worked, "worked no puede ser null");
         Objects.requireNonNull(paused, "paused no puede ser null");
+        Objects.requireNonNull(expected, "expected no puede ser null");
+        Objects.requireNonNull(effectiveWorked, "effectiveWorked no puede ser null");
+        Objects.requireNonNull(overtime, "overtime no puede ser null");
+        Objects.requireNonNull(deviation, "deviation no puede ser null");
     }
 }

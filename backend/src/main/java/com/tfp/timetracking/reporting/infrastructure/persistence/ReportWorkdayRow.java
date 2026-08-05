@@ -9,4 +9,13 @@ import java.util.UUID;
  * agregado (pausas via {@link ReportBreakRow} en una segunda consulta
  * separada) ni construir el objeto de dominio {@code Workday}.
  */
-public record ReportWorkdayRow(UUID id, UUID employeeId, String status, Instant startedAt, Instant endedAt) {}
+public record ReportWorkdayRow(
+        UUID id,
+        UUID employeeId,
+        String status,
+        Instant startedAt,
+        Instant endedAt,
+        Long expectedMinutes,
+        Long effectiveWorkedMinutes,
+        Long overtimeMinutes,
+        Long deviationMinutes) {}

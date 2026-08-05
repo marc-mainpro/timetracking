@@ -2066,6 +2066,18 @@ components:
         paused:
           type: string
           example: PT2H30M
+        expected:
+          type: string
+          example: PT2H
+        effectiveWorked:
+          type: string
+          example: PT2H15M
+        overtime:
+          type: string
+          example: PT15M
+        deviation:
+          type: string
+          example: PT0S
         workdayCount:
           type: integer
           format: int32
@@ -2075,8 +2087,45 @@ components:
         openWorkdays:
           type: integer
           format: int32
+        evaluatedWorkdayCount:
+          type: integer
+          format: int32
     EmployeeDaySummaryResponse:
       type: object
+      properties:
+        day:
+          type: string
+          format: date
+        worked:
+          type: string
+          example: PT2H30M
+        paused:
+          type: string
+          example: PT30M
+        expected:
+          type: string
+          example: PT2H
+        effectiveWorked:
+          type: string
+          example: PT2H15M
+        overtime:
+          type: string
+          example: PT15M
+        deviation:
+          type: string
+          example: PT0S
+        workdayCount:
+          type: integer
+          format: int32
+        adjustedWorkdayCount:
+          type: integer
+          format: int32
+        openWorkdays:
+          type: integer
+          format: int32
+        evaluatedWorkdayCount:
+          type: integer
+          format: int32
       properties:
         day:
           type: string

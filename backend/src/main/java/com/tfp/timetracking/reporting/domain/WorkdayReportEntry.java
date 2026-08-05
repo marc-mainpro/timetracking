@@ -1,5 +1,6 @@
 package com.tfp.timetracking.reporting.domain;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -22,7 +23,18 @@ import java.util.UUID;
  *                 {@code true}.
  */
 public record WorkdayReportEntry(
-        UUID workdayId, UUID employeeId, boolean open, boolean adjusted, Instant startedAt, Instant endedAt, List<BreakInterval> breaks) {
+        UUID workdayId,
+        UUID employeeId,
+        boolean open,
+        boolean adjusted,
+        Instant startedAt,
+        Instant endedAt,
+        List<BreakInterval> breaks,
+        Duration expected,
+        Duration effectiveWorked,
+        Duration overtime,
+        Duration deviation,
+        boolean evaluated) {
 
     public WorkdayReportEntry {
         Objects.requireNonNull(workdayId, "workdayId no puede ser null");
@@ -32,5 +44,9 @@ public record WorkdayReportEntry(
             throw new IllegalArgumentException("Una jornada cerrada/ajustada debe tener endedAt");
         }
         breaks = List.copyOf(Objects.requireNonNull(breaks, "breaks no puede ser null"));
+        expected = expected != null ? expected : Duration.ZERO;
+        effectiveWorked = effectiveWorked != null ? effectiveWorked : Duration.ZERO;
+        overtime = overtime != null ? overtime : Duration.ZERO;
+        deviation = deviation != null ? deviation : Duration.ZERO;
     }
 }

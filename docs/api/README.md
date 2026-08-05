@@ -186,22 +186,27 @@ tiempo trabajado (`from`/`to` obligatorios, ISO-8601, rango máximo 366 días).
 Los límites de día usan la zona horaria IANA del tenant (`Tenant.timezone`),
 no UTC: una jornada que cruza medianoche local, o un día de cambio de hora
 (23h/25h), se reparte entre los días que toca. Cada día devuelve `worked`
-(trabajado, jornada menos pausas), `paused`, `workdayCount`,
-`adjustedWorkdayCount` y `openWorkdays`. Las jornadas todavía abiertas se
-excluyen de `worked`/`paused` (no hay forma fiable de saber cuánto trabajará
-aún el empleado) pero se cuentan en `openWorkdays`. Un `EMPLOYEE` solo puede
-pedir el suyo; un `TENANT_ADMIN` puede pedir el de cualquier empleado de su
-tenant. Un `employeeId` de otro empleado (sin ser admin) o de otro tenant
-responde `404`.
+(trabajado bruto, jornada menos pausas), `paused`, `expected`,
+`effectiveWorked`, `overtime`, `deviation`, `workdayCount`,
+`adjustedWorkdayCount`, `openWorkdays` y `evaluatedWorkdayCount`. Los campos
+de evaluación salen de `workday_evaluation`; si una jornada histórica aún no
+tiene evaluación persistida, no altera `worked` y simplemente no suma en esos
+campos derivados. Las jornadas todavía abiertas se excluyen de
+`worked`/`paused` (no hay forma fiable de saber cuánto trabajará aún el
+empleado) pero se cuentan en `openWorkdays`. Un `EMPLOYEE` solo puede pedir el
+suyo; un `TENANT_ADMIN` puede pedir el de cualquier empleado de su tenant. Un
+`employeeId` de otro empleado (sin ser admin) o de otro tenant responde `404`.
 
 `GET /api/v1/reports/tenant/summary`: agregado por empleado en todo el rango
-(mismos parámetros `from`/`to`/366 días), sin desglose diario. Solo
-`TENANT_ADMIN`.
+(mismos parámetros `from`/`to`/366 días), sin desglose diario. Devuelve los
+campos actuales (`worked`, `paused`, `workdayCount`, `adjustedWorkdayCount`,
+`openWorkdays`) y añade `expected`, `effectiveWorked`, `overtime`,
+`deviation` y `evaluatedWorkdayCount`. Solo `TENANT_ADMIN`.
 
 `GET /api/v1/reports/tenant/export.csv`: mismo dato que `tenant/summary` en
-`text/csv` (UTF-8 sin BOM, cabecera `employeeId,workedSeconds,pausedSeconds,
-workdayCount,adjustedWorkdayCount,openWorkdays`, campos escapados según RFC
-4180). Solo `TENANT_ADMIN`.
+`text/csv` (UTF-8 sin BOM, cabecera
+`employeeId,workedSeconds,pausedSeconds,expectedSeconds,effectiveWorkedSeconds,overtimeSeconds,deviationSeconds,workdayCount,adjustedWorkdayCount,openWorkdays,evaluatedWorkdayCount`,
+campos escapados según RFC 4180). Solo `TENANT_ADMIN`.
 
 ## Formato de error
 

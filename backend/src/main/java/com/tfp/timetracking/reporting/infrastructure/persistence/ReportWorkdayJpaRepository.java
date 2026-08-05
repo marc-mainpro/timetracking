@@ -17,8 +17,11 @@ interface ReportWorkdayJpaRepository extends JpaRepository<WorkdayJpaEntity, UUI
 
     @Query("""
             select new com.tfp.timetracking.reporting.infrastructure.persistence.ReportWorkdayRow(
-                w.id, w.employeeId, w.status, w.startedAt, w.endedAt)
+                w.id, w.employeeId, w.status, w.startedAt, w.endedAt,
+                e.expectedMinutes, e.effectiveWorkedMinutes, e.overtimeMinutes, e.deviationMinutes)
             from WorkdayJpaEntity w
+            left join com.tfp.timetracking.timetracking.infrastructure.persistence.WorkdayEvaluationJpaEntity e
+              on e.workdayId = w.id
             where w.tenantId = :tenantId
               and w.employeeId = :employeeId
               and w.startedAt >= :from
@@ -29,8 +32,11 @@ interface ReportWorkdayJpaRepository extends JpaRepository<WorkdayJpaEntity, UUI
 
     @Query("""
             select new com.tfp.timetracking.reporting.infrastructure.persistence.ReportWorkdayRow(
-                w.id, w.employeeId, w.status, w.startedAt, w.endedAt)
+                w.id, w.employeeId, w.status, w.startedAt, w.endedAt,
+                e.expectedMinutes, e.effectiveWorkedMinutes, e.overtimeMinutes, e.deviationMinutes)
             from WorkdayJpaEntity w
+            left join com.tfp.timetracking.timetracking.infrastructure.persistence.WorkdayEvaluationJpaEntity e
+              on e.workdayId = w.id
             where w.tenantId = :tenantId
               and w.startedAt >= :from
               and w.startedAt <= :to

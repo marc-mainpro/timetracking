@@ -18,7 +18,17 @@ public class ReportRestMapper {
 
     private EmployeeDaySummaryResponse toResponse(EmployeeDaySummary summary) {
         return new EmployeeDaySummaryResponse(
-                summary.day(), summary.worked(), summary.paused(), summary.workdayCount(), summary.adjustedWorkdayCount(), summary.openWorkdays());
+                summary.day(),
+                summary.worked(),
+                summary.paused(),
+                summary.expected(),
+                summary.effectiveWorked(),
+                summary.overtime(),
+                summary.deviation(),
+                summary.workdayCount(),
+                summary.adjustedWorkdayCount(),
+                summary.openWorkdays(),
+                summary.evaluatedWorkdayCount());
     }
 
     private TenantEmployeeSummaryResponse toResponse(TenantEmployeeSummary summary) {
@@ -26,8 +36,13 @@ public class ReportRestMapper {
                 summary.employeeId(),
                 summary.worked(),
                 summary.paused(),
+                summary.expected(),
+                summary.effectiveWorked(),
+                summary.overtime(),
+                summary.deviation(),
                 summary.workdayCount(),
                 summary.adjustedWorkdayCount(),
-                summary.openWorkdays());
+                summary.openWorkdays(),
+                summary.evaluatedWorkdayCount());
     }
 }

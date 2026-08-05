@@ -96,7 +96,7 @@ class GenerateEmployeeTimeSummaryUseCaseTest {
         when(userRepository.findById(tenantId, employeeId)).thenReturn(Optional.of(mock(com.tfp.timetracking.identity.domain.User.class)));
         when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant()));
         WorkdayReportEntry entry = new WorkdayReportEntry(
-                UUID.randomUUID(), employeeId, false, false, Instant.parse("2026-01-05T08:00:00Z"), Instant.parse("2026-01-05T10:00:00Z"), List.of());
+                UUID.randomUUID(), employeeId, false, false, Instant.parse("2026-01-05T08:00:00Z"), Instant.parse("2026-01-05T10:00:00Z"), List.of(), null, null, null, null, false);
         when(workdaySummaryQueryPort.findByEmployee(tenantId, employeeId, from, to)).thenReturn(List.of(entry));
 
         assertThat(useCase.generate(employeeId, from, to)).hasSize(1);

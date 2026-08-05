@@ -127,6 +127,7 @@ sesiones, calendarios, ausencias, turnos, informes, notificaciones).
 | RF-TIM-014 Descansos obligatorios | T72-01/T72-02 | `HourlyRules.requiredBreak`, `WorkdayAnomaly.REQUIRED_BREAK_NOT_MET` | — | `WorkdayEvaluationEngineTest` |
 | Configuración admin de reglas horarias | T72-01 | `GetHourlyRulesUseCase`, `UpdateHourlyRulesUseCase`, `AdminHourlyRulesController` | `GET/PUT /api/v1/admin/hourly-rules` | `HourlyRulesUseCasesTest`, `AdminHourlyRulesControllerIntegrationTest` |
 | Evaluación al cerrar/ajustar jornada | T72-03 | `EndWorkdayUseCase`, `ApproveCorrectionRequestUseCase`, `WorkdayEvaluationRepository` | — | `EndWorkdayUseCaseTest`, `ApproveCorrectionRequestUseCaseTest`, `FlywayWorkdayEvaluationMigrationIntegrationTest` |
+| Reporting con evaluación horaria | T100-01/T100-03/T100-04 | `WorkdaySummaryQueryPortAdapter`, `TimeSummaryCalculator`, `ReportRestMapper`, `TimeSummaryCsvWriter` | `GET /api/v1/reports/**`, `GET /api/v1/reports/tenant/export.csv` | `TimeSummaryCalculatorTest`, `TimeSummaryCsvWriterTest`, `ReportControllerIntegrationTest` |
 
 ## Documentación
 

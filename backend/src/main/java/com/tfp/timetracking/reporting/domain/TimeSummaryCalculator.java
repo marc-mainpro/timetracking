@@ -57,9 +57,14 @@ public final class TimeSummaryCalculator {
                     bucketEntry.getKey(),
                     nonNegative(bucket.worked),
                     nonNegative(bucket.paused),
+                    nonNegative(bucket.expected),
+                    nonNegative(bucket.effectiveWorked),
+                    nonNegative(bucket.overtime),
+                    nonNegative(bucket.deviation),
                     bucket.workdayCount,
                     bucket.adjustedWorkdayCount,
-                    bucket.openWorkdays));
+                    bucket.openWorkdays,
+                    bucket.evaluatedWorkdayCount));
         }
         return result;
     }
@@ -81,6 +86,13 @@ public final class TimeSummaryCalculator {
                     .reduce(Duration.ZERO, Duration::plus);
             bucket.worked = bucket.worked.plus(total.minus(breaksDuration));
             bucket.paused = bucket.paused.plus(breaksDuration);
+            if (entry.evaluated()) {
+                bucket.expected = bucket.expected.plus(entry.expected());
+                bucket.effectiveWorked = bucket.effectiveWorked.plus(entry.effectiveWorked());
+                bucket.overtime = bucket.overtime.plus(entry.overtime());
+                bucket.deviation = bucket.deviation.plus(entry.deviation());
+                bucket.evaluatedWorkdayCount++;
+            }
             bucket.workdayCount++;
             if (entry.adjusted()) {
                 bucket.adjustedWorkdayCount++;
@@ -92,9 +104,14 @@ public final class TimeSummaryCalculator {
                         e.getKey(),
                         nonNegative(e.getValue().worked),
                         nonNegative(e.getValue().paused),
+                        nonNegative(e.getValue().expected),
+                        nonNegative(e.getValue().effectiveWorked),
+                        nonNegative(e.getValue().overtime),
+                        nonNegative(e.getValue().deviation),
                         e.getValue().workdayCount,
                         e.getValue().adjustedWorkdayCount,
-                        e.getValue().openWorkdays))
+                        e.getValue().openWorkdays,
+                        e.getValue().evaluatedWorkdayCount))
                 .sorted(Comparator.comparing(TenantEmployeeSummary::employeeId))
                 .toList();
     }
@@ -112,10 +129,19 @@ public final class TimeSummaryCalculator {
         if (entry.adjusted()) {
             startBucket.adjustedWorkdayCount++;
         }
+        if (entry.evaluated()) {
+            startBucket.evaluatedWorkdayCount++;
+        }
 
         for (DaySegment segment : splitByLocalDay(entry.startedAt(), entry.endedAt(), zone)) {
-            buckets.computeIfAbsent(segment.day(), d -> new MutableDayBucket()).worked =
-                    buckets.get(segment.day()).worked.plus(segment.duration());
+            MutableDayBucket bucket = buckets.computeIfAbsent(segment.day(), d -> new MutableDayBucket());
+            bucket.worked = bucket.worked.plus(segment.duration());
+            if (entry.evaluated()) {
+                bucket.expected = bucket.expected.plus(allocate(entry.expected(), segment, entry));
+                bucket.effectiveWorked = bucket.effectiveWorked.plus(allocate(entry.effectiveWorked(), segment, entry));
+                bucket.overtime = bucket.overtime.plus(allocate(entry.overtime(), segment, entry));
+                bucket.deviation = bucket.deviation.plus(allocate(entry.deviation(), segment, entry));
+            }
         }
 
         for (BreakInterval breakInterval : entry.breaks()) {
@@ -151,13 +177,31 @@ public final class TimeSummaryCalculator {
         return duration.isNegative() ? Duration.ZERO : duration;
     }
 
+    private static Duration allocate(Duration total, DaySegment segment, WorkdayReportEntry entry) {
+        if (total.isZero()) {
+            return Duration.ZERO;
+        }
+        Duration fullSpan = Duration.between(entry.startedAt(), entry.endedAt());
+        if (fullSpan.isZero() || fullSpan.isNegative()) {
+            return Duration.ZERO;
+        }
+        double ratio = (double) segment.duration().toMillis() / (double) fullSpan.toMillis();
+        long millis = Math.round(total.toMillis() * ratio);
+        return Duration.ofMillis(millis);
+    }
+
     private record DaySegment(LocalDate day, Duration duration) {}
 
     private static final class MutableDayBucket {
         private Duration worked = Duration.ZERO;
         private Duration paused = Duration.ZERO;
+        private Duration expected = Duration.ZERO;
+        private Duration effectiveWorked = Duration.ZERO;
+        private Duration overtime = Duration.ZERO;
+        private Duration deviation = Duration.ZERO;
         private int workdayCount;
         private int adjustedWorkdayCount;
         private int openWorkdays;
+        private int evaluatedWorkdayCount;
     }
 }
