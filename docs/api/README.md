@@ -97,7 +97,10 @@ supera la ventana. Si el email ya existe, el backend responde `409` sin
 reflejar el correo original en el mensaje de error.
 
 `GET /api/v1/workdays/current`: devuelve la jornada activa del empleado
-autenticado o `404` si no existe.
+autenticado o `404` si no existe. Si la jornada ya fue cerrada o ajustada y ha
+sido evaluada por el motor horario, la respuesta incluye `evaluation`
+(`expectedDuration`, `workedDuration`, `pausedDuration`, `overtimeDuration`,
+`anomalies`).
 
 `POST /api/v1/workdays/start`: abre una nueva jornada para el empleado
 autenticado usando la hora del servidor. Responde `201` con la jornada creada.
@@ -108,17 +111,21 @@ de la jornada actual. Las transiciones inválidas responden `409` con el
 `errorCode` de dominio correspondiente.
 
 `POST /api/v1/workdays/current/end`: cierra la jornada actual. Si existe una
-pausa abierta responde `409` con `WORKDAY_OPEN_BREAK`.
+pausa abierta responde `409` con `WORKDAY_OPEN_BREAK`. Tras el cierre, el
+backend persiste una evaluación horaria de la jornada y la devuelve en el campo
+`evaluation` de la respuesta.
 
 `GET /api/v1/workdays`: historial propio paginado (`page`, `size`, `from`,
 `to`).
 
 `GET /api/v1/workdays/{workdayId}`: devuelve la jornada solo si pertenece al
-empleado autenticado; si no, `404`.
+empleado autenticado; si no, `404`. Si la jornada fue evaluada, incluye ese
+resultado.
 
 `GET /api/v1/admin/workdays` y `GET /api/v1/admin/workdays/{workdayId}`:
 listado y detalle para `TENANT_ADMIN`, siempre acotados al tenant del
-principal autenticado. Recursos de otro tenant responden `404`.
+principal autenticado. Recursos de otro tenant responden `404`. Las jornadas
+cerradas o ajustadas incluyen su `evaluation` si ya existe.
 
 `GET /api/v1/admin/hourly-rules`: devuelve la configuración horaria actual del
 tenant autenticado. Si aún no hay configuración persistida, responde `200` con

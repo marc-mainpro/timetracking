@@ -2,8 +2,11 @@ package com.tfp.timetracking.timetracking.interfaces.rest;
 
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.PagedResult;
+import com.tfp.timetracking.shared.application.TenantContext;
 import com.tfp.timetracking.timetracking.domain.BreakEntry;
 import com.tfp.timetracking.timetracking.domain.Workday;
+import com.tfp.timetracking.timetracking.domain.WorkdayEvaluation;
+import com.tfp.timetracking.timetracking.domain.WorkdayEvaluationRepository;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -13,9 +16,14 @@ import org.springframework.stereotype.Component;
 public class WorkdayRestMapper {
 
     private final Clock clock;
+    private final WorkdayEvaluationRepository workdayEvaluationRepository;
+    private final TenantContext tenantContext;
 
-    public WorkdayRestMapper(Clock clock) {
+    public WorkdayRestMapper(
+            Clock clock, WorkdayEvaluationRepository workdayEvaluationRepository, TenantContext tenantContext) {
         this.clock = clock;
+        this.workdayEvaluationRepository = workdayEvaluationRepository;
+        this.tenantContext = tenantContext;
     }
 
     public WorkdayResponse toResponse(Workday workday) {
@@ -25,7 +33,8 @@ public class WorkdayRestMapper {
                 workday.startedAt(),
                 workday.endedAt(),
                 workday.breaks().stream().map(this::toBreakResponse).toList(),
-                workedDuration(workday));
+                workedDuration(workday),
+                loadEvaluation(workday));
     }
 
     public PagedResponse<WorkdayResponse> toPagedResponse(PagedResult<Workday> result) {
@@ -49,5 +58,20 @@ public class WorkdayRestMapper {
                 .map(breakEntry -> Duration.between(breakEntry.startedAt(), breakEntry.endedAt()))
                 .reduce(Duration.ZERO, Duration::plus);
         return total.minus(breaks);
+    }
+
+    private WorkdayEvaluationResponse loadEvaluation(Workday workday) {
+        return workdayEvaluationRepository.findByWorkdayId(tenantContext.currentTenantId(), workday.id())
+                .map(this::toEvaluationResponse)
+                .orElse(null);
+    }
+
+    private WorkdayEvaluationResponse toEvaluationResponse(WorkdayEvaluation evaluation) {
+        return new WorkdayEvaluationResponse(
+                evaluation.expectedDuration(),
+                evaluation.workedDuration(),
+                evaluation.pausedDuration(),
+                evaluation.overtimeDuration(),
+                evaluation.anomalies().stream().map(Enum::name).toList());
     }
 }

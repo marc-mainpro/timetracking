@@ -1669,6 +1669,27 @@ components:
         workedDuration:
           type: string
           example: PT2H30M
+        evaluation:
+          $ref: '#/components/schemas/WorkdayEvaluationResponse'
+    WorkdayEvaluationResponse:
+      type: object
+      properties:
+        expectedDuration:
+          type: string
+          example: PT8H
+        workedDuration:
+          type: string
+          example: PT8H30M
+        pausedDuration:
+          type: string
+          example: PT30M
+        overtimeDuration:
+          type: string
+          example: PT30M
+        anomalies:
+          type: array
+          items:
+            type: string
     TenantRegistrationRequestBody:
       type: object
       properties:

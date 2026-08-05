@@ -54,6 +54,9 @@ class WorkdayControllerIntegrationTest {
     @Autowired
     private TestTenantFactory testTenantFactory;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Test
     void completesFullWorkdayFlowOverHttp() throws Exception {
         TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("flow");
@@ -76,16 +79,30 @@ class WorkdayControllerIntegrationTest {
         String closedResponse = mockMvc.perform(post("/api/v1/workdays/current/end").header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.employee().token()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CLOSED"))
+                .andExpect(jsonPath("$.evaluation").exists())
+                .andExpect(jsonPath("$.evaluation.expectedDuration").value("PT0S"))
+                .andExpect(jsonPath("$.evaluation.overtimeDuration").value("PT0S"))
+                .andExpect(jsonPath("$.evaluation.anomalies.length()").value(0))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
+        String workdayId = objectMapper.readTree(closedResponse).get("id").asText();
 
         mockMvc.perform(get("/api/v1/workdays/current").header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.employee().token()))
                 .andExpect(status().isNotFound());
 
         mockMvc.perform(get("/api/v1/workdays").header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.employee().token()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content.length()").value(1));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].evaluation").exists());
+
+        mockMvc.perform(get("/api/v1/workdays/" + workdayId).header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.employee().token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.evaluation").exists());
+
+        mockMvc.perform(get("/api/v1/admin/workdays/" + workdayId).header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.evaluation").exists());
     }
 
     @Test
