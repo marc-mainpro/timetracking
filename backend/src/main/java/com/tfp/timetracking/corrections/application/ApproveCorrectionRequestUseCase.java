@@ -56,8 +56,13 @@ public class ApproveCorrectionRequestUseCase {
         Workday workday = workdayRepository.findById(tenantId, correction.workdayId())
                 .orElseThrow(() -> new ResourceNotFoundException("Jornada no encontrada"));
 
-        workday.adjust(correction.proposedChanges().toWorkdayAdjustment(), clock.now(), idGenerator);
+        // La correccion se resuelve ANTES de tocar la jornada. Al reves, una
+        // segunda aprobacion chocaba con la invariante de la jornada y devolvia
+        // WORKDAY_ALREADY_CLOSED, que describe un sintoma y no la causa: lo que
+        // ocurre es que esa correccion ya estaba resuelta. Ambas operaciones
+        // comparten transaccion, asi que el orden no afecta a la atomicidad.
         correction.approve(actorUserId, command.resolutionComment(), clock.now(), idGenerator);
+        workday.adjust(correction.proposedChanges().toWorkdayAdjustment(), clock.now(), idGenerator);
 
         Workday savedWorkday = workdayRepository.save(workday);
         CorrectionRequest saved = correctionRequestRepository.save(correction);

@@ -53,12 +53,15 @@ Requisitos para ejecutarlos: `docker compose up -d --build`,
 | `registro-publico.spec.ts` | Solicitud de alta, verificación por correo real (leído de mailpit), aprobación y activación desde plataforma, primer acceso del propietario; y respuesta anti-enumeración ante correo repetido |
 | `jornada.spec.ts` | Inicio, pausa, fin y evaluación de jornada; invariante de jornada única abierta; informe de tenant con las jornadas contabilizadas |
 | `aislamiento.spec.ts` | Fuga entre tenants en listados y por identificador (404, no 403), empleado contra administración, administrador contra plataforma, y suspensión/reactivación de tenant |
+| `correccion.spec.ts` | Solicitud, aprobación con reevaluación de la jornada, rechazo que no la altera, y doble resolución rechazada (RT-006) |
+| `calendario-turno.spec.ts` | Creación y asignación de calendario por ámbito, turno nocturno que cruza medianoche, y turno como tiempo previsto de la jornada (T90-06) |
+| `ausencia-notificacion.spec.ts` | Solicitud, aprobación y rechazo de ausencia con la notificación que generan a través del Outbox, lectura del aviso y aislamiento de notificaciones entre tenants |
 
 Se ejecutan con un solo worker: comparten base de datos y varias afirman sobre
 listados completos, así que el paralelismo las volvería dependientes del orden.
 Las llamadas de autenticación reparten el `X-Forwarded-For` entre direcciones de
 documentación para no chocar con el rate limiting, que sigue igual de estricto.
 
-**Pendiente:** los flujos de corrección, calendario, ausencia, turno y
-notificación todavía no tienen recorrido E2E propio; están cubiertos por
-pruebas de integración.
+Los recorridos que atraviesan el Outbox —notificaciones y el sembrado del
+catálogo de ausencias— esperan con `expect.poll` en lugar de con una pausa fija:
+la entrega es eventual y su latencia depende del intervalo de sondeo.

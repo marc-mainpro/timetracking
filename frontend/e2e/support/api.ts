@@ -11,6 +11,8 @@ export interface Actor {
 
 export interface TenantActors {
   tenantId: string;
+  /** Identificador del empleado: lo necesitan las asignaciones por ámbito. */
+  employeeId: string;
   admin: Actor;
   employee: Actor;
 }
@@ -109,10 +111,12 @@ export async function createTenant(api: APIRequestContext, seed: string): Promis
   if (!employeeCreated.ok()) {
     throw new Error(`No se pudo crear el empleado: ${employeeCreated.status()} ${await employeeCreated.text()}`);
   }
+  const employeeId = (await employeeCreated.json()).id;
   const employeeToken = await login(api, employeeEmail, employeePassword);
 
   return {
     tenantId,
+    employeeId,
     admin: { email: adminEmail, password: adminPassword, token: adminToken },
     employee: { email: employeeEmail, password: employeePassword, token: employeeToken }
   };

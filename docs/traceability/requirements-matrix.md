@@ -180,10 +180,9 @@ backups. Lo que sigue abierto está al final, en «Pendiente».
 
 ## Pendiente
 
-- **T160-01** Parcial. Existe infraestructura E2E (Playwright, `frontend/e2e/`)
-  y cubre alta pública con correo real, jornada e informe, y aislamiento
-  multitenant. Faltan los recorridos de corrección, calendario, ausencia, turno
-  y notificación.
+- **T160-01** Completo para los diez flujos del plan: 20 casos en
+  `frontend/e2e/` sobre la pila real. Sin recorrido de navegador propio queda
+  solo la interfaz gráfica, que se cubre con las pruebas de componente.
 - **T160-03** Revisión de rendimiento, incluidos los índices de reporting
   (T100-02), que no tienen migración propia.
 - **T160-02** Revisión de seguridad OWASP y cierre del modelo de amenazas.
@@ -191,6 +190,12 @@ backups. Lo que sigue abierto está al final, en «Pendiente».
 - **T140-05** Panel técnico básico (P3, opcional).
 - **RS-015** El escaneo de dependencias del backend requiere dar de alta el
   secreto `NVD_API_KEY` en GitHub; hasta entonces cubre solo el frontend.
+
+## Ausencias (RF-ABS)
+
+| Requisito | Tarea | Caso de uso / componente | Endpoint | Pruebas |
+|---|---|---|---|---|
+| RF-ABS-001 Tipos de ausencia | T80-01 | `AbsenceType`, `SeedDefaultAbsenceTypesListener` (siembra el catálogo al crear el tenant) | `GET /api/v1/app/absence-types` | `SeedDefaultAbsenceTypesListenerTest`, `ausencia-notificacion.spec.ts` |
 
 ## Notificaciones (RF-NOT)
 
