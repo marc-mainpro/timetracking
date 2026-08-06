@@ -1,15 +1,16 @@
-# Matriz de trazabilidad — V2 (Iteración 1: administración de tenants)
+# Matriz de trazabilidad — V2
 
 Relaciona requisito → tarea → caso de uso / componente → endpoint → prueba.
-Cubre la iteración de administración de tenants (épicas T50, T130 parcial,
-T00). Se ampliará en iteraciones posteriores (registro público controlado,
-sesiones, calendarios, ausencias, turnos, informes, notificaciones).
+Cubre las épicas implementadas de la V2: administración de tenants y registro
+público, sesiones y recuperación de contraseña, calendarios y reglas horarias,
+ausencias, turnos, informes, notificaciones, auditoría, observabilidad y
+backups. Lo que sigue abierto está al final, en «Pendiente».
 
 ## Administración de tenants (RF-TEN)
 
 | Requisito | Tarea | Caso de uso / componente | Endpoint | Pruebas |
 |---|---|---|---|---|
-| RF-TEN-001 Listado de tenants | T50-05 | `ListTenantsUseCase`, `PlatformTenantController.list` | `GET /api/v1/platform/tenants` | `ListTenantsUseCaseTest`, `PlatformTenantControllerIntegrationTest` |
+| RF-TEN-001 Listado de tenants (incl. nº de usuarios y último acceso) | T50-05 | `ListTenantsUseCase`, `TenantSummary`, puerto `TenantUsageQuery` + `JdbcTenantUsageQuery`, `PlatformTenantController.list` | `GET /api/v1/platform/tenants` | `ListTenantsUseCaseTest`, `PlatformTenantControllerIntegrationTest`, `platform-tenants.component.spec` |
 | RF-TEN-002 Consulta de tenant | T50-05 | `GetTenantUseCase`, `PlatformTenantController.get` | `GET /api/v1/platform/tenants/{id}` | `GetTenantUseCaseTest`, `PlatformTenantControllerIntegrationTest` |
 | RF-TEN-003 Creación por PLATFORM_ADMIN | T50-05 | `CreateTenantUseCase`, `PlatformTenantController.create` | `POST /api/v1/platform/tenants` | `CreateTenantUseCaseTest`, `PlatformTenantControllerIntegrationTest` |
 | RF-TEN-010 Registro público deshabilitable | T53-04 | `PublicTenantRegistrationController` + flag `registration.public.enabled` | `POST /api/v1/public/tenant-registrations` (403 si off) | `PublicRegistrationDisabledIntegrationTest` |
@@ -172,16 +173,22 @@ sesiones, calendarios, ausencias, turnos, informes, notificaciones).
 | Requisito | Tarea | Componente | Evidencia |
 |---|---|---|---|
 | RO-005 Backups periódicos de PostgreSQL | T150-02 | `scripts/backup/backup-postgres.sh` (`pg_dump -Fc`, cifrado AES-256, SHA-256, logs, códigos de salida) + cron diario 03:00 | Ejecución real 2026-08-04: backup de 24 011 B verificado con `pg_restore --list`; `docs/manuals/backup-restore.md` §2 |
-| RO-006 Política de retención | T150-01, T150-02 | Rotación *grandfather-father-son* en `backup-postgres.sh` (7 días + 4 semanas ISO) | `docs/adr/ADR-0016-estrategia-backup-retencion.md`; rotación probada con 9 backups sintéticos: elimina los que caen fuera de ambas ventanas y conserva el primero de cada semana ISO |
+| RO-006 Política de retención | T150-01, T150-02 | Rotación *grandfather-father-son* en `backup-postgres.sh` (7 días + 4 semanas ISO) | `docs/adr/ADR-0013-estrategia-backup-retencion.md`; rotación probada con 9 backups sintéticos: elimina los que caen fuera de ambas ventanas y conserva el primero de cada semana ISO |
 | RO-007 Procedimiento de restauración documentado y probado | T150-03, T150-04 | `scripts/backup/restore-postgres.sh` (parar → restaurar → validar → arrancar) + `scripts/smoke.sh` | `docs/manuals/backup-restore.md` §3 y §4; simulacro ejecutado 2026-08-04 |
 | RT-008 Restauración validada y documentada | T150-04 | Validación automática en el script (esquema, Flyway sin fallos, tablas de negocio con filas) y smoke tests | Simulacro 2026-08-04: 13 s, `TRUNCATE tenant CASCADE` recuperado a 3 tenants / 5 usuarios / 8 outbox, login HTTP 200, `scripts/smoke.sh` en verde. Acta completa en `docs/manuals/backup-restore.md` §4 |
-| RC-008 Sin alta disponibilidad (restricción asumida) | T150-01 | Backup lógico diario en lugar de PITR/réplica; RPO 24 h, RTO 1 h declarados | `docs/adr/ADR-0016-estrategia-backup-retencion.md` (alternativas descartadas) |
+| RC-008 Sin alta disponibilidad (restricción asumida) | T150-01 | Backup lógico diario en lugar de PITR/réplica; RPO 24 h, RTO 1 h declarados | `docs/adr/ADR-0013-estrategia-backup-retencion.md` (alternativas descartadas) |
 
-## Pendiente (fuera de esta iteración)
+## Pendiente
 
-- T130-04/05 Auditoría de tenant ampliada y consulta avanzada.
-- RF-TEN-001: `número de usuarios` y `último acceso` en el listado (dependen de
-  identity/sesiones — épica T60).
+- **T160-01** Pruebas E2E completas de los diez flujos. Hoy solo existe
+  `EndToEndFlowIT` (nivel API); no hay infraestructura E2E de navegador.
+- **T160-03** Revisión de rendimiento, incluidos los índices de reporting
+  (T100-02), que no tienen migración propia.
+- **T160-02** Revisión de seguridad OWASP y cierre del modelo de amenazas.
+- **T100-06** Exportación PDF (P3, opcional).
+- **T140-05** Panel técnico básico (P3, opcional).
+- **RS-015** El escaneo de dependencias del backend requiere dar de alta el
+  secreto `NVD_API_KEY` en GitHub; hasta entonces cubre solo el frontend.
 
 ## Notificaciones (RF-NOT)
 

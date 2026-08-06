@@ -164,10 +164,39 @@ class PlatformTenantControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(new AuthLoginRequest(ownerEmail, "supersecretpwd"))))
                 .andExpect(status().isOk());
 
-        // Aparece en el listado de plataforma.
+        // Aparece en el listado de plataforma, con su uso (RF-TEN-001): un solo
+        // usuario —el administrador recién creado— y un último acceso, que
+        // existe porque acaba de iniciar sesión.
         mockMvc.perform(get("/api/v1/platform/tenants").header(HttpHeaders.AUTHORIZATION, bearer(platformToken)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[?(@.id == '" + tenantId + "')]").exists());
+                .andExpect(jsonPath("$.content[?(@.id == '" + tenantId + "')]").exists())
+                .andExpect(jsonPath("$.content[?(@.id == '" + tenantId + "')].userCount").value(1))
+                .andExpect(jsonPath("$.content[?(@.id == '" + tenantId + "')].lastAccessAt").exists());
+    }
+
+    @Test
+    void aTenantWithoutAccessesIsListedAsNeverAccessed() throws Exception {
+        // Un tenant recién creado por plataforma todavía no tiene sesiones. Debe
+        // listarse con su usuario y sin último acceso, no quedar fuera.
+        String platformToken = createPlatformAdminToken("never-accessed");
+        String ownerEmail = "owner+never+" + System.currentTimeMillis() + "@acme.test";
+
+        String response = mockMvc.perform(post("/api/v1/platform/tenants")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(platformToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CreateTenantRequest(
+                                "Sin Accesos", "Europe/Madrid", ownerEmail, "supersecretpwd", "Owner", "Nuevo"))))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String tenantId = objectMapper.readTree(response).get("tenantId").asText();
+
+        mockMvc.perform(get("/api/v1/platform/tenants").header(HttpHeaders.AUTHORIZATION, bearer(platformToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[?(@.id == '" + tenantId + "')].userCount").value(1))
+                .andExpect(jsonPath("$.content[?(@.id == '" + tenantId + "')].lastAccessAt")
+                        .value(org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.nullValue())));
     }
 
     @Test

@@ -12,6 +12,9 @@ export interface PlatformTenantSummary {
   createdAt: string;
   activatedAt: string | null;
   suspendedAt: string | null;
+  userCount: number;
+  /** Último uso de una sesión del tenant; null si nunca se ha accedido. */
+  lastAccessAt: string | null;
 }
 
 export interface PlatformTenantDetail extends PlatformTenantSummary {

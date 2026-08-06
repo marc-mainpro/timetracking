@@ -35,6 +35,14 @@
           <div class="tenant-main">
             <strong>{{ tenant.name }}</strong>
             <small>{{ tenant.timezone }} · alta {{ tenant.createdAt | date: 'short' }}</small>
+            <small>
+              {{ tenant.userCount }} {{ tenant.userCount === 1 ? 'usuario' : 'usuarios' }} ·
+              @if (tenant.lastAccessAt) {
+                último acceso {{ tenant.lastAccessAt | date: 'short' }}
+              } @else {
+                sin accesos
+              }
+            </small>
           </div>
           <span class="pill pill--{{ tenant.status.toLowerCase() }}">{{ tenant.status }}</span>
           <div class="row-actions">

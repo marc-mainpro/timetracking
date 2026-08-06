@@ -102,7 +102,7 @@
 - Manuales y guion: `docs/manuals/*.md`, `docs/demo/demo-script.md`.
 - Backup automatizado con retención y cifrado (RO-005, RO-006):
   `scripts/backup/backup-postgres.sh`, estrategia en
-  `docs/adr/ADR-0016-estrategia-backup-retencion.md`.
+  `docs/adr/ADR-0013-estrategia-backup-retencion.md`.
 - Restauración documentada y **probada de verdad** (RO-007, RT-008):
   `scripts/backup/restore-postgres.sh`; acta del simulacro del 2026-08-04
   (13 s, smoke tests en verde, incidencia detectada y corregida) en

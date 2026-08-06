@@ -17,7 +17,9 @@ describe('PlatformTenantsComponent', () => {
     timezone: 'Europe/Madrid',
     createdAt: '2026-01-15T10:00:00Z',
     activatedAt: '2026-01-15T10:00:00Z',
-    suspendedAt: null
+    suspendedAt: null,
+    userCount: 3,
+    lastAccessAt: '2026-01-20T08:30:00Z'
   };
 
   beforeEach(async () => {
@@ -139,4 +141,28 @@ describe('PlatformTenantsComponent', () => {
       .flush({ ...tenant, updatedAt: tenant.createdAt, archivedAt: null, suspensionReason: null });
     expect(component.selectedTenant()?.id).toBe('t-1');
   });
+  it('muestra el número de usuarios y el último acceso del tenant', () => {
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('3 usuarios');
+    expect(text).toContain('último acceso');
+  });
+
+  it('indica cuando un tenant nunca se ha usado', () => {
+    component.load();
+    httpMock.expectOne((req) => req.url === '/api/v1/platform/tenants').flush({
+      content: [{ ...tenant, userCount: 1, lastAccessAt: null }],
+      page: 0,
+      size: 20,
+      totalElements: 1,
+      totalPages: 1
+    });
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('1 usuario');
+    expect(text).toContain('sin accesos');
+  });
+
 });

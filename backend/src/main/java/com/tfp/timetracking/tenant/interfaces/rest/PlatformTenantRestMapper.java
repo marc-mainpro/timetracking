@@ -1,6 +1,7 @@
 package com.tfp.timetracking.tenant.interfaces.rest;
 
 import com.tfp.timetracking.shared.domain.PagedResult;
+import com.tfp.timetracking.tenant.application.TenantSummary;
 import com.tfp.timetracking.tenant.domain.Tenant;
 import org.springframework.stereotype.Component;
 
@@ -8,7 +9,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class PlatformTenantRestMapper {
 
-    public PlatformTenantSummaryResponse toSummary(Tenant tenant) {
+    public PlatformTenantSummaryResponse toSummary(TenantSummary summary) {
+        Tenant tenant = summary.tenant();
         return new PlatformTenantSummaryResponse(
                 tenant.id(),
                 tenant.name(),
@@ -16,7 +18,9 @@ public class PlatformTenantRestMapper {
                 tenant.timezone(),
                 tenant.createdAt(),
                 tenant.activatedAt(),
-                tenant.suspendedAt());
+                tenant.suspendedAt(),
+                summary.userCount(),
+                summary.lastAccessAt());
     }
 
     public PlatformTenantDetailResponse toDetail(Tenant tenant) {
@@ -33,7 +37,7 @@ public class PlatformTenantRestMapper {
                 tenant.suspensionReason());
     }
 
-    public PagedPlatformTenantsResponse toPagedResponse(PagedResult<Tenant> result) {
+    public PagedPlatformTenantsResponse toPagedResponse(PagedResult<TenantSummary> result) {
         return new PagedPlatformTenantsResponse(
                 result.content().stream().map(this::toSummary).toList(),
                 result.page(),
