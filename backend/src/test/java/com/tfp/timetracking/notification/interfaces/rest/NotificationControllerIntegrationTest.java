@@ -15,6 +15,7 @@ import com.tfp.timetracking.notification.domain.NotificationType;
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.IdGenerator;
 import com.tfp.timetracking.shared.infrastructure.security.TestTenantFactory;
+import com.tfp.timetracking.tenant.application.RegisterTenantUseCase;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -67,11 +68,13 @@ class NotificationControllerIntegrationTest {
         TestTenantFactory testTenantFactory(
                 MockMvc mockMvc,
                 ObjectMapper objectMapper,
+                RegisterTenantUseCase registerTenantUseCase,
                 UserRepository userRepository,
                 PasswordHasher passwordHasher,
                 Clock clock,
                 IdGenerator idGenerator) {
-            return new TestTenantFactory(mockMvc, objectMapper, userRepository, passwordHasher, clock, idGenerator);
+            return new TestTenantFactory(
+                    mockMvc, objectMapper, registerTenantUseCase, userRepository, passwordHasher, clock, idGenerator);
         }
     }
 

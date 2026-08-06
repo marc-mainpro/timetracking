@@ -11,9 +11,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tfp.timetracking.tenant.interfaces.rest.RegisterTenantRequest;
-import com.tfp.timetracking.tenant.interfaces.rest.RegisterTenantResponse;
 import jakarta.servlet.http.Cookie;
+import com.tfp.timetracking.tenant.application.RegisterTenantCommand;
+import com.tfp.timetracking.tenant.application.RegisterTenantResult;
+import com.tfp.timetracking.tenant.application.RegisterTenantUseCase;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -57,6 +58,9 @@ class SessionControllerIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private RegisterTenantUseCase registerTenantUseCase;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -129,16 +133,8 @@ class SessionControllerIntegrationTest {
         long suffix = Instant.now().toEpochMilli();
         String email = "admin+" + suffix + "@acme.test";
         String password = "supersecretpwd";
-        RegisterTenantRequest request =
-                new RegisterTenantRequest("Acme Corp " + suffix, "Europe/Madrid", email, password, "Jane", "Doe");
-        String responseBody = mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        RegisterTenantResponse response = objectMapper.readValue(responseBody, RegisterTenantResponse.class);
+        RegisterTenantResult response =
+                registerTenantUseCase.register(new RegisterTenantCommand("Acme Corp " + suffix, "Europe/Madrid", email, password, "Jane", "Doe"));
         return new RegisteredAdmin(response.tenantId(), response.adminUserId(), email, password);
     }
 

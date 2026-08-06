@@ -30,7 +30,6 @@ class RouteAuthorizationIntegrationTest {
     private static final Set<String> PUBLIC_ROUTES = Set.of(
             "POST /api/v1/auth/login",
             "POST /api/v1/auth/refresh",
-            "POST /api/v1/auth/register",
             "POST /api/v1/auth/password/forgot",
             "POST /api/v1/auth/password/reset",
             // Alta pública V2 (T53): abiertas en la cadena, gobernadas por

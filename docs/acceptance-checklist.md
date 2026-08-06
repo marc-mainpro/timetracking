@@ -4,7 +4,7 @@
 
 - SaaS multitenant con aislamiento por tenant: cubierto por
   `CrossTenantSecurityIntegrationTest` y `EndToEndFlowIT`.
-- Registro de organización y primer admin: `POST /api/v1/auth/register`,
+- Registro de organización y primer admin: `POST /api/v1/public/tenant-registrations` + aprobación desde plataforma,
   `AuthRegisterControllerIntegrationTest`.
 - Gestión de empleados por admin: `EmployeeControllerIntegrationTest`,
   frontend `admin-employees`.

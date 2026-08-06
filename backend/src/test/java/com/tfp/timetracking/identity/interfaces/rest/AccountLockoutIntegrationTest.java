@@ -12,6 +12,7 @@ import com.tfp.timetracking.identity.domain.UserRepository;
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.IdGenerator;
 import com.tfp.timetracking.shared.infrastructure.security.TestTenantFactory;
+import com.tfp.timetracking.tenant.application.RegisterTenantUseCase;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import java.util.Map;
@@ -91,11 +92,15 @@ class AccountLockoutIntegrationTest {
     @Autowired
     private MeterRegistry meterRegistry;
 
+    @Autowired
+    private RegisterTenantUseCase registerTenantUseCase;
+
     private TestTenantFactory tenantFactory;
 
     @BeforeEach
     void setUp() {
-        tenantFactory = new TestTenantFactory(mockMvc, objectMapper, userRepository, passwordHasher, clock, idGenerator);
+        tenantFactory = new TestTenantFactory(
+                    mockMvc, objectMapper, registerTenantUseCase, userRepository, passwordHasher, clock, idGenerator);
     }
 
     @Test

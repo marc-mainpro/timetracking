@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tfp.timetracking.shared.infrastructure.security.TestTenantFactory;
+import com.tfp.timetracking.tenant.application.RegisterTenantUseCase;
 import java.util.Map;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
@@ -390,11 +391,13 @@ class AdminCalendarControllerIntegrationTest {
         TestTenantFactory testTenantFactory(
                 MockMvc mockMvc,
                 ObjectMapper objectMapper,
+                RegisterTenantUseCase registerTenantUseCase,
                 com.tfp.timetracking.identity.domain.UserRepository userRepository,
                 com.tfp.timetracking.identity.domain.PasswordHasher passwordHasher,
                 com.tfp.timetracking.shared.domain.Clock clock,
                 com.tfp.timetracking.shared.domain.IdGenerator idGenerator) {
-            return new TestTenantFactory(mockMvc, objectMapper, userRepository, passwordHasher, clock, idGenerator);
+            return new TestTenantFactory(
+                    mockMvc, objectMapper, registerTenantUseCase, userRepository, passwordHasher, clock, idGenerator);
         }
     }
 }

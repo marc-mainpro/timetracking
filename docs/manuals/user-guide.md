@@ -2,7 +2,7 @@
 
 ## Admin del tenant
 
-1. Registro inicial: acceder a `/auth/register`, crear organización y primer
+1. Registro inicial: acceder a `/registro`, enviar la solicitud de alta y esperar a que plataforma la apruebe; crea la organización y su primer
    administrador.
 2. Gestión de empleados: ir a `/admin/employees`, listar, crear, editar,
    activar/desactivar y cambiar roles.

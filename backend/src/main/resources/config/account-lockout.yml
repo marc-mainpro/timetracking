@@ -23,10 +23,14 @@ auth:
       - method: POST
         pattern: /api/v1/auth/login
 
-      # Registro público de tenant: hereda el límite global. Crear tenants es
-      # caro y no hay motivo legítimo para repetirlo desde la misma IP.
+      # Solicitud pública de alta de tenant: hereda el límite global. Crear
+      # tenants es caro y no hay motivo legítimo para repetirlo desde la misma
+      # IP. El patrón cubre también la verificación y el reenvío, que envían
+      # correo.
       - method: POST
-        pattern: /api/v1/auth/register
+        pattern: /api/v1/public/tenant-registrations/**
+      - method: POST
+        pattern: /api/v1/public/tenant-registrations
 
       # Refresh: límite más alto. Es una operación legítima y frecuente (una
       # por sesión cada 15 min de TTL del access token) y varios empleados

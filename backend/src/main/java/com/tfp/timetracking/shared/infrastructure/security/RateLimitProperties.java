@@ -44,7 +44,7 @@ public record RateLimitProperties(int capacity, Duration window, List<EndpointLi
 
     private static final List<EndpointLimit> MINIMUM_ENDPOINTS = List.of(
             new EndpointLimit("POST", "/api/v1/auth/login", null, null),
-            new EndpointLimit("POST", "/api/v1/auth/register", null, null));
+            new EndpointLimit("POST", "/api/v1/public/tenant-registrations/**", null, null));
 
     /**
      * @param method metodo HTTP al que aplica la regla; {@code null} para todos

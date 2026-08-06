@@ -205,11 +205,13 @@ class CrossTenantSecurityIntegrationTest {
         TestTenantFactory testTenantFactory(
                 MockMvc mockMvc,
                 com.fasterxml.jackson.databind.ObjectMapper objectMapper,
+                com.tfp.timetracking.tenant.application.RegisterTenantUseCase registerTenantUseCase,
                 UserRepository userRepository,
                 com.tfp.timetracking.identity.domain.PasswordHasher passwordHasher,
                 com.tfp.timetracking.shared.domain.Clock clock,
                 com.tfp.timetracking.shared.domain.IdGenerator idGenerator) {
-            return new TestTenantFactory(mockMvc, objectMapper, userRepository, passwordHasher, clock, idGenerator);
+            return new TestTenantFactory(
+                    mockMvc, objectMapper, registerTenantUseCase, userRepository, passwordHasher, clock, idGenerator);
         }
 
         @Bean

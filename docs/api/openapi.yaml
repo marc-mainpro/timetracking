@@ -74,12 +74,43 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/EmployeeResponse'
+  /api/v1/admin/hourly-rules:
+    get:
+      tags:
+      - Admin - Hourly rules
+      summary: Consulta las reglas horarias del tenant autenticado
+      operationId: get_1
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/HourlyRulesResponse'
+    put:
+      tags:
+      - Admin - Hourly rules
+      summary: Sustituye las reglas horarias del tenant autenticado
+      operationId: update_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HourlyRulesRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/HourlyRulesResponse'
   /api/v1/admin/calendars/{calendarId}:
     get:
       tags:
       - Admin - Calendars
       summary: Consulta el detalle de un calendario
-      operationId: get_1
+      operationId: get_2
       parameters:
       - name: calendarId
         in: path
@@ -98,7 +129,7 @@ paths:
       tags:
       - Admin - Calendars
       summary: 'Edita un calendario: sustituye reglas, festivos y jornadas especiales'
-      operationId: update_1
+      operationId: update_2
       parameters:
       - name: calendarId
         in: path
@@ -309,7 +340,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RegisterTenantRequest'
+              $ref: '#/components/schemas/CreateTenantRequest'
         required: true
       responses:
         '200':
@@ -317,7 +348,7 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: '#/components/schemas/RegisterTenantResponse'
+                $ref: '#/components/schemas/CreateTenantResponse'
   /api/v1/platform/tenants/{tenantId}/suspend:
     post:
       tags:
@@ -455,6 +486,22 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/TenantRegistrationResponse'
+  /api/v1/notifications/{notificationId}/read:
+    post:
+      tags:
+      - Notifications
+      summary: Marca como leida una notificacion propia
+      operationId: markRead
+      parameters:
+      - name: notificationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
   /api/v1/employees:
     get:
       tags:
@@ -557,25 +604,6 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/CorrectionResponse'
-  /api/v1/auth/register:
-    post:
-      tags:
-      - auth-register-controller
-      operationId: register
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegisterTenantRequest'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/RegisterTenantResponse'
-      deprecated: true
   /api/v1/auth/refresh:
     post:
       tags:
@@ -595,72 +623,12 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/AuthTokenResponse'
-  /api/v1/auth/sessions:
-    get:
-      tags:
-      - Authentication
-      summary: Lista las sesiones activas del usuario autenticado
-      operationId: listSessions
-      responses:
-        '200':
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SessionResponse'
-    delete:
-      tags:
-      - Authentication
-      summary: Revoca todas las sesiones del usuario autenticado
-      operationId: revokeAllSessions
-      responses:
-        '204':
-          description: No Content
-  /api/v1/auth/sessions/{sessionId}:
-    delete:
-      tags:
-      - Authentication
-      summary: Revoca una sesion concreta del usuario autenticado
-      operationId: revokeSession
-      parameters:
-      - name: sessionId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-      responses:
-        '204':
-          description: No Content
-        '404':
-          description: Not Found
-  /api/v1/auth/password/forgot:
-    post:
-      tags:
-      - Authentication
-      summary: Solicita un correo de recuperacion de contrasena
-      operationId: forgotPassword
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PasswordForgotRequest'
-        required: true
-      responses:
-        '202':
-          description: Accepted
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/PasswordResetAcceptedResponse'
   /api/v1/auth/password/reset:
     post:
       tags:
       - Authentication
       summary: Restablece la contrasena usando un token de un solo uso
-      operationId: resetPassword
+      operationId: reset
       requestBody:
         content:
           application/json:
@@ -668,27 +636,66 @@ paths:
               $ref: '#/components/schemas/PasswordResetRequest'
         required: true
       responses:
-        '204':
-          description: No Content
-  /api/v1/app/absence-types:
-    get:
+        '200':
+          description: OK
+  /api/v1/auth/password/forgot:
+    post:
       tags:
-      - Absences
-      operationId: listAbsenceTypes
+      - Authentication
+      summary: Solicita un correo de recuperacion de contrasena
+      operationId: forgot
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordForgotRequest'
+        required: true
       responses:
         '200':
           description: OK
           content:
             '*/*':
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AbsenceTypeResponse'
+                $ref: '#/components/schemas/PasswordResetAcceptedResponse'
+  /api/v1/auth/logout:
+    post:
+      tags:
+      - Authentication
+      summary: Revoca el refresh token actual y limpia la cookie
+      operationId: logout
+      parameters:
+      - name: refresh_token
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/auth/login:
+    post:
+      tags:
+      - Authentication
+      summary: Autentica un usuario y emite access token + refresh cookie
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLoginRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
   /api/v1/app/absences:
     get:
       tags:
       - Absences
-      operationId: listOwnAbsences
+      operationId: list_2
       parameters:
       - name: from
         in: query
@@ -714,7 +721,7 @@ paths:
     post:
       tags:
       - Absences
-      operationId: requestAbsence
+      operationId: request_2
       requestBody:
         content:
           application/json:
@@ -732,7 +739,7 @@ paths:
     post:
       tags:
       - Absences
-      operationId: cancelAbsence
+      operationId: cancel
       parameters:
       - name: absenceId
         in: path
@@ -747,18 +754,11 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/AbsenceResponse'
-  /api/v1/app/shifts:
+  /api/v1/admin/shifts/templates:
     get:
       tags:
-      - Shifts
-      operationId: listOwnShifts
-      parameters:
-      - name: date
-        in: query
-        required: true
-        schema:
-          type: string
-          format: date
+      - Admin - Shifts
+      operationId: listTemplates
       responses:
         '200':
           description: OK
@@ -767,33 +767,16 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/AppShiftResponse'
-  /api/v1/auth/logout:
+                  $ref: '#/components/schemas/ShiftTemplateResponse'
     post:
       tags:
-      - Authentication
-      summary: Revoca el refresh token actual y limpia la cookie
-      operationId: logout
-      parameters:
-      - name: refresh_token
-        in: cookie
-        required: false
-        schema:
-          type: string
-      responses:
-        '204':
-          description: No Content
-  /api/v1/auth/login:
-    post:
-      tags:
-      - Authentication
-      summary: Autentica un usuario y emite access token + refresh cookie
-      operationId: login
+      - Admin - Shifts
+      operationId: createTemplate
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AuthLoginRequest'
+              $ref: '#/components/schemas/ShiftTemplateRequest'
         required: true
       responses:
         '200':
@@ -801,13 +784,31 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: '#/components/schemas/AuthTokenResponse'
+                $ref: '#/components/schemas/ShiftTemplateResponse'
+  /api/v1/admin/shifts/assignments:
+    post:
+      tags:
+      - Admin - Shifts
+      operationId: assign
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignShiftRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ShiftAssignmentResponse'
   /api/v1/admin/calendars:
     get:
       tags:
       - Admin - Calendars
       summary: Lista los calendarios del tenant, con filtro opcional por estado
-      operationId: list_2
+      operationId: list_3
       parameters:
       - name: page
         in: query
@@ -861,7 +862,7 @@ paths:
       tags:
       - Admin - Calendar assignments
       summary: Lista las asignaciones del tenant, con filtro opcional por calendario
-      operationId: list_3
+      operationId: list_4
       parameters:
       - name: page
         in: query
@@ -897,7 +898,7 @@ paths:
       tags:
       - Admin - Calendar assignments
       summary: Asigna un calendario a todo el tenant, a un equipo o a un empleado
-      operationId: assign
+      operationId: assign_1
       requestBody:
         content:
           application/json:
@@ -911,94 +912,11 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/CalendarAssignmentResponse'
-  /api/v1/admin/hourly-rules:
-    get:
-      tags:
-      - Admin - Hourly rules
-      summary: Consulta las reglas horarias del tenant autenticado
-      operationId: getHourlyRules
-      responses:
-        '200':
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/HourlyRulesResponse'
-    put:
-      tags:
-      - Admin - Hourly rules
-      summary: Sustituye las reglas horarias del tenant autenticado
-      operationId: updateHourlyRules
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/HourlyRulesRequest'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/HourlyRulesResponse'
-  /api/v1/admin/absences:
-    get:
-      tags:
-      - Admin - Absences
-      operationId: listTenantAbsences
-      parameters:
-      - name: from
-        in: query
-        required: false
-        schema:
-          type: string
-          format: date
-      - name: to
-        in: query
-        required: false
-        schema:
-          type: string
-          format: date
-      responses:
-        '200':
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AbsenceResponse'
-  /api/v1/admin/absences/{absenceId}/approve:
-    post:
-      tags:
-      - Admin - Absences
-      operationId: approveAbsence
-      parameters:
-      - name: absenceId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AbsenceResolutionRequest'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/AbsenceResponse'
   /api/v1/admin/absences/{absenceId}/reject:
     post:
       tags:
       - Admin - Absences
-      operationId: rejectAbsence
+      operationId: reject_2
       parameters:
       - name: absenceId
         in: path
@@ -1019,29 +937,23 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/AbsenceResponse'
-  /api/v1/admin/shifts/templates:
-    get:
-      tags:
-      - Admin - Shifts
-      operationId: listShiftTemplates
-      responses:
-        '200':
-          description: OK
-          content:
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ShiftTemplateResponse'
+  /api/v1/admin/absences/{absenceId}/approve:
     post:
       tags:
-      - Admin - Shifts
-      operationId: createShiftTemplate
+      - Admin - Absences
+      operationId: approve_2
+      parameters:
+      - name: absenceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ShiftTemplateRequest'
+              $ref: '#/components/schemas/AbsenceResolutionRequest'
         required: true
       responses:
         '200':
@@ -1049,25 +961,7 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: '#/components/schemas/ShiftTemplateResponse'
-  /api/v1/admin/shifts/assignments:
-    post:
-      tags:
-      - Admin - Shifts
-      operationId: assignShift
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AssignShiftRequest'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/ShiftAssignmentResponse'
+                $ref: '#/components/schemas/AbsenceResponse'
   /api/v1/employees/{employeeId}/deactivate:
     patch:
       tags:
@@ -1152,7 +1046,7 @@ paths:
     get:
       tags:
       - Workdays
-      operationId: get_2
+      operationId: get_3
       parameters:
       - name: workdayId
         in: path
@@ -1269,7 +1163,7 @@ paths:
       tags:
       - Platform - Tenants
       summary: Consulta el detalle de un tenant
-      operationId: get_3
+      operationId: get_4
       parameters:
       - name: tenantId
         in: path
@@ -1289,7 +1183,7 @@ paths:
       tags:
       - Platform - Tenant registrations
       summary: Lista las solicitudes de alta, con filtro opcional por estado
-      operationId: list_4
+      operationId: list_5
       parameters:
       - name: page
         in: query
@@ -1324,7 +1218,7 @@ paths:
     get:
       tags:
       - Platform - Audit
-      operationId: list_5
+      operationId: list_6
       parameters:
       - name: page
         in: query
@@ -1367,11 +1261,55 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/PagedAuditEventsResponse'
+  /api/v1/notifications:
+    get:
+      tags:
+      - Notifications
+      summary: Lista las notificaciones del usuario autenticado
+      operationId: list_7
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PagedNotificationsResponse'
+  /api/v1/notifications/unread-count:
+    get:
+      tags:
+      - Notifications
+      summary: Numero de notificaciones sin leer del usuario autenticado
+      operationId: unreadCount
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/UnreadCountResponse'
   /api/v1/corrections:
     get:
       tags:
       - Corrections
-      operationId: list_6
+      operationId: list_8
       parameters:
       - name: page
         in: query
@@ -1406,7 +1344,7 @@ paths:
     get:
       tags:
       - Corrections
-      operationId: get_4
+      operationId: get_5
       parameters:
       - name: correctionId
         in: path
@@ -1421,11 +1359,69 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/CorrectionResponse'
+  /api/v1/auth/sessions:
+    get:
+      tags:
+      - Authentication
+      summary: Lista las sesiones activas del usuario autenticado
+      operationId: list_9
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionResponse'
+    delete:
+      tags:
+      - Authentication
+      summary: Revoca todas las sesiones del usuario autenticado
+      operationId: revokeAll
+      responses:
+        '200':
+          description: OK
+  /api/v1/app/shifts:
+    get:
+      tags:
+      - Shifts
+      operationId: list_10
+      parameters:
+      - name: date
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AppShiftResponse'
+  /api/v1/app/absence-types:
+    get:
+      tags:
+      - Absences
+      operationId: types
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AbsenceTypeResponse'
   /api/v1/admin/workdays:
     get:
       tags:
       - Admin Workdays
-      operationId: list_7
+      operationId: list_11
       parameters:
       - name: page
         in: query
@@ -1473,7 +1469,7 @@ paths:
     get:
       tags:
       - Admin Workdays
-      operationId: get_5
+      operationId: get_6
       parameters:
       - name: workdayId
         in: path
@@ -1524,7 +1520,7 @@ paths:
     get:
       tags:
       - Audit
-      operationId: list_8
+      operationId: list_12
       parameters:
       - name: page
         in: query
@@ -1567,6 +1563,49 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/PagedAuditEventsResponse'
+  /api/v1/admin/absences:
+    get:
+      tags:
+      - Admin - Absences
+      operationId: list_13
+      parameters:
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AbsenceResponse'
+  /api/v1/auth/sessions/{sessionId}:
+    delete:
+      tags:
+      - Authentication
+      summary: Revoca una sesion concreta del usuario autenticado
+      operationId: revoke
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
   /api/v1/admin/calendar-assignments/{assignmentId}:
     delete:
       tags:
@@ -1628,6 +1667,54 @@ components:
             type: string
           minItems: 1
           uniqueItems: true
+    HourlyRulesRequest:
+      type: object
+      description: Configuracion de reglas horarias del tenant
+      properties:
+        maxDailyWorkMinutes:
+          type: integer
+          format: int32
+          description: Maximo de minutos trabajados por jornada
+          example: 480
+        requiredBreakMinutes:
+          type: integer
+          format: int32
+          description: Minimo de minutos de pausa requeridos
+          example: 30
+        roundingStepMinutes:
+          type: integer
+          format: int32
+          description: Paso de redondeo en minutos
+          example: 15
+        toleranceMinutes:
+          type: integer
+          format: int32
+          description: Tolerancia en minutos
+          example: 5
+    HourlyRulesResponse:
+      type: object
+      description: Reglas horarias efectivas del tenant
+      properties:
+        maxDailyWorkMinutes:
+          type: integer
+          format: int32
+          description: Maximo de minutos trabajados por jornada
+          example: 480
+        requiredBreakMinutes:
+          type: integer
+          format: int32
+          description: Minimo de minutos de pausa requeridos
+          example: 30
+        roundingStepMinutes:
+          type: integer
+          format: int32
+          description: Paso de redondeo en minutos
+          example: 15
+        toleranceMinutes:
+          type: integer
+          format: int32
+          description: Tolerancia en minutos
+          example: 5
     DayRulePayload:
       type: object
       description: 'Regla semanal: si el dia de la semana es laborable y cuantos minutos se esperan'
@@ -1872,6 +1959,31 @@ components:
         endedAt:
           type: string
           format: date-time
+    WorkdayEvaluationResponse:
+      type: object
+      properties:
+        expectedDuration:
+          type: string
+          example: PT2H30M
+        workedDuration:
+          type: string
+          example: PT2H30M
+        effectiveWorkedDuration:
+          type: string
+          example: PT2H30M
+        pausedDuration:
+          type: string
+          example: PT2H30M
+        overtimeDuration:
+          type: string
+          example: PT2H30M
+        deviationDuration:
+          type: string
+          example: PT2H30M
+        anomalies:
+          type: array
+          items:
+            type: string
     WorkdayResponse:
       type: object
       properties:
@@ -1895,31 +2007,6 @@ components:
           example: PT2H30M
         evaluation:
           $ref: '#/components/schemas/WorkdayEvaluationResponse'
-    WorkdayEvaluationResponse:
-      type: object
-      properties:
-        expectedDuration:
-          type: string
-          example: PT8H
-        workedDuration:
-          type: string
-          example: PT8H30M
-        effectiveWorkedDuration:
-          type: string
-          example: PT8H15M
-        pausedDuration:
-          type: string
-          example: PT30M
-        overtimeDuration:
-          type: string
-          example: PT30M
-        deviationDuration:
-          type: string
-          example: PT0S
-        anomalies:
-          type: array
-          items:
-            type: string
     TenantRegistrationRequestBody:
       type: object
       properties:
@@ -1967,7 +2054,7 @@ components:
           type: string
           maxLength: 255
           minLength: 0
-    RegisterTenantRequest:
+    CreateTenantRequest:
       type: object
       properties:
         tenantName:
@@ -1989,7 +2076,7 @@ components:
         lastName:
           type: string
           minLength: 1
-    RegisterTenantResponse:
+    CreateTenantResponse:
       type: object
       properties:
         tenantId:
@@ -2126,27 +2213,27 @@ components:
         expiresAt:
           type: string
           format: date-time
-    SessionResponse:
+    PasswordResetRequest:
       type: object
       properties:
-        id:
+        token:
           type: string
-          format: uuid
-        createdAt:
+          minLength: 1
+        newPassword:
           type: string
-          format: date-time
-        lastUsedAt:
+          maxLength: 200
+          minLength: 10
+    PasswordForgotRequest:
+      type: object
+      properties:
+        email:
           type: string
-          format: date-time
-        expiresAt:
+          minLength: 1
+    PasswordResetAcceptedResponse:
+      type: object
+      properties:
+        message:
           type: string
-          format: date-time
-        revokedAt:
-          type: string
-          format: date-time
-          nullable: true
-        current:
-          type: boolean
     AuthLoginRequest:
       type: object
       properties:
@@ -2156,32 +2243,6 @@ components:
         password:
           type: string
           minLength: 1
-    PasswordForgotRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          minLength: 1
-      required:
-      - email
-    PasswordResetRequest:
-      type: object
-      properties:
-        token:
-          type: string
-          minLength: 1
-        newPassword:
-          type: string
-          minLength: 10
-          maxLength: 200
-      required:
-      - token
-      - newPassword
-    PasswordResetAcceptedResponse:
-      type: object
-      properties:
-        message:
-          type: string
     AbsenceRequestBody:
       type: object
       properties:
@@ -2197,32 +2258,11 @@ components:
         reason:
           type: string
           maxLength: 500
+          minLength: 0
       required:
       - absenceTypeId
-      - startDate
       - endDate
-    AbsenceResolutionRequest:
-      type: object
-      properties:
-        resolutionComment:
-          type: string
-          maxLength: 500
-    AbsenceTypeResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        code:
-          type: string
-        name:
-          type: string
-        requiresApproval:
-          type: boolean
-        allowsAttachment:
-          type: boolean
-        active:
-          type: boolean
+      - startDate
     AbsenceResponse:
       type: object
       properties:
@@ -2262,22 +2302,43 @@ components:
         name:
           type: string
           maxLength: 120
+          minLength: 0
         startTime:
           type: string
-          format: time
+          example: '14:30:00'
         endTime:
           type: string
-          format: time
+          example: '14:30:00'
         plannedBreakMinutes:
           type: integer
           format: int32
-          minimum: 0
           maximum: 1440
+          minimum: 0
       required:
-      - name
-      - startTime
       - endTime
       - plannedBreakMinutes
+      - startTime
+    ShiftTemplateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        startTime:
+          type: string
+          example: '14:30:00'
+        endTime:
+          type: string
+          example: '14:30:00'
+        plannedBreakMinutes:
+          type: integer
+          format: int32
+        status:
+          type: string
+        crossesMidnight:
+          type: boolean
     AssignShiftRequest:
       type: object
       properties:
@@ -2297,27 +2358,6 @@ components:
       - employeeId
       - shiftTemplateId
       - validFrom
-    ShiftTemplateResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        startTime:
-          type: string
-          format: time
-        endTime:
-          type: string
-          format: time
-        plannedBreakMinutes:
-          type: integer
-          format: int32
-        status:
-          type: string
-        crossesMidnight:
-          type: boolean
     ShiftAssignmentResponse:
       type: object
       properties:
@@ -2336,73 +2376,6 @@ components:
         validTo:
           type: string
           format: date
-    AppShiftResponse:
-      type: object
-      properties:
-        assignmentId:
-          type: string
-          format: uuid
-        shiftTemplateId:
-          type: string
-          format: uuid
-        name:
-          type: string
-        startTime:
-          type: string
-          format: time
-        endTime:
-          type: string
-          format: time
-        crossesMidnight:
-          type: boolean
-        plannedDuration:
-          type: string
-        plannedBreakDuration:
-          type: string
-        validFrom:
-          type: string
-          format: date
-        validTo:
-          type: string
-          format: date
-    HourlyRulesRequest:
-      type: object
-      properties:
-        maxDailyWorkMinutes:
-          type: integer
-          format: int32
-          minimum: 1
-        requiredBreakMinutes:
-          type: integer
-          format: int32
-          minimum: 0
-        roundingStepMinutes:
-          type: integer
-          format: int32
-          minimum: 1
-        toleranceMinutes:
-          type: integer
-          format: int32
-          minimum: 0
-    HourlyRulesResponse:
-      type: object
-      properties:
-        maxDailyWorkMinutes:
-          type: integer
-          format: int32
-          nullable: true
-        requiredBreakMinutes:
-          type: integer
-          format: int32
-          nullable: true
-        roundingStepMinutes:
-          type: integer
-          format: int32
-          nullable: true
-        toleranceMinutes:
-          type: integer
-          format: int32
-          nullable: true
     AssignCalendarRequest:
       type: object
       description: Asignacion de un calendario a un ambito
@@ -2442,6 +2415,13 @@ components:
         createdAt:
           type: string
           format: date-time
+    AbsenceResolutionRequest:
+      type: object
+      properties:
+        resolutionComment:
+          type: string
+          maxLength: 500
+          minLength: 0
     PagedResponseWorkdayResponse:
       type: object
       properties:
@@ -2475,16 +2455,16 @@ components:
           example: PT2H30M
         expected:
           type: string
-          example: PT2H
+          example: PT2H30M
         effectiveWorked:
           type: string
-          example: PT2H15M
+          example: PT2H30M
         overtime:
           type: string
-          example: PT15M
+          example: PT2H30M
         deviation:
           type: string
-          example: PT0S
+          example: PT2H30M
         workdayCount:
           type: integer
           format: int32
@@ -2508,19 +2488,19 @@ components:
           example: PT2H30M
         paused:
           type: string
-          example: PT30M
+          example: PT2H30M
         expected:
           type: string
-          example: PT2H
+          example: PT2H30M
         effectiveWorked:
           type: string
-          example: PT2H15M
+          example: PT2H30M
         overtime:
           type: string
-          example: PT15M
+          example: PT2H30M
         deviation:
           type: string
-          example: PT0S
+          example: PT2H30M
         workdayCount:
           type: integer
           format: int32
@@ -2531,25 +2511,6 @@ components:
           type: integer
           format: int32
         evaluatedWorkdayCount:
-          type: integer
-          format: int32
-      properties:
-        day:
-          type: string
-          format: date
-        worked:
-          type: string
-          example: PT2H30M
-        paused:
-          type: string
-          example: PT2H30M
-        workdayCount:
-          type: integer
-          format: int32
-        adjustedWorkdayCount:
-          type: integer
-          format: int32
-        openWorkdays:
           type: integer
           format: int32
     PagedPlatformTenantsResponse:
@@ -2659,6 +2620,51 @@ components:
         totalPages:
           type: integer
           format: int32
+    NotificationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        readAt:
+          type: string
+          format: date-time
+        read:
+          type: boolean
+    PagedNotificationsResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    UnreadCountResponse:
+      type: object
+      properties:
+        unread:
+          type: integer
+          format: int64
     PagedEmployeesResponse:
       type: object
       properties:
@@ -2697,6 +2703,71 @@ components:
         totalPages:
           type: integer
           format: int32
+    SessionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        revokedAt:
+          type: string
+          format: date-time
+        current:
+          type: boolean
+    AppShiftResponse:
+      type: object
+      properties:
+        assignmentId:
+          type: string
+          format: uuid
+        shiftTemplateId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        startTime:
+          type: string
+          example: '14:30:00'
+        endTime:
+          type: string
+          example: '14:30:00'
+        crossesMidnight:
+          type: boolean
+        plannedDuration:
+          type: string
+        plannedBreakDuration:
+          type: string
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+    AbsenceTypeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        requiresApproval:
+          type: boolean
+        allowsAttachment:
+          type: boolean
+        active:
+          type: boolean
     CalendarSummaryResponse:
       type: object
       description: Resumen de un calendario laboral

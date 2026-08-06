@@ -12,7 +12,7 @@ Ampliado en T30-03 (RS-007). Ver ADR-0014.
   | Patrón | Método | Límite |
   |---|---|---|
   | `/api/v1/auth/login` | POST | 10 / min (valor global heredado) |
-  | `/api/v1/auth/register` | POST | 10 / min (valor global heredado) |
+  | `/api/v1/public/tenant-registrations/**` | POST | 10 / min (valor global heredado) |
   | `/api/v1/auth/refresh` | POST | 30 / min |
   | `/api/v1/auth/password/**` | POST | 5 / 15 min |
   | `/api/v1/auth/verification/**` | POST | 5 / 15 min |

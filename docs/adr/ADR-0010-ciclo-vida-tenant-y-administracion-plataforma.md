@@ -42,7 +42,7 @@ a todos los tenants.
    operación de plataforma: `POST /api/v1/platform/tenants` (`PLATFORM_ADMIN`)
    crea el tenant y su primer `TENANT_ADMIN` (reutilizando
    `RegisterTenantUseCase`) y registra auditoría. El registro público
-   autoservicio (`POST /api/v1/auth/register`) queda **deshabilitado por
+   autoservicio (hoy `POST /api/v1/public/tenant-registrations`) queda **deshabilitado por
    defecto** mediante la bandera `registration.public.enabled` (RF-TEN-010); se
    conserva tras la bandera para poder reactivarlo sin cambios de código. El
    perfil de test lo mantiene habilitado para no reescribir las suites que

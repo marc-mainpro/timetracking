@@ -8,7 +8,7 @@ repositorio como `docs/api/openapi.yaml`.
 
 | Método | Ruta | Auth | Tarea |
 |---|---|---|---|
-| POST | `/api/v1/auth/register` | público | T203 |
+
 | POST | `/api/v1/auth/login` | público | T204 |
 | POST | `/api/v1/auth/refresh` | público | T204 |
 | POST | `/api/v1/auth/logout` | Bearer JWT | T204 |
@@ -56,7 +56,7 @@ repositorio como `docs/api/openapi.yaml`.
 | GET | `/api/v1/reports/tenant/summary` | `TENANT_ADMIN` | T801 |
 | GET | `/api/v1/reports/tenant/export.csv` | `TENANT_ADMIN` | T801 |
 
-`POST /api/v1/auth/register`: crea un tenant y su primer usuario
+`POST /api/v1/public/tenant-registrations`: registra una **solicitud** de alta; el tenant y su primer usuario los crea la aprobación desde plataforma
 `TENANT_ADMIN` de forma transaccional. Body: `tenantName`, `timezone`,
 `adminEmail`, `adminPassword` (≥10 caracteres), `firstName`, `lastName`.
 Responde `201` con `{tenantId, adminUserId}` (sin datos sensibles) y
@@ -115,7 +115,7 @@ busca por hash, caduca y solo puede usarse una vez. Si es valido, cambia la
 contrasena, marca el token como usado, revoca todos los `refresh_token` del
 usuario y limpia la cookie `refresh_token` con `204 No Content`.
 
-`POST /api/v1/auth/register`: también está limitado por IP (`10 req/min` en
+`POST /api/v1/public/tenant-registrations/**`: también está limitado por IP (`10 req/min` en
 configuración normal) y responde `429` con `RATE_LIMIT_EXCEEDED` cuando se
 supera la ventana. Si el email ya existe, el backend responde `409` sin
 reflejar el correo original en el mensaje de error.

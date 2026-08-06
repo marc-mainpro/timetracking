@@ -15,8 +15,9 @@ import com.tfp.timetracking.identity.interfaces.rest.AuthTokenResponse;
 import com.tfp.timetracking.identity.interfaces.rest.CreateEmployeeRequest;
 import com.tfp.timetracking.outbox.application.PublishPendingOutboxMessages;
 import com.tfp.timetracking.outbox.domain.OutboxMessageStatus;
-import com.tfp.timetracking.tenant.interfaces.rest.RegisterTenantRequest;
-import com.tfp.timetracking.tenant.interfaces.rest.RegisterTenantResponse;
+import com.tfp.timetracking.tenant.application.RegisterTenantCommand;
+import com.tfp.timetracking.tenant.application.RegisterTenantResult;
+import com.tfp.timetracking.tenant.application.RegisterTenantUseCase;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -61,6 +62,9 @@ class EndToEndFlowIT {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private RegisterTenantUseCase registerTenantUseCase;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -124,15 +128,8 @@ class EndToEndFlowIT {
         long suffix = Instant.now().toEpochMilli() + Math.abs(seed.hashCode());
         String email = "admin+" + seed + "+" + suffix + "@acme.test";
         String password = "supersecretpwd";
-        RegisterTenantRequest request =
-                new RegisterTenantRequest("Tenant " + seed, "Europe/Madrid", email, password, "Admin", seed);
-        MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
-                        .header("X-Forwarded-For", "198.51.100." + (Math.abs(seed.hashCode() % 200) + 20))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andReturn();
-        RegisterTenantResponse response = objectMapper.readValue(result.getResponse().getContentAsString(), RegisterTenantResponse.class);
+        RegisterTenantResult response = registerTenantUseCase.register(new RegisterTenantCommand(
+                "Tenant " + seed, "Europe/Madrid", email, password, "Admin", seed));
         return new TenantSession(response.tenantId(), response.adminUserId(), email, password, login(email, password));
     }
 

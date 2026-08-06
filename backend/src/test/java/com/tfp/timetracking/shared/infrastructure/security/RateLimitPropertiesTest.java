@@ -30,7 +30,7 @@ class RateLimitPropertiesTest {
         RateLimitProperties fromEmpty = new RateLimitProperties(10, Duration.ofMinutes(1), List.of());
 
         assertThat(fromNull.endpoints()).extracting(EndpointLimit::pattern)
-                .containsExactly("/api/v1/auth/login", "/api/v1/auth/register");
+                .containsExactly("/api/v1/auth/login", "/api/v1/public/tenant-registrations/**");
         assertThat(fromEmpty.endpoints()).isEqualTo(fromNull.endpoints());
     }
 

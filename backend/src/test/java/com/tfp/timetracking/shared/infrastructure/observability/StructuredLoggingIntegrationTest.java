@@ -15,6 +15,7 @@ import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.IdGenerator;
 import com.tfp.timetracking.shared.infrastructure.security.CorrelationIdFilter;
 import com.tfp.timetracking.shared.infrastructure.security.TestTenantFactory;
+import com.tfp.timetracking.tenant.application.RegisterTenantUseCase;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -247,11 +248,13 @@ class StructuredLoggingIntegrationTest {
         TestTenantFactory testTenantFactory(
                 MockMvc mockMvc,
                 ObjectMapper objectMapper,
+                RegisterTenantUseCase registerTenantUseCase,
                 UserRepository userRepository,
                 PasswordHasher passwordHasher,
                 Clock clock,
                 IdGenerator idGenerator) {
-            return new TestTenantFactory(mockMvc, objectMapper, userRepository, passwordHasher, clock, idGenerator);
+            return new TestTenantFactory(
+                    mockMvc, objectMapper, registerTenantUseCase, userRepository, passwordHasher, clock, idGenerator);
         }
     }
 }

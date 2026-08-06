@@ -21,12 +21,16 @@ done
 curl -fsS http://localhost:8080/actuator/health >/dev/null
 curl -fsS http://localhost:4200/ >/dev/null
 
+# Escritura real de extremo a extremo: una solicitud de alta pública. Responde
+# 202 y no crea el tenant todavía —eso lo decide plataforma al aprobarla—, pero
+# atraviesa API, base de datos y outbox, que es lo que el smoke debe comprobar.
+# Requiere PUBLIC_REGISTRATION_ENABLED=true (por defecto está deshabilitado).
 suffix="$(date +%s)"
-payload="{\"tenantName\":\"Smoke Demo ${suffix}\",\"timezone\":\"Europe/Madrid\",\"adminEmail\":\"smoke+${suffix}@acme.test\",\"adminPassword\":\"supersecretpwd\",\"firstName\":\"Smoke\",\"lastName\":\"Demo\"}"
+payload="{\"companyName\":\"Smoke Demo ${suffix}\",\"timezone\":\"Europe/Madrid\",\"firstName\":\"Smoke\",\"lastName\":\"Demo\",\"email\":\"smoke+${suffix}@acme.test\",\"password\":\"supersecretpwd\",\"acceptTerms\":true}"
 
 curl -fsS -X POST \
   -H 'Content-Type: application/json' \
   -d "$payload" \
-  http://localhost:8080/api/v1/auth/register >/dev/null
+  http://localhost:8080/api/v1/public/tenant-registrations >/dev/null
 
 printf 'Smoke test completado correctamente.\n'

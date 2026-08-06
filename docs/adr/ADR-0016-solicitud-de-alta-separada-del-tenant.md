@@ -69,13 +69,15 @@ nunca serán una organización.
    pepper (`registration.ip-hash-pepper`) guardar el hash equivaldría a guardar
    la IP.
 
-7. **`POST /api/v1/auth/register` queda `@Deprecated` pero operativo.** Sigue
-   creando un tenant `ACTIVE` en un paso. Se mantiene porque `TestTenantFactory`
-   —y con ella la batería de integración de todos los módulos— arranca sus
-   tenants por ahí; migrarla es un cambio transversal ajeno a esta épica. Queda
-   registrado como deuda en el `HANDOFF.md`. Ambos endpoints comparten el mismo
-   flag `registration.public.enabled`, así que en producción (flag apagado por
-   defecto) ninguno de los dos está abierto.
+7. **`POST /api/v1/auth/register` se ha retirado.** *(Actualizado: al cerrar
+   esta ADR el endpoint quedó `@Deprecated` pero operativo, porque
+   `TestTenantFactory` —y con ella la batería de integración de todos los
+   módulos— arrancaba sus tenants por ahí y migrarla era un cambio transversal
+   ajeno a la épica.)* La deuda está saldada: el helper invoca ahora
+   `RegisterTenantUseCase` directamente, y el caso de uso sigue vivo porque lo
+   usan la creación desde plataforma y la aprobación de solicitudes. La única
+   vía pública de alta es el flujo de solicitud, verificación y aprobación
+   descrito arriba.
 
 8. **El correo sale por el Outbox, no por el caso de uso** (ADR-0012). El
    agregado emite `TenantRegistrationVerificationRequested`, el mapper lo

@@ -30,7 +30,7 @@
     no reescribe la contraseña de un `PLATFORM_ADMIN` ya existente; para
     cambiarla, usa el flujo de cambio de contraseña de la aplicación.
 - `PUBLIC_REGISTRATION_ENABLED`: habilita el registro público autoservicio
-  (`POST /api/v1/auth/register`, RF-TEN-010). **Deshabilitado por defecto**: el
+  (`POST /api/v1/public/tenant-registrations`, RF-TEN-010). **Deshabilitado por defecto**: el
   alta de tenants es una operación de `PLATFORM_ADMIN`.
   - Con `false`, el endpoint responde 404/403 y **`scripts/smoke.sh` y
     `scripts/seed-demo.sh` fallan**, porque ambos registran un tenant. Ponlo a

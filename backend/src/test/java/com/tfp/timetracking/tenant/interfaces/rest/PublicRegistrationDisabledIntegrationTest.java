@@ -21,9 +21,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Con el registro público deshabilitado (comportamiento por defecto en
- * producción, RF-TEN-010), tanto el alta heredada {@code /api/v1/auth/register}
- * como el flujo de solicitudes de la V2 responden 403: los tenants solo se
- * crean desde la administración de plataforma.
+ * producción, RF-TEN-010), el flujo público de solicitudes de la V2 responde
+ * 403: los tenants solo se crean desde la administración de plataforma.
  *
  * <p>La bandera se comprueba en las tres operaciones públicas, no solo en el
  * alta: si solo se cerrase la puerta de entrada, seguir verificando o reenviando
@@ -54,16 +53,6 @@ class PublicRegistrationDisabledIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
-
-    @Test
-    void publicRegistrationIsForbiddenWhenDisabled() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/register")
-                        .header("X-Forwarded-For", "203.0.113.200")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new RegisterTenantRequest(
-                                "Bloqueada", "Europe/Madrid", "blocked@acme.test", "supersecretpwd", "A", "B"))))
-                .andExpect(status().isForbidden());
-    }
 
     @Test
     void tenantRegistrationRequestsAreForbiddenWhenDisabled() throws Exception {

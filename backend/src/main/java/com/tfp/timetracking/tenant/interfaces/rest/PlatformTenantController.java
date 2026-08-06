@@ -57,7 +57,7 @@ public class PlatformTenantController {
 
     @PostMapping
     @Operation(summary = "Crea un tenant y su primer TENANT_ADMIN (solo PLATFORM_ADMIN)")
-    public ResponseEntity<RegisterTenantResponse> create(@Valid @RequestBody RegisterTenantRequest request) {
+    public ResponseEntity<CreateTenantResponse> create(@Valid @RequestBody CreateTenantRequest request) {
         RegisterTenantResult result = createTenantUseCase.create(new RegisterTenantCommand(
                 request.tenantName(),
                 request.timezone(),
@@ -65,7 +65,7 @@ public class PlatformTenantController {
                 request.adminPassword(),
                 request.firstName(),
                 request.lastName()));
-        RegisterTenantResponse body = new RegisterTenantResponse(result.tenantId(), result.adminUserId());
+        CreateTenantResponse body = new CreateTenantResponse(result.tenantId(), result.adminUserId());
         return ResponseEntity.created(URI.create("/api/v1/platform/tenants/" + result.tenantId())).body(body);
     }
 

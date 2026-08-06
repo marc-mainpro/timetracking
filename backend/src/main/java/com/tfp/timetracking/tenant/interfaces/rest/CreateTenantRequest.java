@@ -5,10 +5,14 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * DTO de request de {@code POST /api/v1/auth/register} (CONTEXT-API §2).
- * Separado del modelo de dominio y de las entidades JPA (CONTEXT-GLOBAL §4).
+ * Alta manual de un tenant por un {@code PLATFORM_ADMIN}
+ * ({@code POST /api/v1/platform/tenants}, RF-TEN-003).
+ *
+ * <p>Es la unica via que crea un tenant ya operativo sin pasar por la
+ * aprobacion de una solicitud: la decide una persona con rol de plataforma, que
+ * es precisamente el control que el alta publica no tiene.
  */
-public record RegisterTenantRequest(
+public record CreateTenantRequest(
         @NotBlank(message = "El nombre de la organizacion es obligatorio") String tenantName,
         @NotBlank(message = "La zona horaria es obligatoria") String timezone,
         @NotBlank(message = "El email es obligatorio") @Email(message = "Email invalido") String adminEmail,

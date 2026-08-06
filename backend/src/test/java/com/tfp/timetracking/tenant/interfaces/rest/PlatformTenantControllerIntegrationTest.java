@@ -16,6 +16,7 @@ import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.IdGenerator;
 import com.tfp.timetracking.shared.domain.PlatformTenant;
 import com.tfp.timetracking.shared.infrastructure.security.TestTenantFactory;
+import com.tfp.timetracking.tenant.application.RegisterTenantUseCase;
 import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
@@ -147,7 +148,7 @@ class PlatformTenantControllerIntegrationTest {
         String response = mockMvc.perform(post("/api/v1/platform/tenants")
                         .header(HttpHeaders.AUTHORIZATION, bearer(platformToken))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new RegisterTenantRequest(
+                        .content(objectMapper.writeValueAsString(new CreateTenantRequest(
                                 "Nueva Org", "Europe/Madrid", ownerEmail, "supersecretpwd", "Owner", "Nuevo"))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.tenantId").exists())
@@ -176,7 +177,7 @@ class PlatformTenantControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/platform/tenants")
                         .header(HttpHeaders.AUTHORIZATION, bearer(tenant.admin().token()))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new RegisterTenantRequest(
+                        .content(objectMapper.writeValueAsString(new CreateTenantRequest(
                                 "Otra", "Europe/Madrid", "x@acme.test", "supersecretpwd", "X", "Y"))))
                 .andExpect(status().isForbidden());
     }
@@ -227,11 +228,13 @@ class PlatformTenantControllerIntegrationTest {
         TestTenantFactory testTenantFactory(
                 MockMvc mockMvc,
                 ObjectMapper objectMapper,
+                RegisterTenantUseCase registerTenantUseCase,
                 UserRepository userRepository,
                 PasswordHasher passwordHasher,
                 Clock clock,
                 IdGenerator idGenerator) {
-            return new TestTenantFactory(mockMvc, objectMapper, userRepository, passwordHasher, clock, idGenerator);
+            return new TestTenantFactory(
+                    mockMvc, objectMapper, registerTenantUseCase, userRepository, passwordHasher, clock, idGenerator);
         }
     }
 }

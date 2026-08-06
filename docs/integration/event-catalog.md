@@ -197,7 +197,7 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
 
 - **Módulo productor:** `tenant` (`tenant.application.integration.TenantIntegrationEventMapper`).
 - **Disparador de negocio:** alta de un tenant nuevo (registro público,
-  `POST /api/v1/auth/register`), junto con su usuario administrador inicial
+  `POST /api/v1/platform/tenants` o la aprobación de una solicitud de alta), junto con su usuario administrador inicial
   (que además dispara `identity.employee-created.v1` en la misma operación).
 - **`aggregateId`:** id del tenant creado.
 

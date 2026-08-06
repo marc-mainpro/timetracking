@@ -21,9 +21,6 @@ public class TenantPublicEndpoints implements PublicEndpointsContributor {
     @Override
     public List<PublicEndpoint> publicEndpoints() {
         return List.of(
-                // Alta directa heredada del MVP (ADR-0016): sigue creando un
-                // tenant ACTIVE y solo se usa desde la bateria de tests.
-                PublicEndpoint.of(HttpMethod.POST, "/api/v1/auth/register"),
                 // Flujo V2 solicitud -> verificacion -> aprobacion (T53-03).
                 PublicEndpoint.of(HttpMethod.POST, "/api/v1/public/tenant-registrations"),
                 PublicEndpoint.of(HttpMethod.POST, "/api/v1/public/tenant-registrations/verify-email"),
