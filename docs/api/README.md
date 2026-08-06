@@ -32,6 +32,7 @@ repositorio como `docs/api/openapi.yaml`.
 | GET | `/api/v1/admin/workdays/{workdayId}` | `TENANT_ADMIN` | T403 |
 | GET | `/api/v1/admin/hourly-rules` | `TENANT_ADMIN` | T72 |
 | PUT | `/api/v1/admin/hourly-rules` | `TENANT_ADMIN` | T72 |
+| GET | `/api/v1/app/shifts` | `EMPLOYEE` | T90 |
 | GET | `/api/v1/employees` | `TENANT_ADMIN` | T501 |
 | POST | `/api/v1/employees` | `TENANT_ADMIN` | T501 |
 | GET | `/api/v1/employees/{employeeId}` | `TENANT_ADMIN` | T501 |
@@ -47,6 +48,9 @@ repositorio como `docs/api/openapi.yaml`.
 | GET | `/api/v1/admin/absences` | `TENANT_ADMIN` | T80 |
 | POST | `/api/v1/admin/absences/{absenceId}/approve` | `TENANT_ADMIN` | T80 |
 | POST | `/api/v1/admin/absences/{absenceId}/reject` | `TENANT_ADMIN` | T80 |
+| GET | `/api/v1/admin/shifts/templates` | `TENANT_ADMIN` | T90 |
+| POST | `/api/v1/admin/shifts/templates` | `TENANT_ADMIN` | T90 |
+| POST | `/api/v1/admin/shifts/assignments` | `TENANT_ADMIN` | T90 |
 | GET | `/api/v1/admin/audit-events` | `TENANT_ADMIN` | T603 |
 | GET | `/api/v1/reports/employees/{employeeId}/summary` | `EMPLOYEE` / `TENANT_ADMIN` | T801 |
 | GET | `/api/v1/reports/tenant/summary` | `TENANT_ADMIN` | T801 |
@@ -160,6 +164,11 @@ redondea la duración neta al tramo más cercano y `toleranceMinutes` crea una
 ventana muerta para extras, desviaciones y anomalías marginales. Solo
 `TENANT_ADMIN`.
 
+`GET /api/v1/app/shifts?date=YYYY-MM-DD`: devuelve los turnos efectivos del
+empleado autenticado para una fecha civil concreta. Cada elemento incluye la
+plantilla aplicada, si cruza medianoche, la pausa prevista y la vigencia de la
+asignación.
+
 `GET /api/v1/employees`: listado paginado de empleados del tenant del admin,
 con filtro opcional `status`.
 
@@ -205,6 +214,18 @@ ausencia. El comentario de resolución es opcional.
 
 `POST /api/v1/admin/absences/{absenceId}/reject`: rechaza una solicitud de
 ausencia. El comentario de resolución es opcional en la API actual.
+
+`GET /api/v1/admin/shifts/templates`: lista las plantillas de turno del tenant
+autenticado.
+
+`POST /api/v1/admin/shifts/templates`: crea una plantilla de turno. Body:
+`{name, startTime, endTime, plannedBreakMinutes}`. Permite turnos nocturnos si
+`endTime` es anterior a `startTime`.
+
+`POST /api/v1/admin/shifts/assignments`: asigna una plantilla a un empleado del
+tenant autenticado. Body: `{employeeId, shiftTemplateId, validFrom, validTo}`.
+Si el empleado o la plantilla no pertenecen al tenant actual, responde `404`.
+Si la plantilla está archivada, responde `409 SHIFT_TEMPLATE_ARCHIVED`.
 
 `GET /api/v1/admin/audit-events`: listado paginado de eventos de auditoría del
 tenant autenticado, con filtros opcionales `action`, `from` y `to`. Solo está

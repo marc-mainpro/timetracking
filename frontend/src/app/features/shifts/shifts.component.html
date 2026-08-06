@@ -1,0 +1,49 @@
+<section class="shifts-shell">
+  <header class="card shifts-header">
+    <div>
+      <p class="eyebrow">Turnos</p>
+      <h1>Consulta tu turno asignado</h1>
+      <p>Elige una fecha para ver el turno efectivo que te corresponde ese día.</p>
+    </div>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="load()" class="card filter-card">
+    <label>
+      <span>Fecha</span>
+      <input type="date" formControlName="date" />
+    </label>
+    <button type="submit" [disabled]="loading()">Consultar</button>
+  </form>
+
+  @if (errorMessage(); as error) {
+    <p class="message message--error">{{ error }}</p>
+  }
+
+  <section class="card list-card">
+    @if (loading()) {
+      <p>Cargando turnos...</p>
+    } @else if (shifts().length === 0) {
+      <p class="empty-state">No tienes turnos efectivos para la fecha seleccionada.</p>
+    } @else {
+      @for (shift of shifts(); track shift.assignmentId) {
+        <article class="shift-row">
+          <div>
+            <strong>{{ shift.name }}</strong>
+            <p>{{ shift.startTime }} - {{ shift.endTime }}</p>
+          </div>
+          <div>
+            <span>Pausa prevista</span>
+            <strong>{{ shift.plannedBreakDuration }}</strong>
+          </div>
+          <div>
+            <span>Vigencia</span>
+            <strong>{{ shift.validFrom }}{{ shift.validTo ? ' - ' + shift.validTo : '' }}</strong>
+          </div>
+          @if (shift.crossesMidnight) {
+            <span class="pill">Nocturno</span>
+          }
+        </article>
+      }
+    }
+  </section>
+</section>

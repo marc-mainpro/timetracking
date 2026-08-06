@@ -12,6 +12,8 @@ describe('ErrorMessagesService', () => {
 
   it('maps known error codes to friendly messages', () => {
     expect(service.fromProblem({ errorCode: 'INVALID_CREDENTIALS' })).toBe('Las credenciales no son válidas.');
+    expect(service.fromProblem({ errorCode: 'SHIFT_TEMPLATE_ALREADY_EXISTS' })).toBe('Ya existe una plantilla de turno con ese nombre.');
+    expect(service.fromProblem({ errorCode: 'SHIFT_TEMPLATE_ARCHIVED' })).toBe('La plantilla de turno está archivada y no puede asignarse.');
   });
 
   it('explains an account locked by failed attempts (RS-008)', () => {

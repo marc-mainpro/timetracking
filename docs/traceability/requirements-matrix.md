@@ -138,6 +138,15 @@ sesiones, calendarios, ausencias, turnos, informes, notificaciones).
 | RF-ABS-003 Aprobación o rechazo | T80-04/T80-05 | `ApproveAbsenceRequestUseCase`, `RejectAbsenceRequestUseCase`, `AdminAbsenceController` | `POST /api/v1/admin/absences/{id}/approve`, `POST /api/v1/admin/absences/{id}/reject` | `ResolveAbsenceRequestUseCasesTest`, `AdminAbsenceControllerIntegrationTest` |
 | RF-ABS-005 Historial | T80-04/T80-05 | `ListOwnAbsenceRequestsUseCase`, `ListTenantAbsenceRequestsUseCase` | `GET /api/v1/app/absences`, `GET /api/v1/admin/absences` | `AbsenceRequestRepositoryAdapterIntegrationTest`, `AppAbsenceControllerIntegrationTest`, `AdminAbsenceControllerIntegrationTest` |
 
+## Turnos (RF-SHF)
+
+| Requisito | Tarea | Caso de uso / componente | Endpoint | Prueba |
+|---|---|---|---|---|
+| RF-SHF-001 Plantillas de turno | T90-01/T90-04/T90-05 | `ShiftTemplate`, `CreateShiftTemplateUseCase`, `AdminShiftController` | `GET/POST /api/v1/admin/shifts/templates` | `ShiftTemplateTest`, `ShiftTemplateUseCasesTest`, `AdminShiftControllerIntegrationTest` |
+| RF-SHF-002 Asignación de turno | T90-02/T90-04/T90-05 | `ShiftAssignment`, `AssignShiftUseCase`, `AdminShiftController` | `POST /api/v1/admin/shifts/assignments` | `ShiftAssignmentTest`, `ShiftAssignmentUseCasesTest`, `AdminShiftControllerIntegrationTest` |
+| RF-SHF-003 Turnos nocturnos | T90-01/T90-05 | `ShiftTemplate.crossesMidnight`, `AppShiftController` | `GET /api/v1/app/shifts` | `ShiftTemplateTest`, `AppShiftControllerIntegrationTest` |
+| RF-SHF-006 Consulta de turnos | T90-04/T90-05 | `ListOwnEffectiveShiftsUseCase`, `AppShiftController` | `GET /api/v1/app/shifts` | `AppShiftControllerIntegrationTest` |
+
 ## Documentación
 
 | Artefacto | Tarea | Ubicación |

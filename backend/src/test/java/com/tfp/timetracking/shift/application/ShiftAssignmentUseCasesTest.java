@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.tfp.timetracking.identity.domain.UserRepository;
 import com.tfp.timetracking.shared.application.TenantContext;
 import com.tfp.timetracking.shift.domain.model.ShiftAssignment;
 import com.tfp.timetracking.shift.domain.model.ShiftAssignmentRepository;
@@ -26,6 +27,7 @@ class ShiftAssignmentUseCasesTest {
     void assignsShiftAndListsEffectiveAssignments() {
         ShiftAssignmentRepository assignmentRepository = org.mockito.Mockito.mock(ShiftAssignmentRepository.class);
         ShiftTemplateRepository templateRepository = org.mockito.Mockito.mock(ShiftTemplateRepository.class);
+        UserRepository userRepository = org.mockito.Mockito.mock(UserRepository.class);
         TenantContext tenantContext = org.mockito.Mockito.mock(TenantContext.class);
 
         UUID tenantId = UUID.randomUUID();
@@ -43,9 +45,10 @@ class ShiftAssignmentUseCasesTest {
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(tenantContext.currentUserId()).thenReturn(employeeId);
         when(templateRepository.findById(tenantId, templateId)).thenReturn(Optional.of(template));
+        when(userRepository.findById(tenantId, employeeId)).thenReturn(Optional.of(org.mockito.Mockito.mock(com.tfp.timetracking.identity.domain.User.class)));
         when(assignmentRepository.save(any(ShiftAssignment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ShiftAssignment saved = new AssignShiftUseCase(assignmentRepository, templateRepository, tenantContext)
+        ShiftAssignment saved = new AssignShiftUseCase(assignmentRepository, templateRepository, userRepository, tenantContext)
                 .assign(new AssignShiftCommand(employeeId, templateId, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)));
 
         assertThat(saved.employeeId()).isEqualTo(employeeId);

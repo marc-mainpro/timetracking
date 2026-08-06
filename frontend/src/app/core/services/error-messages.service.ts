@@ -29,6 +29,8 @@ export class ErrorMessagesService {
     ['EMAIL_ALREADY_IN_USE', 'Ese correo ya está en uso.'],
     ['CORRECTION_ALREADY_PENDING', 'Ya existe una corrección pendiente para esa jornada.'],
     ['CORRECTION_ALREADY_RESOLVED', 'La corrección ya fue resuelta por otro administrador.'],
+    ['SHIFT_TEMPLATE_ALREADY_EXISTS', 'Ya existe una plantilla de turno con ese nombre.'],
+    ['SHIFT_TEMPLATE_ARCHIVED', 'La plantilla de turno está archivada y no puede asignarse.'],
     ['CONCURRENT_MODIFICATION', 'Otra persona modificó este recurso al mismo tiempo. Recargamos el estado más reciente.'],
     ['RESOURCE_NOT_FOUND', 'No se encontró el recurso solicitado.'],
     ['ABSENCE_TYPE_INACTIVE', 'El tipo de ausencia seleccionado ya no está disponible.'],

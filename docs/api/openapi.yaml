@@ -747,6 +747,27 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/AbsenceResponse'
+  /api/v1/app/shifts:
+    get:
+      tags:
+      - Shifts
+      operationId: listOwnShifts
+      parameters:
+      - name: date
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AppShiftResponse'
   /api/v1/auth/logout:
     post:
       tags:
@@ -998,6 +1019,55 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/AbsenceResponse'
+  /api/v1/admin/shifts/templates:
+    get:
+      tags:
+      - Admin - Shifts
+      operationId: listShiftTemplates
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShiftTemplateResponse'
+    post:
+      tags:
+      - Admin - Shifts
+      operationId: createShiftTemplate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShiftTemplateRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ShiftTemplateResponse'
+  /api/v1/admin/shifts/assignments:
+    post:
+      tags:
+      - Admin - Shifts
+      operationId: assignShift
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignShiftRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ShiftAssignmentResponse'
   /api/v1/employees/{employeeId}/deactivate:
     patch:
       tags:
@@ -2186,6 +2256,115 @@ components:
         createdAt:
           type: string
           format: date-time
+    ShiftTemplateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        startTime:
+          type: string
+          format: time
+        endTime:
+          type: string
+          format: time
+        plannedBreakMinutes:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 1440
+      required:
+      - name
+      - startTime
+      - endTime
+      - plannedBreakMinutes
+    AssignShiftRequest:
+      type: object
+      properties:
+        employeeId:
+          type: string
+          format: uuid
+        shiftTemplateId:
+          type: string
+          format: uuid
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+      required:
+      - employeeId
+      - shiftTemplateId
+      - validFrom
+    ShiftTemplateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        startTime:
+          type: string
+          format: time
+        endTime:
+          type: string
+          format: time
+        plannedBreakMinutes:
+          type: integer
+          format: int32
+        status:
+          type: string
+        crossesMidnight:
+          type: boolean
+    ShiftAssignmentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        shiftTemplateId:
+          type: string
+          format: uuid
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+    AppShiftResponse:
+      type: object
+      properties:
+        assignmentId:
+          type: string
+          format: uuid
+        shiftTemplateId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        startTime:
+          type: string
+          format: time
+        endTime:
+          type: string
+          format: time
+        crossesMidnight:
+          type: boolean
+        plannedDuration:
+          type: string
+        plannedBreakDuration:
+          type: string
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
     HourlyRulesRequest:
       type: object
       properties:

@@ -1,0 +1,109 @@
+<section class="admin-shell">
+  <header class="card admin-header">
+    <div>
+      <p class="eyebrow">Turnos</p>
+      <h1>Plantillas y asignaciones de turnos</h1>
+      <p>Crea plantillas reutilizables y asígnalas a empleados del tenant con una vigencia concreta.</p>
+    </div>
+  </header>
+
+  @if (actionMessage(); as message) {
+    <p class="message message--success">{{ message }}</p>
+  }
+  @if (errorMessage(); as error) {
+    <p class="message message--error">{{ error }}</p>
+  }
+
+  <div class="admin-layout">
+    <section class="card template-card">
+      <h2>Nueva plantilla</h2>
+      <form [formGroup]="templateForm" (ngSubmit)="createTemplate()" class="form-grid">
+        <label>
+          <span>Nombre</span>
+          <input type="text" formControlName="name" />
+        </label>
+        <label>
+          <span>Inicio</span>
+          <input type="time" formControlName="startTime" />
+        </label>
+        <label>
+          <span>Fin</span>
+          <input type="time" formControlName="endTime" />
+        </label>
+        <label>
+          <span>Pausa prevista (min)</span>
+          <input type="number" formControlName="plannedBreakMinutes" />
+        </label>
+        <button type="submit" [disabled]="savingTemplate()">Crear plantilla</button>
+      </form>
+    </section>
+
+    <section class="card list-card">
+      <h2>Plantillas</h2>
+      @if (loading()) {
+        <p>Cargando plantillas...</p>
+      } @else {
+        @for (template of templates(); track template.id) {
+          <article class="item-row">
+            <div>
+              <strong>{{ template.name }}</strong>
+              <p>{{ template.startTime }} - {{ template.endTime }}</p>
+            </div>
+            <div>
+              <span>Pausa {{ template.plannedBreakMinutes }} min</span>
+              @if (template.crossesMidnight) {
+                <span class="pill">Nocturno</span>
+              }
+            </div>
+          </article>
+        } @empty {
+          <p>No hay plantillas todavía.</p>
+        }
+      }
+    </section>
+
+    <section class="card assignment-card">
+      <h2>Asignar turno</h2>
+      <form [formGroup]="assignmentForm" (ngSubmit)="assignShift()" class="form-grid">
+        <label>
+          <span>Empleado</span>
+          <select formControlName="employeeId">
+            <option value="">Selecciona un empleado</option>
+            @for (employee of employees(); track employee.id) {
+              <option [value]="employee.id">{{ employee.firstName }} {{ employee.lastName }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>Plantilla</span>
+          <select formControlName="shiftTemplateId">
+            <option value="">Selecciona una plantilla</option>
+            @for (template of templates(); track template.id) {
+              <option [value]="template.id">{{ template.name }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>Válido desde</span>
+          <input type="date" formControlName="validFrom" />
+        </label>
+        <label>
+          <span>Válido hasta</span>
+          <input type="date" formControlName="validTo" />
+        </label>
+        <button type="submit" [disabled]="savingAssignment()">Asignar turno</button>
+      </form>
+
+      @if (assignments().length > 0) {
+        <div class="assignment-list">
+          @for (assignment of assignments(); track assignment.id) {
+            <article class="item-row">
+              <strong>{{ assignment.employeeId }}</strong>
+              <span>{{ assignment.validFrom }}{{ assignment.validTo ? ' - ' + assignment.validTo : '' }}</span>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  </div>
+</section>

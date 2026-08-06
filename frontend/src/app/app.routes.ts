@@ -38,6 +38,11 @@ export const routes: Routes = [
     loadChildren: () => import('./features/absences/absences.routes').then((m) => m.ABSENCES_ROUTES)
   },
   {
+    path: 'shifts',
+    canActivate: [authGuard, roleGuard(['EMPLOYEE'])],
+    loadChildren: () => import('./features/shifts/shifts.routes').then((m) => m.SHIFTS_ROUTES)
+  },
+  {
     path: 'registro',
     loadChildren: () =>
       import('./features/registration/registration.routes').then((m) => m.REGISTRATION_ROUTES)
@@ -75,6 +80,11 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard(['TENANT_ADMIN'])],
     loadChildren: () =>
       import('./features/absences/absences.routes').then((m) => m.ADMIN_ABSENCES_ROUTES)
+  },
+  {
+    path: 'admin/shifts',
+    canActivate: [authGuard, roleGuard(['TENANT_ADMIN'])],
+    loadChildren: () => import('./features/shifts/shifts.routes').then((m) => m.ADMIN_SHIFTS_ROUTES)
   },
   {
     path: 'admin/reports',

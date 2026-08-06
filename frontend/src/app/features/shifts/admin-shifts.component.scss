@@ -1,0 +1,13 @@
+.admin-layout,
+.form-grid,
+.item-row,
+.assignment-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.item-row {
+  padding: 1rem;
+  border: 1px solid var(--border-color, #d9d9d9);
+  border-radius: 0.75rem;
+}
