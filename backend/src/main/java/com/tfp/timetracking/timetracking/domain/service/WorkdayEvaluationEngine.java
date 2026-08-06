@@ -12,9 +12,29 @@ import java.util.List;
 public final class WorkdayEvaluationEngine {
 
     public WorkdayEvaluation evaluate(Workday workday, EffectiveCalendar effectiveCalendar, HourlyRules hourlyRules) {
+        return evaluate(workday, effectiveCalendar, hourlyRules, null);
+    }
+
+    /**
+     * Evalua la jornada tomando como previsto el turno asignado cuando lo hay
+     * (T90-06, RF-SHF-005).
+     *
+     * <p>El turno <b>prevalece sobre el calendario</b>: es la planificacion mas
+     * especifica que existe para ese empleado y ese dia, mientras que el
+     * calendario describe la jornada tipica de su ambito. Si no hay turno, se
+     * cae al calendario, y si tampoco lo hay el previsto es cero.
+     *
+     * @param plannedShiftWorkDuration tiempo de trabajo previsto por el turno,
+     *     ya neto de la pausa prevista; {@code null} si no hay turno asignado
+     */
+    public WorkdayEvaluation evaluate(
+            Workday workday,
+            EffectiveCalendar effectiveCalendar,
+            HourlyRules hourlyRules,
+            Duration plannedShiftWorkDuration) {
         Duration workedDuration = workedDuration(workday);
         Duration pausedDuration = pausedDuration(workday);
-        Duration expectedDuration = effectiveCalendar != null ? effectiveCalendar.expectedHours() : Duration.ZERO;
+        Duration expectedDuration = expectedDuration(effectiveCalendar, plannedShiftWorkDuration);
         Duration effectiveWorkedDuration = applyRounding(workedDuration, hourlyRules);
         Duration tolerance = hourlyRules != null && hourlyRules.tolerance() != null ? hourlyRules.tolerance() : Duration.ZERO;
         Duration overtimeDuration = positiveDifference(effectiveWorkedDuration, expectedDuration.plus(tolerance));
@@ -44,6 +64,13 @@ public final class WorkdayEvaluationEngine {
                 deviationDuration,
                 anomalies,
                 java.time.Instant.EPOCH);
+    }
+
+    private Duration expectedDuration(EffectiveCalendar effectiveCalendar, Duration plannedShiftWorkDuration) {
+        if (plannedShiftWorkDuration != null) {
+            return plannedShiftWorkDuration;
+        }
+        return effectiveCalendar != null ? effectiveCalendar.expectedHours() : Duration.ZERO;
     }
 
     private Duration workedDuration(Workday workday) {

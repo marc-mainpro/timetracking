@@ -14,6 +14,7 @@ import com.tfp.timetracking.calendar.domain.model.CalendarDay;
 import com.tfp.timetracking.calendar.domain.model.DaySource;
 import com.tfp.timetracking.calendar.domain.model.EffectiveCalendar;
 import com.tfp.timetracking.calendar.domain.model.WorkCalendar;
+import com.tfp.timetracking.shift.application.ResolvePlannedShiftUseCase;
 import com.tfp.timetracking.timetracking.domain.HourlyRules;
 import com.tfp.timetracking.timetracking.domain.HourlyRulesRepository;
 import com.tfp.timetracking.timetracking.domain.Workday;
@@ -30,18 +31,31 @@ import org.mockito.ArgumentCaptor;
 
 class EvaluateClosedWorkdayServiceTest {
 
+    private static final LocalDate DATE = LocalDate.of(2026, 8, 10);
+
+    private final ResolveEffectiveCalendarUseCase resolveEffectiveCalendarUseCase =
+            org.mockito.Mockito.mock(ResolveEffectiveCalendarUseCase.class);
+    private final AbsenceRequestRepository absenceRequestRepository =
+            org.mockito.Mockito.mock(AbsenceRequestRepository.class);
+    private final ResolvePlannedShiftUseCase resolvePlannedShiftUseCase =
+            org.mockito.Mockito.mock(ResolvePlannedShiftUseCase.class);
+    private final HourlyRulesRepository hourlyRulesRepository =
+            org.mockito.Mockito.mock(HourlyRulesRepository.class);
+    private final WorkdayEvaluationRepository evaluationRepository =
+            org.mockito.Mockito.mock(WorkdayEvaluationRepository.class);
+
+    private final EvaluateClosedWorkdayService service = new EvaluateClosedWorkdayService(
+            resolveEffectiveCalendarUseCase,
+            absenceRequestRepository,
+            resolvePlannedShiftUseCase,
+            hourlyRulesRepository,
+            evaluationRepository);
+
+    private final UUID tenantId = UUID.randomUUID();
+    private final UUID employeeId = UUID.randomUUID();
+
     @Test
     void approvedAbsenceSetsExpectedDurationToZero() {
-        ResolveEffectiveCalendarUseCase resolveEffectiveCalendarUseCase = org.mockito.Mockito.mock(ResolveEffectiveCalendarUseCase.class);
-        AbsenceRequestRepository absenceRequestRepository = org.mockito.Mockito.mock(AbsenceRequestRepository.class);
-        HourlyRulesRepository hourlyRulesRepository = org.mockito.Mockito.mock(HourlyRulesRepository.class);
-        WorkdayEvaluationRepository evaluationRepository = org.mockito.Mockito.mock(WorkdayEvaluationRepository.class);
-
-        EvaluateClosedWorkdayService service = new EvaluateClosedWorkdayService(
-                resolveEffectiveCalendarUseCase, absenceRequestRepository, hourlyRulesRepository, evaluationRepository);
-
-        UUID tenantId = UUID.randomUUID();
-        UUID employeeId = UUID.randomUUID();
         Workday workday = Workday.reconstitute(
                 UUID.randomUUID(),
                 tenantId,
@@ -54,18 +68,103 @@ class EvaluateClosedWorkdayServiceTest {
                 Instant.parse("2026-08-10T16:00:00Z"),
                 List.of());
 
-        when(resolveEffectiveCalendarUseCase.resolve(employeeId, null, LocalDate.of(2026, 8, 10)))
-                .thenReturn(Optional.of(effectiveCalendar(tenantId, employeeId)));
-        when(absenceRequestRepository.findApprovedByEmployeeAndDateRange(tenantId, employeeId, LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 10)))
-                .thenReturn(List.of(approvedAbsence(tenantId, employeeId)));
-        when(hourlyRulesRepository.findByTenantId(tenantId)).thenReturn(Optional.of(HourlyRules.withoutLimits(tenantId)));
-        when(evaluationRepository.save(any(WorkdayEvaluation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        givenCalendar();
+        givenApprovedAbsence();
+        givenNoShift();
+        givenDefaults();
 
         service.evaluate(workday);
 
+        assertThat(savedEvaluation().expectedDuration()).isEqualTo(Duration.ZERO);
+    }
+
+    @Test
+    void assignedShiftTakesPrecedenceOverTheCalendar() {
+        // El turno es la planificacion mas especifica del empleado para ese dia;
+        // el calendario solo describe la jornada tipica de su ambito (T90-06).
+        Workday workday = closedWorkday();
+        givenCalendar();
+        givenNoAbsence();
+        when(resolvePlannedShiftUseCase.resolveExpectedWorkDuration(tenantId, employeeId, DATE))
+                .thenReturn(Optional.of(Duration.ofHours(6)));
+        givenDefaults();
+
+        service.evaluate(workday);
+
+        assertThat(savedEvaluation().expectedDuration()).isEqualTo(Duration.ofHours(6));
+    }
+
+    @Test
+    void fallsBackToTheCalendarWhenThereIsNoShift() {
+        Workday workday = closedWorkday();
+        givenCalendar();
+        givenNoAbsence();
+        givenNoShift();
+        givenDefaults();
+
+        service.evaluate(workday);
+
+        assertThat(savedEvaluation().expectedDuration()).isEqualTo(Duration.ofMinutes(480));
+    }
+
+    @Test
+    void approvedAbsenceBeatsAnAssignedShift() {
+        // Si el empleado tenia el dia libre no habia nada previsto, aunque
+        // figure una asignacion de turno vigente para esa fecha.
+        Workday workday = closedWorkday();
+        givenCalendar();
+        givenApprovedAbsence();
+        givenDefaults();
+
+        service.evaluate(workday);
+
+        assertThat(savedEvaluation().expectedDuration()).isEqualTo(Duration.ZERO);
+        org.mockito.Mockito.verifyNoInteractions(resolvePlannedShiftUseCase);
+    }
+
+    private Workday closedWorkday() {
+        return Workday.reconstitute(
+                UUID.randomUUID(),
+                tenantId,
+                employeeId,
+                com.tfp.timetracking.timetracking.domain.WorkdayStatus.CLOSED,
+                Instant.parse("2026-08-10T08:00:00Z"),
+                Instant.parse("2026-08-10T16:00:00Z"),
+                0L,
+                Instant.parse("2026-08-10T08:00:00Z"),
+                Instant.parse("2026-08-10T16:00:00Z"),
+                List.of());
+    }
+
+    private void givenCalendar() {
+        when(resolveEffectiveCalendarUseCase.resolve(employeeId, null, DATE))
+                .thenReturn(Optional.of(effectiveCalendar(tenantId, employeeId)));
+    }
+
+    private void givenApprovedAbsence() {
+        when(absenceRequestRepository.findApprovedByEmployeeAndDateRange(tenantId, employeeId, DATE, DATE))
+                .thenReturn(List.of(approvedAbsence(tenantId, employeeId)));
+    }
+
+    private void givenNoAbsence() {
+        when(absenceRequestRepository.findApprovedByEmployeeAndDateRange(tenantId, employeeId, DATE, DATE))
+                .thenReturn(List.of());
+    }
+
+    private void givenNoShift() {
+        when(resolvePlannedShiftUseCase.resolveExpectedWorkDuration(tenantId, employeeId, DATE))
+                .thenReturn(Optional.empty());
+    }
+
+    private void givenDefaults() {
+        when(hourlyRulesRepository.findByTenantId(tenantId)).thenReturn(Optional.of(HourlyRules.withoutLimits(tenantId)));
+        when(evaluationRepository.save(any(WorkdayEvaluation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    }
+
+    private WorkdayEvaluation savedEvaluation() {
         ArgumentCaptor<WorkdayEvaluation> captor = ArgumentCaptor.forClass(WorkdayEvaluation.class);
         verify(evaluationRepository).save(captor.capture());
-        assertThat(captor.getValue().expectedDuration()).isEqualTo(Duration.ZERO);
+        return captor.getValue();
     }
 
     private EffectiveCalendar effectiveCalendar(UUID tenantId, UUID employeeId) {

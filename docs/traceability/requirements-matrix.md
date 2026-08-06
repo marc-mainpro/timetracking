@@ -145,6 +145,7 @@ sesiones, calendarios, ausencias, turnos, informes, notificaciones).
 | RF-SHF-001 Plantillas de turno | T90-01/T90-04/T90-05 | `ShiftTemplate`, `CreateShiftTemplateUseCase`, `AdminShiftController` | `GET/POST /api/v1/admin/shifts/templates` | `ShiftTemplateTest`, `ShiftTemplateUseCasesTest`, `AdminShiftControllerIntegrationTest` |
 | RF-SHF-002 Asignación de turno | T90-02/T90-04/T90-05 | `ShiftAssignment`, `AssignShiftUseCase`, `AdminShiftController` | `POST /api/v1/admin/shifts/assignments` | `ShiftAssignmentTest`, `ShiftAssignmentUseCasesTest`, `AdminShiftControllerIntegrationTest` |
 | RF-SHF-003 Turnos nocturnos | T90-01/T90-05 | `ShiftTemplate.crossesMidnight`, `AppShiftController` | `GET /api/v1/app/shifts` | `ShiftTemplateTest`, `AppShiftControllerIntegrationTest` |
+| RF-SHF-005 Comparación previsto-real | T90-06 | `ResolvePlannedShiftUseCase`, `WorkdayEvaluationEngine`, `EvaluateClosedWorkdayService` | — (se refleja en la evaluación de la jornada) | `ResolvePlannedShiftUseCaseTest`, `EvaluateClosedWorkdayServiceTest` |
 | RF-SHF-006 Consulta de turnos | T90-04/T90-05 | `ListOwnEffectiveShiftsUseCase`, `AppShiftController` | `GET /api/v1/app/shifts` | `AppShiftControllerIntegrationTest` |
 
 ## Documentación
