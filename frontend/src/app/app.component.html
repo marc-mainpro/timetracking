@@ -24,6 +24,9 @@
           <a routerLink="/corrections" routerLinkActive="active" (click)="closeMenu()">Correcciones</a>
         }
         @if (showEmployeeLinks()) {
+          <a routerLink="/absences" routerLinkActive="active" (click)="closeMenu()">Ausencias</a>
+        }
+        @if (showEmployeeLinks()) {
           <a routerLink="/reports" routerLinkActive="active" (click)="closeMenu()">Mis informes</a>
         }
         @if (showAdminLinks()) {
@@ -34,6 +37,9 @@
         }
         @if (showAdminLinks()) {
           <a routerLink="/admin/corrections" routerLinkActive="active" (click)="closeMenu()">Revisiones</a>
+        }
+        @if (showAdminLinks()) {
+          <a routerLink="/admin/absences" routerLinkActive="active" (click)="closeMenu()">Ausencias</a>
         }
         @if (showAdminLinks()) {
           <a routerLink="/admin/reports" routerLinkActive="active" (click)="closeMenu()">Informes</a>

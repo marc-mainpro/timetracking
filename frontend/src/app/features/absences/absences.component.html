@@ -1,0 +1,83 @@
+<section class="absences-shell">
+  <header class="card absences-header">
+    <div>
+      <p class="eyebrow">Ausencias</p>
+      <h1>Solicita y sigue tus ausencias</h1>
+      <p>Registra vacaciones, permisos y otras ausencias con su rango de fechas y consulta su estado.</p>
+    </div>
+  </header>
+
+  @if (actionMessage(); as message) {
+    <p class="message message--success">{{ message }}</p>
+  }
+  @if (formError(); as error) {
+    <p class="message message--error">{{ error }}</p>
+  }
+
+  <div class="absences-layout">
+    <section class="card request-card">
+      <form [formGroup]="form" (ngSubmit)="submit()" class="absence-form">
+        <label>
+          <span>Tipo de ausencia</span>
+          <select formControlName="absenceTypeId">
+            <option value="">Selecciona un tipo</option>
+            @for (type of types(); track type.id) {
+              <option [value]="type.id">{{ type.name }}</option>
+            }
+          </select>
+        </label>
+        <div class="date-grid">
+          <label>
+            <span>Inicio</span>
+            <input type="date" formControlName="startDate" />
+          </label>
+          <label>
+            <span>Fin</span>
+            <input type="date" formControlName="endDate" />
+          </label>
+        </div>
+        <label>
+          <span>Motivo</span>
+          <textarea rows="3" formControlName="reason" placeholder="Opcional: añade contexto si hace falta"></textarea>
+        </label>
+        <button type="submit" [disabled]="saving()">{{ saving() ? 'Enviando...' : 'Solicitar ausencia' }}</button>
+      </form>
+    </section>
+
+    <section class="card list-card">
+      <div class="list-head">
+        <span class="eyebrow">Mis solicitudes</span>
+        <strong>{{ absences().length }} registradas</strong>
+      </div>
+
+      @if (loading()) {
+        <p>Cargando ausencias...</p>
+      } @else if (absences().length === 0) {
+        <p class="empty-state">Todavía no tienes ausencias registradas.</p>
+      } @else {
+        @for (absence of absences(); track absence.id) {
+          <article class="absence-row">
+            <div>
+              <strong>{{ typeName(absence.absenceTypeId) }}</strong>
+              <p>{{ absence.startDate }} al {{ absence.endDate }}</p>
+              @if (absence.reason) {
+                <small>{{ absence.reason }}</small>
+              }
+            </div>
+            <div class="absence-actions">
+              <span class="pill" [class.pill--approved]="absence.status === 'APPROVED'" [class.pill--rejected]="absence.status === 'REJECTED'">
+                {{ absence.status }}
+              </span>
+              @if (absence.resolutionComment) {
+                <small>{{ absence.resolutionComment }}</small>
+              }
+              @if (absence.status === 'PENDING') {
+                <button type="button" class="ghost" (click)="cancel(absence.id)">Cancelar</button>
+              }
+            </div>
+          </article>
+        }
+      }
+    </section>
+  </div>
+</section>

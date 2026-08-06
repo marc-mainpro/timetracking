@@ -17,6 +17,10 @@ repositorio como `docs/api/openapi.yaml`.
 | DELETE | `/api/v1/auth/sessions` | Bearer JWT | T60 |
 | POST | `/api/v1/auth/password/forgot` | público | T60 |
 | POST | `/api/v1/auth/password/reset` | público | T60 |
+| GET | `/api/v1/app/absence-types` | `EMPLOYEE` | T80 |
+| POST | `/api/v1/app/absences` | `EMPLOYEE` | T80 |
+| GET | `/api/v1/app/absences` | `EMPLOYEE` | T80 |
+| POST | `/api/v1/app/absences/{absenceId}/cancel` | `EMPLOYEE` | T80 |
 | GET | `/api/v1/workdays/current` | `EMPLOYEE` | T403 |
 | POST | `/api/v1/workdays/start` | `EMPLOYEE` | T403 |
 | POST | `/api/v1/workdays/current/breaks/start` | `EMPLOYEE` | T403 |
@@ -40,6 +44,9 @@ repositorio como `docs/api/openapi.yaml`.
 | GET | `/api/v1/corrections/{correctionId}` | `EMPLOYEE` / `TENANT_ADMIN` | T602 |
 | POST | `/api/v1/corrections/{correctionId}/approve` | `TENANT_ADMIN` | T602 |
 | POST | `/api/v1/corrections/{correctionId}/reject` | `TENANT_ADMIN` | T602 |
+| GET | `/api/v1/admin/absences` | `TENANT_ADMIN` | T80 |
+| POST | `/api/v1/admin/absences/{absenceId}/approve` | `TENANT_ADMIN` | T80 |
+| POST | `/api/v1/admin/absences/{absenceId}/reject` | `TENANT_ADMIN` | T80 |
 | GET | `/api/v1/admin/audit-events` | `TENANT_ADMIN` | T603 |
 | GET | `/api/v1/reports/employees/{employeeId}/summary` | `EMPLOYEE` / `TENANT_ADMIN` | T801 |
 | GET | `/api/v1/reports/tenant/summary` | `TENANT_ADMIN` | T801 |
@@ -79,6 +86,19 @@ cookie `refresh_token`.
 
 `DELETE /api/v1/auth/sessions`: revoca todas las sesiones del usuario
 autenticado, incluida la actual, y devuelve `204` limpiando la cookie.
+
+`GET /api/v1/app/absence-types`: lista los tipos de ausencia activos del tenant
+autenticado para que el empleado pueda solicitar una ausencia.
+
+`POST /api/v1/app/absences`: crea una solicitud de ausencia del empleado
+autenticado. Body: `{absenceTypeId, startDate, endDate, reason}`. Si el tipo
+está inactivo responde `409 ABSENCE_TYPE_INACTIVE`.
+
+`GET /api/v1/app/absences`: lista las solicitudes del empleado autenticado, con
+filtro opcional por rango `from`/`to` en formato `YYYY-MM-DD`.
+
+`POST /api/v1/app/absences/{absenceId}/cancel`: cancela una solicitud propia en
+estado `PENDING`. Si pertenece a otro empleado o a otro tenant responde `404`.
 
 `POST /api/v1/auth/password/forgot`: inicia la recuperacion de contrasena.
 Recibe `{email}` y siempre responde `202` con un mensaje neutro, exista o no
@@ -176,6 +196,15 @@ transacción.
 
 `POST /api/v1/corrections/{correctionId}/reject`: rechaza la corrección. El
 comentario de rechazo es obligatorio.
+
+`GET /api/v1/admin/absences`: lista las solicitudes de ausencia del tenant,
+con filtro opcional por rango `from`/`to`.
+
+`POST /api/v1/admin/absences/{absenceId}/approve`: aprueba una solicitud de
+ausencia. El comentario de resolución es opcional.
+
+`POST /api/v1/admin/absences/{absenceId}/reject`: rechaza una solicitud de
+ausencia. El comentario de resolución es opcional en la API actual.
 
 `GET /api/v1/admin/audit-events`: listado paginado de eventos de auditoría del
 tenant autenticado, con filtros opcionales `action`, `from` y `to`. Solo está

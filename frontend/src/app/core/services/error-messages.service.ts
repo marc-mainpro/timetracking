@@ -31,6 +31,8 @@ export class ErrorMessagesService {
     ['CORRECTION_ALREADY_RESOLVED', 'La corrección ya fue resuelta por otro administrador.'],
     ['CONCURRENT_MODIFICATION', 'Otra persona modificó este recurso al mismo tiempo. Recargamos el estado más reciente.'],
     ['RESOURCE_NOT_FOUND', 'No se encontró el recurso solicitado.'],
+    ['ABSENCE_TYPE_INACTIVE', 'El tipo de ausencia seleccionado ya no está disponible.'],
+    ['ABSENCE_REQUEST_ALREADY_RESOLVED', 'La solicitud de ausencia ya fue resuelta por otra persona.'],
     ['UNAUTHORIZED', 'Necesitas iniciar sesión para continuar.']
   ]);
 

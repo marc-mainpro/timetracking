@@ -670,6 +670,83 @@ paths:
       responses:
         '204':
           description: No Content
+  /api/v1/app/absence-types:
+    get:
+      tags:
+      - Absences
+      operationId: listAbsenceTypes
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AbsenceTypeResponse'
+  /api/v1/app/absences:
+    get:
+      tags:
+      - Absences
+      operationId: listOwnAbsences
+      parameters:
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AbsenceResponse'
+    post:
+      tags:
+      - Absences
+      operationId: requestAbsence
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbsenceRequestBody'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AbsenceResponse'
+  /api/v1/app/absences/{absenceId}/cancel:
+    post:
+      tags:
+      - Absences
+      operationId: cancelAbsence
+      parameters:
+      - name: absenceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AbsenceResponse'
   /api/v1/auth/logout:
     post:
       tags:
@@ -844,6 +921,83 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/HourlyRulesResponse'
+  /api/v1/admin/absences:
+    get:
+      tags:
+      - Admin - Absences
+      operationId: listTenantAbsences
+      parameters:
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AbsenceResponse'
+  /api/v1/admin/absences/{absenceId}/approve:
+    post:
+      tags:
+      - Admin - Absences
+      operationId: approveAbsence
+      parameters:
+      - name: absenceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbsenceResolutionRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AbsenceResponse'
+  /api/v1/admin/absences/{absenceId}/reject:
+    post:
+      tags:
+      - Admin - Absences
+      operationId: rejectAbsence
+      parameters:
+      - name: absenceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbsenceResolutionRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AbsenceResponse'
   /api/v1/employees/{employeeId}/deactivate:
     patch:
       tags:
@@ -1958,6 +2112,80 @@ components:
       properties:
         message:
           type: string
+    AbsenceRequestBody:
+      type: object
+      properties:
+        absenceTypeId:
+          type: string
+          format: uuid
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        reason:
+          type: string
+          maxLength: 500
+      required:
+      - absenceTypeId
+      - startDate
+      - endDate
+    AbsenceResolutionRequest:
+      type: object
+      properties:
+        resolutionComment:
+          type: string
+          maxLength: 500
+    AbsenceTypeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        requiresApproval:
+          type: boolean
+        allowsAttachment:
+          type: boolean
+        active:
+          type: boolean
+    AbsenceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        absenceTypeId:
+          type: string
+          format: uuid
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        reason:
+          type: string
+        status:
+          type: string
+        resolvedBy:
+          type: string
+          format: uuid
+        resolvedAt:
+          type: string
+          format: date-time
+        resolutionComment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
     HourlyRulesRequest:
       type: object
       properties:

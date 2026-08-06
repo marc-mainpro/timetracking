@@ -129,6 +129,15 @@ sesiones, calendarios, ausencias, turnos, informes, notificaciones).
 | Evaluación al cerrar/ajustar jornada | T72-03 | `EndWorkdayUseCase`, `ApproveCorrectionRequestUseCase`, `WorkdayEvaluationRepository` | — | `EndWorkdayUseCaseTest`, `ApproveCorrectionRequestUseCaseTest`, `FlywayWorkdayEvaluationMigrationIntegrationTest` |
 | Reporting con evaluación horaria | T100-01/T100-03/T100-04 | `WorkdaySummaryQueryPortAdapter`, `TimeSummaryCalculator`, `ReportRestMapper`, `TimeSummaryCsvWriter` | `GET /api/v1/reports/**`, `GET /api/v1/reports/tenant/export.csv` | `TimeSummaryCalculatorTest`, `TimeSummaryCsvWriterTest`, `ReportControllerIntegrationTest` |
 
+## Ausencias (RF-ABS)
+
+| Requisito | Tarea | Caso de uso / componente | Endpoint | Prueba |
+|---|---|---|---|---|
+| RF-ABS-001 Tipos de ausencia | T80-01/T80-05 | `AbsenceType`, `ListAbsenceTypesUseCase`, `AppAbsenceController` | `GET /api/v1/app/absence-types` | `AbsenceTypeTest`, `AppAbsenceControllerIntegrationTest` |
+| RF-ABS-002 Solicitud de ausencia | T80-02/T80-04/T80-05 | `AbsenceRequest`, `RequestAbsenceUseCase`, `AppAbsenceController` | `POST /api/v1/app/absences` | `AbsenceRequestTest`, `RequestAbsenceUseCaseTest`, `AppAbsenceControllerIntegrationTest` |
+| RF-ABS-003 Aprobación o rechazo | T80-04/T80-05 | `ApproveAbsenceRequestUseCase`, `RejectAbsenceRequestUseCase`, `AdminAbsenceController` | `POST /api/v1/admin/absences/{id}/approve`, `POST /api/v1/admin/absences/{id}/reject` | `ResolveAbsenceRequestUseCasesTest`, `AdminAbsenceControllerIntegrationTest` |
+| RF-ABS-005 Historial | T80-04/T80-05 | `ListOwnAbsenceRequestsUseCase`, `ListTenantAbsenceRequestsUseCase` | `GET /api/v1/app/absences`, `GET /api/v1/admin/absences` | `AbsenceRequestRepositoryAdapterIntegrationTest`, `AppAbsenceControllerIntegrationTest`, `AdminAbsenceControllerIntegrationTest` |
+
 ## Documentación
 
 | Artefacto | Tarea | Ubicación |

@@ -33,6 +33,11 @@ export const routes: Routes = [
       import('./features/corrections/corrections.routes').then((m) => m.CORRECTIONS_ROUTES)
   },
   {
+    path: 'absences',
+    canActivate: [authGuard, roleGuard(['EMPLOYEE'])],
+    loadChildren: () => import('./features/absences/absences.routes').then((m) => m.ABSENCES_ROUTES)
+  },
+  {
     path: 'registro',
     loadChildren: () =>
       import('./features/registration/registration.routes').then((m) => m.REGISTRATION_ROUTES)
@@ -64,6 +69,12 @@ export const routes: Routes = [
       import('./features/corrections/corrections.routes').then(
         (m) => m.ADMIN_CORRECTIONS_ROUTES
       )
+  },
+  {
+    path: 'admin/absences',
+    canActivate: [authGuard, roleGuard(['TENANT_ADMIN'])],
+    loadChildren: () =>
+      import('./features/absences/absences.routes').then((m) => m.ADMIN_ABSENCES_ROUTES)
   },
   {
     path: 'admin/reports',
