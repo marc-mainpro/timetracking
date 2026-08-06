@@ -2,6 +2,7 @@ package com.tfp.timetracking.shift.infrastructure.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.tfp.timetracking.support.AbstractPostgresDataJpaTest;
 import com.tfp.timetracking.shift.domain.model.ShiftBreakPolicy;
 import com.tfp.timetracking.shift.domain.model.ShiftTemplate;
 import java.sql.Timestamp;
@@ -11,32 +12,15 @@ import java.time.LocalTime;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-@Testcontainers
-@ActiveProfiles("test")
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class ShiftTemplateRepositoryAdapterIntegrationTest {
-
-    @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
-            .withDatabaseName("timetracking")
-            .withUsername("timetracking")
-            .withPassword("timetracking");
-
-    @DynamicPropertySource
-    static void datasourceProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
-    }
+@DataJpaTest
+@Import(ShiftTemplateRepositoryAdapter.class)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+class ShiftTemplateRepositoryAdapterIntegrationTest extends AbstractPostgresDataJpaTest {
 
     @Autowired
     private ShiftTemplateRepositoryAdapter repository;

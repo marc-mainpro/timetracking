@@ -4,23 +4,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.tfp.timetracking.support.AbstractFlywayMigrationTest;
 import java.sql.Connection;
 import java.sql.Timestamp;
 import java.sql.ResultSet;
 import java.time.Instant;
 import java.util.UUID;
-import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * T201: verifica que V2__identity.sql se aplica limpio desde una base de
@@ -28,27 +20,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * final deja el email de usuario como unico global (ADR-0008), requisito
  * necesario para el login por {@code email + password} sin ambiguedad.
  */
-@Testcontainers
-@ActiveProfiles("test")
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class FlywayIdentityMigrationIntegrationTest {
-
-    @Container
-    static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:16-alpine")
-                    .withDatabaseName("timetracking")
-                    .withUsername("timetracking")
-                    .withPassword("timetracking");
-
-    @DynamicPropertySource
-    static void datasourceProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
-    }
-
-    @Autowired
-    private DataSource dataSource;
+class FlywayIdentityMigrationIntegrationTest extends AbstractFlywayMigrationTest {
 
     @Test
     void appliesIdentityMigrationFromEmptyDatabase() throws Exception {
