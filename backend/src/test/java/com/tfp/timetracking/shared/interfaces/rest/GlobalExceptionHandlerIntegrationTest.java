@@ -69,6 +69,30 @@ class GlobalExceptionHandlerIntegrationTest {
                 .andExpect(jsonPath("$.detail", not(containsString("RuntimeException"))));
     }
 
+    @Test
+    void aMalformedQueryParameterIsARequestErrorNotAServerError() throws Exception {
+        // Detectado por los E2E (T160-01): enviar una fecha donde se espera un
+        // instante terminaba en 500, mintiendo sobre la causa y ensuciando las
+        // métricas de error del servidor.
+        TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("bad-param");
+
+        mockMvc.perform(get("/api/v1/reports/tenant/summary?from=2020-01-01&to=2999-12-31")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.detail", containsString("from")));
+    }
+
+    @Test
+    void anUnknownApiPathIsNotFound() throws Exception {
+        TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("unknown-path");
+
+        mockMvc.perform(get("/api/v1/no-existe")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("RESOURCE_NOT_FOUND"));
+    }
+
     @TestConfiguration
     static class ExceptionHandlerIntegrationTestConfiguration {
 

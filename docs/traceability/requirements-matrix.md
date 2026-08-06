@@ -180,8 +180,10 @@ backups. Lo que sigue abierto está al final, en «Pendiente».
 
 ## Pendiente
 
-- **T160-01** Pruebas E2E completas de los diez flujos. Hoy solo existe
-  `EndToEndFlowIT` (nivel API); no hay infraestructura E2E de navegador.
+- **T160-01** Parcial. Existe infraestructura E2E (Playwright, `frontend/e2e/`)
+  y cubre alta pública con correo real, jornada e informe, y aislamiento
+  multitenant. Faltan los recorridos de corrección, calendario, ausencia, turno
+  y notificación.
 - **T160-03** Revisión de rendimiento, incluidos los índices de reporting
   (T100-02), que no tienen migración propia.
 - **T160-02** Revisión de seguridad OWASP y cierre del modelo de amenazas.

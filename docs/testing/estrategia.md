@@ -35,3 +35,30 @@ Fuente de verdad: `tasks/_context/CONTEXT-GLOBAL.md` §8.
   `backend/target/site/jacoco/index.html` y publicado como artefacto en CI.
 - Frontend: `npm run test:coverage` genera `frontend/coverage/`, también
   publicado como artefacto en CI.
+
+## End-to-end de navegador (T160-01)
+
+`frontend/e2e/` con Playwright, ejecutados con `npm run e2e` contra la **pila
+completa** levantada por Docker Compose: frontend, backend, PostgreSQL y
+mailpit. No se simula el backend a propósito: el valor de estas pruebas está en
+atravesar todas las capas, y un backend simulado no detectaría una migración
+rota ni una fuga entre tenants.
+
+Requisitos para ejecutarlos: `docker compose up -d --build`,
+`PUBLIC_REGISTRATION_ENABLED=true` y `PLATFORM_ADMIN_EMAIL` /
+`PLATFORM_ADMIN_PASSWORD`.
+
+| Fichero | Flujos cubiertos |
+|---|---|
+| `registro-publico.spec.ts` | Solicitud de alta, verificación por correo real (leído de mailpit), aprobación y activación desde plataforma, primer acceso del propietario; y respuesta anti-enumeración ante correo repetido |
+| `jornada.spec.ts` | Inicio, pausa, fin y evaluación de jornada; invariante de jornada única abierta; informe de tenant con las jornadas contabilizadas |
+| `aislamiento.spec.ts` | Fuga entre tenants en listados y por identificador (404, no 403), empleado contra administración, administrador contra plataforma, y suspensión/reactivación de tenant |
+
+Se ejecutan con un solo worker: comparten base de datos y varias afirman sobre
+listados completos, así que el paralelismo las volvería dependientes del orden.
+Las llamadas de autenticación reparten el `X-Forwarded-For` entre direcciones de
+documentación para no chocar con el rate limiting, que sigue igual de estricto.
+
+**Pendiente:** los flujos de corrección, calendario, ausencia, turno y
+notificación todavía no tienen recorrido E2E propio; están cubiertos por
+pruebas de integración.
