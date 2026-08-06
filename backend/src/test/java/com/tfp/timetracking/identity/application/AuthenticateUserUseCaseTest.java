@@ -91,9 +91,12 @@ class AuthenticateUserUseCaseTest {
     }
 
     @Test
-    void rejectsInactiveUser() {
+    void tellsTheOwnerOfAnInactiveAccountWhyItCannotEnter() {
+        // El estado de la cuenta solo se revela a quien ha acertado la
+        // contrasena: es el dueno, y necesita saber por que no puede entrar.
         User user = activeUser(UserStatus.INACTIVE);
         when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.of(user));
+        when(passwordHasher.matches("secret", "hash")).thenReturn(true);
 
         assertThatThrownBy(() -> useCase.authenticate(new AuthenticateUserCommand("jane@example.com", "secret")))
                 .isInstanceOf(UserInactiveException.class);
@@ -102,13 +105,50 @@ class AuthenticateUserUseCaseTest {
     }
 
     @Test
-    void rejectsInactiveTenant() {
+    void tellsTheOwnerOfASuspendedTenantWhyItCannotEnter() {
         User user = activeUser(UserStatus.ACTIVE);
         when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.of(user));
+        when(passwordHasher.matches("secret", "hash")).thenReturn(true);
         when(tenantAccessRepository.isActive(user.tenantId())).thenReturn(false);
 
         assertThatThrownBy(() -> useCase.authenticate(new AuthenticateUserCommand("jane@example.com", "secret")))
                 .isInstanceOf(TenantInactiveException.class);
+    }
+
+    @Test
+    void doesNotRevealThatADeactivatedAccountExists() {
+        // Con la contrasena equivocada, una cuenta desactivada responde igual
+        // que un correo inexistente: si no, el codigo de error convertia el
+        // login en un oraculo de existencia de cuentas (T160-02).
+        User user = activeUser(UserStatus.INACTIVE);
+        when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.of(user));
+        when(passwordHasher.matches("wrong", "hash")).thenReturn(false);
+
+        assertThatThrownBy(() -> useCase.authenticate(new AuthenticateUserCommand("jane@example.com", "wrong")))
+                .isInstanceOf(InvalidCredentialsException.class);
+    }
+
+    @Test
+    void doesNotRevealThatASuspendedTenantExists() {
+        User user = activeUser(UserStatus.ACTIVE);
+        when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.of(user));
+        when(passwordHasher.matches("wrong", "hash")).thenReturn(false);
+        when(tenantAccessRepository.isActive(user.tenantId())).thenReturn(false);
+
+        assertThatThrownBy(() -> useCase.authenticate(new AuthenticateUserCommand("jane@example.com", "wrong")))
+                .isInstanceOf(InvalidCredentialsException.class);
+    }
+
+    @Test
+    void hashesEvenWhenTheEmailDoesNotExist() {
+        // Sin esta comparacion de descarte, un correo inexistente responde sin
+        // pasar por BCrypt y el tiempo de respuesta delata que no existe.
+        when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.empty());
+
+        assertThatThrownBy(() -> useCase.authenticate(new AuthenticateUserCommand("nadie@example.com", "secret")))
+                .isInstanceOf(InvalidCredentialsException.class);
+
+        verify(passwordHasher).matches(org.mockito.ArgumentMatchers.eq("secret"), any());
     }
 
     @Test

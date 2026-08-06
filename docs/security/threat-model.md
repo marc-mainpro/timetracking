@@ -95,3 +95,16 @@ el bloqueo por cuenta no ve la ráfaga contra cuentas distintas.
   que permite distinguir un usuario desactivado de un email inexistente. El
   bloqueo temporal no introduce esta fuga pero tampoco la corrige; debería
   tratarse junto con el resto del flujo de estados de usuario.
+
+## Enumeración de cuentas por el código de error (T160-02)
+
+| Amenaza | Riesgo | Mitigación |
+|---|---|---|
+| Descubrir qué correos tienen cuenta leyendo el `errorCode` del login | Medio: habilita phishing dirigido y reduce el espacio de búsqueda de un ataque de credenciales | El estado de cuenta y tenant solo se revela tras acertar la contraseña; con credenciales incorrectas la respuesta es idéntica exista la cuenta o no |
+| Descubrirlo por el tiempo de respuesta | Medio: el cuerpo idéntico no basta si la latencia difiere | Comparación de hash contra un valor de descarte cuando el correo no existe, para que BCrypt se ejecute en todos los caminos |
+
+Ambas se detectaron revisando el código en T160-02, no en explotación real. La
+segunda es una mitigación de coste, no una garantía: BCrypt iguala el orden de
+magnitud, pero el tiempo de la consulta a base de datos sigue difiriendo
+ligeramente. Cerrar ese margen exigiría respuestas de latencia constante, que se
+considera desproporcionado para el modelo de amenaza de esta aplicación.

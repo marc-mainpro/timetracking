@@ -38,6 +38,15 @@ public class AuthenticateUserUseCase {
     private final IdGenerator idGenerator;
     private final Duration refreshTokenTtl;
 
+    /**
+     * Hash de descarte contra el que se compara cuando el email no existe, para
+     * que el coste de BCrypt —y por tanto el tiempo de respuesta— sea el mismo
+     * exista la cuenta o no. Se calcula al arrancar en vez de incrustar un hash
+     * literal en el codigo: un literal con forma de hash es indistinguible de
+     * un secreto filtrado para cualquier escaner.
+     */
+    private final String timingEqualisationHash;
+
     public AuthenticateUserUseCase(
             UserRepository userRepository,
             TenantAccessRepository tenantAccessRepository,
@@ -65,6 +74,7 @@ public class AuthenticateUserUseCase {
         this.clock = clock;
         this.idGenerator = idGenerator;
         this.refreshTokenTtl = refreshTokenTtl;
+        this.timingEqualisationHash = passwordHasher.hash("timing-equalisation-placeholder");
     }
 
     /**
@@ -80,17 +90,31 @@ public class AuthenticateUserUseCase {
      * mensaje explicativo que necesita.
      *
      * <p>Por eso la contrasena se comprueba <b>antes</b> de decidir la
-     * respuesta al bloqueo, y no se cortocircuita: el trabajo de BCrypt se hace
-     * igual en ambos caminos.
+     * respuesta, y no se cortocircuita: el trabajo de BCrypt se hace igual en
+     * todos los caminos.
+     *
+     * <p>El mismo criterio se aplica al estado de la cuenta y del tenant
+     * (T160-02). Comprobarlos antes de la contrasena convertia el login en un
+     * oraculo de existencia: un email desconocido respondia
+     * {@code INVALID_CREDENTIALS} y uno real desactivado
+     * {@code USER_INACTIVE}, asi que bastaba mirar el codigo de error para
+     * saber que cuentas existen. Ahora ese estado solo se revela a quien ya ha
+     * acertado la contrasena, es decir, a la persona duena de la cuenta, que es
+     * quien necesita saber por que no puede entrar.
+     *
+     * <p>Y con un email inexistente se ejecuta igualmente una comparacion de
+     * hash contra un valor de descarte: sin ella, la respuesta llegaba sin
+     * pasar por BCrypt y el <b>tiempo</b> de respuesta delataba que ese correo
+     * no existe, aunque el cuerpo fuese identico.
      */
     @Transactional
     public AuthenticatedSession authenticate(AuthenticateUserCommand command) {
         User user = userRepository.findByEmail(Email.of(command.email())).orElse(null);
         if (user == null) {
+            passwordHasher.matches(command.password(), timingEqualisationHash);
             authenticationMetrics.recordLoginFailed(AuthenticationMetrics.REASON_UNKNOWN_EMAIL);
             throw new InvalidCredentialsException();
         }
-        ensureTenantAndUserAreActive(user);
 
         boolean passwordMatches = passwordHasher.matches(command.password(), user.passwordHash());
         if (accountLockoutService.isLocked(user)) {
@@ -106,6 +130,10 @@ public class AuthenticateUserUseCase {
             authenticationMetrics.recordLoginFailed(AuthenticationMetrics.REASON_BAD_CREDENTIALS);
             throw new InvalidCredentialsException();
         }
+
+        // Con la contrasena ya acertada: quien esta al otro lado es el dueno de
+        // la cuenta y merece saber por que no puede entrar.
+        ensureTenantAndUserAreActive(user);
 
         accountLockoutService.registerSuccessfulAttempt(user);
         authenticationMetrics.recordLoginSucceeded();

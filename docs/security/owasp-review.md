@@ -1,4 +1,4 @@
-# Revisión OWASP MVP
+# Revisión OWASP
 
 ## Resumen
 
@@ -90,9 +90,32 @@ seguridad específicas y análisis manual del código y configuración.
 ## A07 Identification and Authentication Failures
 
 - Aplica: sí.
-- Mitigación: login uniforme, rate limiting, rotación de refresh token,
-  revocación por reutilización, invalidación por usuario/tenant inactivo.
-- Evidencia: `AuthSecurityIntegrationTest`, `AuthControllerIntegrationTest`.
+- Mitigación: login uniforme, rate limiting, bloqueo temporal de cuenta,
+  rotación de refresh token, revocación por reutilización, invalidación por
+  usuario o tenant inactivo, y recuperación de contraseña con token de un solo
+  uso que revoca las sesiones abiertas.
+- Evidencia: `AuthSecurityIntegrationTest`, `AuthControllerIntegrationTest`,
+  `AuthenticateUserUseCaseTest`, `AccountLockoutIntegrationTest`.
+
+### Hallazgo cerrado en T160-02: el login era un oráculo de existencia
+
+El estado de la cuenta y del tenant se comprobaba **antes** que la contraseña,
+de modo que un correo desconocido respondía `INVALID_CREDENTIALS` y uno real
+desactivado `USER_INACTIVE` o `TENANT_INACTIVE`. Bastaba leer el `errorCode`
+para saber qué cuentas existen, sin conocer ninguna contraseña. La misma clase
+declaraba en su documentación la propiedad contraria para el bloqueo de cuenta,
+así que la garantía existía a medias.
+
+Había además un canal lateral por **tiempo**: con un correo inexistente se
+respondía sin ejecutar BCrypt, y la diferencia de latencia delataba la
+inexistencia aunque el cuerpo fuese idéntico.
+
+Corregido: el estado solo se revela a quien ya ha acertado la contraseña —es
+decir, al dueño de la cuenta, que necesita saber por qué no puede entrar— y con
+un correo inexistente se ejecuta igualmente una comparación contra un hash de
+descarte para igualar el coste. Cubierto por
+`AuthenticateUserUseCaseTest#doesNotRevealThatADeactivatedAccountExists`,
+`#doesNotRevealThatASuspendedTenantExists` y `#hashesEvenWhenTheEmailDoesNotExist`.
 
 ## A08 Software and Data Integrity Failures
 
