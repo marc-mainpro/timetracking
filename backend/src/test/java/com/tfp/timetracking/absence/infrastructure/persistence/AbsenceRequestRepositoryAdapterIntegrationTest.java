@@ -66,6 +66,29 @@ class AbsenceRequestRepositoryAdapterIntegrationTest {
                 .hasSize(1);
     }
 
+    @Test
+    void findsOnlyApprovedRequestsInDateRange() {
+        UUID tenantId = insertTenant();
+        UUID employeeId = insertUser(tenantId, "absence-approved@example.com");
+        UUID absenceTypeId = insertAbsenceType(tenantId, "VAC");
+        AbsenceRequest approved = AbsenceRequest.request(
+                tenantId,
+                employeeId,
+                absenceTypeId,
+                LocalDate.of(2026, 8, 10),
+                LocalDate.of(2026, 8, 12),
+                "Vacaciones",
+                Instant.parse("2026-08-01T10:00:00Z"),
+                UUID::randomUUID);
+        approved.pullDomainEvents();
+        approved.approve(UUID.randomUUID(), null, Instant.parse("2026-08-02T10:00:00Z"), UUID::randomUUID);
+        repository.save(approved);
+
+        assertThat(repository.findApprovedByEmployeeAndDateRange(
+                        tenantId, employeeId, LocalDate.of(2026, 8, 11), LocalDate.of(2026, 8, 11)))
+                .hasSize(1);
+    }
+
     private UUID insertTenant() {
         UUID id = UUID.randomUUID();
         Timestamp now = Timestamp.from(Instant.now());

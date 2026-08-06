@@ -1,5 +1,6 @@
 package com.tfp.timetracking.timetracking.application;
 
+import com.tfp.timetracking.absence.domain.AbsenceRequestRepository;
 import com.tfp.timetracking.calendar.application.usecase.ResolveEffectiveCalendarUseCase;
 import com.tfp.timetracking.calendar.domain.model.EffectiveCalendar;
 import com.tfp.timetracking.timetracking.domain.HourlyRules;
@@ -17,15 +18,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class EvaluateClosedWorkdayService {
 
     private final ResolveEffectiveCalendarUseCase resolveEffectiveCalendarUseCase;
+    private final AbsenceRequestRepository absenceRequestRepository;
     private final HourlyRulesRepository hourlyRulesRepository;
     private final WorkdayEvaluationRepository workdayEvaluationRepository;
     private final WorkdayEvaluationEngine engine = new WorkdayEvaluationEngine();
 
     public EvaluateClosedWorkdayService(
             ResolveEffectiveCalendarUseCase resolveEffectiveCalendarUseCase,
+            AbsenceRequestRepository absenceRequestRepository,
             HourlyRulesRepository hourlyRulesRepository,
             WorkdayEvaluationRepository workdayEvaluationRepository) {
         this.resolveEffectiveCalendarUseCase = resolveEffectiveCalendarUseCase;
+        this.absenceRequestRepository = absenceRequestRepository;
         this.hourlyRulesRepository = hourlyRulesRepository;
         this.workdayEvaluationRepository = workdayEvaluationRepository;
     }
@@ -36,6 +40,11 @@ public class EvaluateClosedWorkdayService {
         EffectiveCalendar effectiveCalendar = resolveEffectiveCalendarUseCase
                 .resolve(workday.employeeId(), null, localDate)
                 .orElse(null);
+        if (!absenceRequestRepository
+                .findApprovedByEmployeeAndDateRange(workday.tenantId(), workday.employeeId(), localDate, localDate)
+                .isEmpty()) {
+            effectiveCalendar = null;
+        }
         HourlyRules hourlyRules = hourlyRulesRepository.findByTenantId(workday.tenantId())
                 .orElse(HourlyRules.withoutLimits(workday.tenantId()));
         WorkdayEvaluation rawEvaluation = engine.evaluate(workday, effectiveCalendar, hourlyRules);

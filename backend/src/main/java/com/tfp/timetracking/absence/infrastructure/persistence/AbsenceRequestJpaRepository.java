@@ -29,6 +29,21 @@ interface AbsenceRequestJpaRepository extends JpaRepository<AbsenceRequestJpaEnt
     @Query("""
             select request from AbsenceRequestJpaEntity request
             where request.tenantId = :tenantId
+              and request.employeeId = :employeeId
+              and request.status = 'APPROVED'
+              and request.startDate <= :to
+              and request.endDate >= :from
+            order by request.startDate asc, request.endDate asc
+            """)
+    List<AbsenceRequestJpaEntity> findApprovedByEmployeeAndDateRange(
+            @Param("tenantId") UUID tenantId,
+            @Param("employeeId") UUID employeeId,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
+
+    @Query("""
+            select request from AbsenceRequestJpaEntity request
+            where request.tenantId = :tenantId
               and request.startDate <= :to
               and request.endDate >= :from
             order by request.employeeId asc, request.startDate asc, request.endDate asc

@@ -13,5 +13,7 @@ public interface AbsenceRequestRepository {
 
     List<AbsenceRequest> findByEmployeeAndDateRange(UUID tenantId, UUID employeeId, LocalDate from, LocalDate to);
 
+    List<AbsenceRequest> findApprovedByEmployeeAndDateRange(UUID tenantId, UUID employeeId, LocalDate from, LocalDate to);
+
     List<AbsenceRequest> findByTenantAndDateRange(UUID tenantId, LocalDate from, LocalDate to);
 }

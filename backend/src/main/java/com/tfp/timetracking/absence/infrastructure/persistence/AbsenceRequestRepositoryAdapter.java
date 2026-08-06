@@ -35,6 +35,13 @@ public class AbsenceRequestRepositoryAdapter implements AbsenceRequestRepository
     }
 
     @Override
+    public List<AbsenceRequest> findApprovedByEmployeeAndDateRange(UUID tenantId, UUID employeeId, LocalDate from, LocalDate to) {
+        return jpaRepository.findApprovedByEmployeeAndDateRange(tenantId, employeeId, from, to).stream()
+                .map(AbsenceRequestMapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public List<AbsenceRequest> findByTenantAndDateRange(UUID tenantId, LocalDate from, LocalDate to) {
         return jpaRepository.findByTenantAndDateRange(tenantId, from, to).stream()
                 .map(AbsenceRequestMapper::toDomain)

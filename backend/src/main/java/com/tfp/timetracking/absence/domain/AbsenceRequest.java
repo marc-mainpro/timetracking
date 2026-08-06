@@ -166,6 +166,16 @@ public final class AbsenceRequest {
         return events;
     }
 
+    public boolean isApproved() {
+        return status == AbsenceRequestStatus.APPROVED;
+    }
+
+    public boolean overlaps(LocalDate from, LocalDate to) {
+        Objects.requireNonNull(from, "from no puede ser null");
+        Objects.requireNonNull(to, "to no puede ser null");
+        return !endDate.isBefore(from) && !startDate.isAfter(to);
+    }
+
     private void ensurePending() {
         if (status != AbsenceRequestStatus.PENDING) {
             throw new AbsenceRequestAlreadyResolvedException();
