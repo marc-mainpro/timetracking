@@ -88,4 +88,84 @@ class ShiftAssignmentTest {
         assertThat(base.overlaps(otherEmployee)).isFalse();
         assertThat(base.overlaps(otherTenant)).isFalse();
     }
+
+    @Test
+    void reassignReplacesTemplateAndPeriod() {
+        ShiftAssignment assignment = ShiftAssignment.create(
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 6, 30),
+                UUID.randomUUID());
+        UUID newTemplate = UUID.randomUUID();
+
+        assignment.reassign(newTemplate, LocalDate.of(2026, 7, 1), null);
+
+        assertThat(assignment.shiftTemplateId()).isEqualTo(newTemplate);
+        assertThat(assignment.validFrom()).isEqualTo(LocalDate.of(2026, 7, 1));
+        assertThat(assignment.validTo()).isNull();
+    }
+
+    @Test
+    void reassignRejectsAnInvertedPeriod() {
+        ShiftAssignment assignment = ShiftAssignment.create(
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                LocalDate.of(2026, 1, 1),
+                null,
+                UUID.randomUUID());
+
+        assertThatThrownBy(() ->
+                        assignment.reassign(UUID.randomUUID(), LocalDate.of(2026, 5, 1), LocalDate.of(2026, 4, 1)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void anOpenEndedAssignmentOverlapsAnythingAfterItsStart() {
+        UUID tenantId = UUID.randomUUID();
+        UUID employeeId = UUID.randomUUID();
+        ShiftAssignment openEnded = ShiftAssignment.create(
+                tenantId, employeeId, UUID.randomUUID(), LocalDate.of(2026, 1, 1), null, UUID.randomUUID());
+        ShiftAssignment later = ShiftAssignment.create(
+                tenantId,
+                employeeId,
+                UUID.randomUUID(),
+                LocalDate.of(2030, 1, 1),
+                LocalDate.of(2030, 12, 31),
+                UUID.randomUUID());
+
+        assertThat(openEnded.overlaps(later)).isTrue();
+        assertThat(later.overlaps(openEnded)).isTrue();
+    }
+
+    @Test
+    void isEffectiveOnRespectsBothEndsOfThePeriod() {
+        ShiftAssignment assignment = ShiftAssignment.create(
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                LocalDate.of(2026, 3, 1),
+                LocalDate.of(2026, 3, 31),
+                UUID.randomUUID());
+
+        assertThat(assignment.isEffectiveOn(LocalDate.of(2026, 2, 28))).isFalse();
+        assertThat(assignment.isEffectiveOn(LocalDate.of(2026, 3, 1))).isTrue();
+        assertThat(assignment.isEffectiveOn(LocalDate.of(2026, 3, 31))).isTrue();
+        assertThat(assignment.isEffectiveOn(LocalDate.of(2026, 4, 1))).isFalse();
+    }
+
+    @Test
+    void anOpenEndedAssignmentIsEffectiveIndefinitely() {
+        ShiftAssignment assignment = ShiftAssignment.create(
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                LocalDate.of(2026, 3, 1),
+                null,
+                UUID.randomUUID());
+
+        assertThat(assignment.isEffectiveOn(LocalDate.of(2099, 1, 1))).isTrue();
+    }
 }

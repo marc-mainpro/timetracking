@@ -2,11 +2,10 @@ package com.tfp.timetracking.timetracking.interfaces.rest;
 
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.PagedResult;
-import com.tfp.timetracking.shared.application.TenantContext;
 import com.tfp.timetracking.timetracking.domain.BreakEntry;
 import com.tfp.timetracking.timetracking.domain.Workday;
 import com.tfp.timetracking.timetracking.domain.WorkdayEvaluation;
-import com.tfp.timetracking.timetracking.domain.WorkdayEvaluationRepository;
+import com.tfp.timetracking.timetracking.application.GetWorkdayEvaluationUseCase;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -16,14 +15,11 @@ import org.springframework.stereotype.Component;
 public class WorkdayRestMapper {
 
     private final Clock clock;
-    private final WorkdayEvaluationRepository workdayEvaluationRepository;
-    private final TenantContext tenantContext;
+    private final GetWorkdayEvaluationUseCase getWorkdayEvaluationUseCase;
 
-    public WorkdayRestMapper(
-            Clock clock, WorkdayEvaluationRepository workdayEvaluationRepository, TenantContext tenantContext) {
+    public WorkdayRestMapper(Clock clock, GetWorkdayEvaluationUseCase getWorkdayEvaluationUseCase) {
         this.clock = clock;
-        this.workdayEvaluationRepository = workdayEvaluationRepository;
-        this.tenantContext = tenantContext;
+        this.getWorkdayEvaluationUseCase = getWorkdayEvaluationUseCase;
     }
 
     public WorkdayResponse toResponse(Workday workday) {
@@ -61,7 +57,7 @@ public class WorkdayRestMapper {
     }
 
     private WorkdayEvaluationResponse loadEvaluation(Workday workday) {
-        return workdayEvaluationRepository.findByWorkdayId(tenantContext.currentTenantId(), workday.id())
+        return getWorkdayEvaluationUseCase.findByWorkdayId(workday.id())
                 .map(this::toEvaluationResponse)
                 .orElse(null);
     }

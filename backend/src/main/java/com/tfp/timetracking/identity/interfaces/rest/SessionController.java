@@ -3,7 +3,6 @@ package com.tfp.timetracking.identity.interfaces.rest;
 import com.tfp.timetracking.identity.application.ListSessionsUseCase;
 import com.tfp.timetracking.identity.application.RevokeAllSessionsUseCase;
 import com.tfp.timetracking.identity.application.RevokeSessionUseCase;
-import com.tfp.timetracking.identity.domain.Session;
 import com.tfp.timetracking.shared.application.TenantContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,6 +26,7 @@ public class SessionController {
     private final ListSessionsUseCase listSessionsUseCase;
     private final RevokeSessionUseCase revokeSessionUseCase;
     private final RevokeAllSessionsUseCase revokeAllSessionsUseCase;
+    private final SessionRestMapper sessionRestMapper;
     private final TenantContext tenantContext;
     private final String cookieName;
     private final String cookiePath;
@@ -36,6 +36,7 @@ public class SessionController {
             ListSessionsUseCase listSessionsUseCase,
             RevokeSessionUseCase revokeSessionUseCase,
             RevokeAllSessionsUseCase revokeAllSessionsUseCase,
+            SessionRestMapper sessionRestMapper,
             TenantContext tenantContext,
             @Value("${auth.refresh-token.cookie-name:refresh_token}") String cookieName,
             @Value("${auth.refresh-token.cookie-path:/api/v1/auth}") String cookiePath,
@@ -43,6 +44,7 @@ public class SessionController {
         this.listSessionsUseCase = listSessionsUseCase;
         this.revokeSessionUseCase = revokeSessionUseCase;
         this.revokeAllSessionsUseCase = revokeAllSessionsUseCase;
+        this.sessionRestMapper = sessionRestMapper;
         this.tenantContext = tenantContext;
         this.cookieName = cookieName;
         this.cookiePath = cookiePath;
@@ -52,10 +54,8 @@ public class SessionController {
     @GetMapping
     @Operation(summary = "Lista las sesiones activas del usuario autenticado")
     public List<SessionResponse> list() {
-        UUID currentSessionId = tenantContext.currentSessionId();
-        return listSessionsUseCase.listCurrentUserSessions().stream()
-                .map(session -> toResponse(session, currentSessionId))
-                .toList();
+        return sessionRestMapper.toResponses(
+                listSessionsUseCase.listCurrentUserSessions(), tenantContext.currentSessionId());
     }
 
     @DeleteMapping("/{sessionId}")
@@ -79,15 +79,6 @@ public class SessionController {
                 .build();
     }
 
-    private SessionResponse toResponse(Session session, UUID currentSessionId) {
-        return new SessionResponse(
-                session.id(),
-                session.createdAt(),
-                session.lastUsedAt(),
-                session.expiresAt(),
-                session.revokedAt(),
-                session.id().equals(currentSessionId));
-    }
 
     private ResponseCookie clearRefreshCookie() {
         return ResponseCookie.from(cookieName, "")

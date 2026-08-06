@@ -83,4 +83,61 @@ class ShiftTemplateTest {
                         new ShiftBreakPolicy(Duration.ZERO)))
                 .isInstanceOf(IllegalStateException.class);
     }
+
+    @Test
+    void rejectsABlankName() {
+        assertThatThrownBy(() -> ShiftTemplate.create(
+                        UUID.randomUUID(),
+                        "  ",
+                        LocalTime.of(9, 0),
+                        LocalTime.of(17, 0),
+                        new ShiftBreakPolicy(Duration.ZERO),
+                        UUID.randomUUID()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("nombre");
+    }
+
+    @Test
+    void rejectsANameLongerThanTheLimit() {
+        assertThatThrownBy(() -> ShiftTemplate.create(
+                        UUID.randomUUID(),
+                        "T".repeat(121),
+                        LocalTime.of(9, 0),
+                        LocalTime.of(17, 0),
+                        new ShiftBreakPolicy(Duration.ZERO),
+                        UUID.randomUUID()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("120");
+    }
+
+    @Test
+    void treatsAMissingBreakPolicyAsNoBreak() {
+        ShiftTemplate template = ShiftTemplate.create(
+                UUID.randomUUID(), "Turno", LocalTime.of(9, 0), LocalTime.of(17, 0), null, UUID.randomUUID());
+
+        assertThat(template.breakPolicy().plannedBreakDuration()).isEqualTo(Duration.ZERO);
+    }
+
+    @Test
+    void rejectsAShiftThatStartsAndEndsAtTheSameTime() {
+        // Mismo inicio y fin no es un turno de 24 h: es un turno vacio.
+        assertThatThrownBy(() -> ShiftTemplate.create(
+                        UUID.randomUUID(),
+                        "Turno",
+                        LocalTime.of(9, 0),
+                        LocalTime.of(9, 0),
+                        new ShiftBreakPolicy(Duration.ofDays(1)),
+                        UUID.randomUUID()))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void archivedTemplateExceptionCarriesAStableErrorCode() {
+        // El codigo viaja al cliente en el Problem Details y el frontend lo
+        // traduce: cambiarlo rompe el mensaje de la interfaz.
+        ShiftTemplateArchivedException exception = new ShiftTemplateArchivedException();
+
+        assertThat(exception.errorCode()).isEqualTo("SHIFT_TEMPLATE_ARCHIVED");
+        assertThat(exception.getMessage()).contains("archivada");
+    }
 }
