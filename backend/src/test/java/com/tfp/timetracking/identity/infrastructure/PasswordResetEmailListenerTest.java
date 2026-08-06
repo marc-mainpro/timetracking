@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import com.tfp.timetracking.outbox.application.ProcessedEventStore;
 import org.junit.jupiter.api.Test;
 
 class PasswordResetEmailListenerTest {
@@ -21,7 +22,7 @@ class PasswordResetEmailListenerTest {
     private final EmailSender emailSender = sent::add;
     private final PasswordResetProperties properties =
             new PasswordResetProperties(Duration.ofHours(1), "https://app.test/restablecer?token=%s");
-    private final PasswordResetEmailListener listener = new PasswordResetEmailListener(emailSender, properties);
+    private final PasswordResetEmailListener listener = new PasswordResetEmailListener(alwaysClaims(), emailSender, properties);
 
     @Test
     void sendsResetLink() {
@@ -63,5 +64,25 @@ class PasswordResetEmailListenerTest {
         payload.put("firstName", "Jane");
         payload.put("resetToken", "raw-token");
         return payload;
+    }
+
+
+    @Test
+    void doesNotResendTheEmailWhenTheEventIsRedelivered() {
+        // La entrega es at-least-once: si otro consumidor falla, el mensaje se
+        // reintenta y este listener vuelve a recibir el mismo evento. Sin la
+        // reserva, el usuario recibiria dos correos de recuperacion.
+        ProcessedEventStore alreadyClaimed = (eventId, consumer) -> false;
+        PasswordResetEmailListener redelivered =
+                new PasswordResetEmailListener(alreadyClaimed, emailSender, properties);
+
+        redelivered.onEvent(event(fullPayload()));
+
+        assertThat(sent).isEmpty();
+    }
+
+    /** Reserva siempre concedida: la idempotencia se prueba aparte. */
+    private static ProcessedEventStore alwaysClaims() {
+        return (eventId, consumer) -> true;
     }
 }

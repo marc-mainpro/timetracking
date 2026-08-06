@@ -4,6 +4,7 @@ import com.tfp.timetracking.identity.application.PasswordResetProperties;
 import com.tfp.timetracking.notification.application.EmailMessage;
 import com.tfp.timetracking.notification.application.EmailSender;
 import com.tfp.timetracking.outbox.application.IntegrationEventListener;
+import com.tfp.timetracking.outbox.application.ProcessedEventStore;
 import com.tfp.timetracking.shared.domain.IntegrationEvent;
 import java.util.Objects;
 import org.slf4j.Logger;
@@ -17,10 +18,16 @@ public class PasswordResetEmailListener implements IntegrationEventListener {
     private static final String SUBJECT = "Restablece tu contrasena";
     private static final Logger log = LoggerFactory.getLogger(PasswordResetEmailListener.class);
 
+    /** Identifica a este consumidor en la tabla de deduplicacion. */
+    static final String CONSUMER = "password-reset-email";
+
+    private final ProcessedEventStore processedEventStore;
     private final EmailSender emailSender;
     private final PasswordResetProperties properties;
 
-    public PasswordResetEmailListener(EmailSender emailSender, PasswordResetProperties properties) {
+    public PasswordResetEmailListener(
+            ProcessedEventStore processedEventStore, EmailSender emailSender, PasswordResetProperties properties) {
+        this.processedEventStore = processedEventStore;
         this.emailSender = emailSender;
         this.properties = properties;
     }
@@ -34,6 +41,10 @@ public class PasswordResetEmailListener implements IntegrationEventListener {
         String resetToken = string(event, "resetToken");
         if (email == null || resetToken == null) {
             log.warn("password-reset.email.skipped-incomplete-event eventId={}", event.eventId());
+            return;
+        }
+        if (!processedEventStore.tryClaim(event.eventId(), CONSUMER)) {
+            log.info("password-reset.email.already-sent aggregateId={}", event.aggregateId());
             return;
         }
         emailSender.send(new EmailMessage(email, SUBJECT, body(string(event, "firstName"), resetToken)));

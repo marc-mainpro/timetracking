@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import com.tfp.timetracking.outbox.application.ProcessedEventStore;
 import org.junit.jupiter.api.Test;
 
 /** T53-05 / ADR-0012: el correo se envía desde el consumidor del outbox, con el enlace correcto. */
@@ -29,7 +30,7 @@ class TenantRegistrationEmailListenerTest {
             "");
 
     private final TenantRegistrationEmailListener listener =
-            new TenantRegistrationEmailListener(emailSender, properties);
+            new TenantRegistrationEmailListener(alwaysClaims(), emailSender, properties);
 
     private IntegrationEvent verificationEvent(Map<String, Object> payload) {
         return new IntegrationEvent(
@@ -100,5 +101,10 @@ class TenantRegistrationEmailListenerTest {
         listener.onEvent(verificationEvent(withoutEmail));
 
         assertThat(sent).isEmpty();
+    }
+
+    /** Reserva siempre concedida: la idempotencia se prueba aparte. */
+    private static ProcessedEventStore alwaysClaims() {
+        return (eventId, consumer) -> true;
     }
 }

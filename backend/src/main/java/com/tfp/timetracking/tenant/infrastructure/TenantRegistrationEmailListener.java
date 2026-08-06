@@ -3,6 +3,7 @@ package com.tfp.timetracking.tenant.infrastructure;
 import com.tfp.timetracking.notification.application.EmailMessage;
 import com.tfp.timetracking.notification.application.EmailSender;
 import com.tfp.timetracking.outbox.application.IntegrationEventListener;
+import com.tfp.timetracking.outbox.application.ProcessedEventStore;
 import com.tfp.timetracking.shared.domain.IntegrationEvent;
 import com.tfp.timetracking.tenant.application.RegistrationProperties;
 import java.util.Objects;
@@ -30,10 +31,16 @@ public class TenantRegistrationEmailListener implements IntegrationEventListener
 
     private static final Logger log = LoggerFactory.getLogger(TenantRegistrationEmailListener.class);
 
+    /** Identifica a este consumidor en la tabla de deduplicacion. */
+    static final String CONSUMER = "tenant-registration-email";
+
+    private final ProcessedEventStore processedEventStore;
     private final EmailSender emailSender;
     private final RegistrationProperties properties;
 
-    public TenantRegistrationEmailListener(EmailSender emailSender, RegistrationProperties properties) {
+    public TenantRegistrationEmailListener(
+            ProcessedEventStore processedEventStore, EmailSender emailSender, RegistrationProperties properties) {
+        this.processedEventStore = processedEventStore;
         this.emailSender = emailSender;
         this.properties = properties;
     }
@@ -47,6 +54,10 @@ public class TenantRegistrationEmailListener implements IntegrationEventListener
         String token = string(event, "verificationToken");
         if (to == null || token == null) {
             log.warn("registration.email.skipped-incomplete-event eventId={}", event.eventId());
+            return;
+        }
+        if (!processedEventStore.tryClaim(event.eventId(), CONSUMER)) {
+            log.info("registration.email.already-sent registrationId={}", event.aggregateId());
             return;
         }
         emailSender.send(new EmailMessage(to, SUBJECT, body(string(event, "ownerFirstName"), token)));

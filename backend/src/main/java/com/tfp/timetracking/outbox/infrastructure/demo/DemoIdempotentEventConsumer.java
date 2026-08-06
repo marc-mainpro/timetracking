@@ -1,12 +1,11 @@
 package com.tfp.timetracking.outbox.infrastructure.demo;
 
 import com.tfp.timetracking.outbox.application.IntegrationEventListener;
-import com.tfp.timetracking.shared.domain.Clock;
+import com.tfp.timetracking.outbox.application.ProcessedEventStore;
 import com.tfp.timetracking.shared.domain.IntegrationEvent;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,14 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
  * real produciria) los tests invocan {@link #consume(IntegrationEvent)}
  * explicitamente una segunda vez con el mismo evento.
  *
- * <p>Patron aplicado: comprobar primero en {@code processed_event} si el
- * {@code eventId} ya se proceso (camino feliz, sin contencion); si no,
- * intentar insertar la marca y aplicar el "efecto" de negocio (aqui,
- * simplemente incrementar un contador observable en tests). Si la insercion
- * viola la clave primaria (dos hilos procesando el mismo evento a la vez),
- * se trata igual que un duplicado: el efecto nunca se aplica dos veces. Un
- * consumidor real seguiria el mismo patron: verificar-y-marcar en la misma
- * transaccion que el efecto de negocio que produce.
+ * <p>Patron aplicado: reservar el par {@code (eventId, consumidor)} en
+ * {@link ProcessedEventStore} y aplicar el "efecto" de negocio (aqui,
+ * incrementar un contador observable en tests) solo si la reserva es nuestra.
+ * La reserva es atomica, asi que dos hilos procesando el mismo evento a la vez
+ * no pueden aplicar el efecto dos veces. Un consumidor real sigue el mismo
+ * patron: reservar y aplicar el efecto en la misma transaccion.
  */
 @Component
 public class DemoIdempotentEventConsumer implements IntegrationEventListener {
@@ -44,13 +41,14 @@ public class DemoIdempotentEventConsumer implements IntegrationEventListener {
 
     private static final Logger log = LoggerFactory.getLogger(DemoIdempotentEventConsumer.class);
 
-    private final ProcessedEventJpaRepository processedEventRepository;
-    private final Clock clock;
+    /** Identifica a este consumidor en la tabla de deduplicacion. */
+    public static final String CONSUMER = "demo-idempotent-event-consumer";
+
+    private final ProcessedEventStore processedEventStore;
     private final AtomicInteger effectsApplied = new AtomicInteger();
 
-    public DemoIdempotentEventConsumer(ProcessedEventJpaRepository processedEventRepository, Clock clock) {
-        this.processedEventRepository = processedEventRepository;
-        this.clock = clock;
+    public DemoIdempotentEventConsumer(ProcessedEventStore processedEventStore) {
+        this.processedEventStore = processedEventStore;
     }
 
     @Override
@@ -65,18 +63,9 @@ public class DemoIdempotentEventConsumer implements IntegrationEventListener {
      */
     @Transactional
     public ConsumptionResult consume(IntegrationEvent event) {
-        if (processedEventRepository.existsById(event.eventId())) {
+        if (!processedEventStore.tryClaim(event.eventId(), CONSUMER)) {
             log.info(
                     "demo-consumer.duplicate-ignored eventId={} eventType={}",
-                    event.eventId(),
-                    event.eventType());
-            return ConsumptionResult.DUPLICATE_IGNORED;
-        }
-        try {
-            processedEventRepository.save(new ProcessedEventJpaEntity(event.eventId(), clock.now()));
-        } catch (DataIntegrityViolationException raceLostToAnotherConsumer) {
-            log.info(
-                    "demo-consumer.duplicate-ignored-race eventId={} eventType={}",
                     event.eventId(),
                     event.eventType());
             return ConsumptionResult.DUPLICATE_IGNORED;

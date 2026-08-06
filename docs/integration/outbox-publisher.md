@@ -10,7 +10,18 @@ con reintentos, backoff exponencial y métricas.
 **At-least-once**, tal y como fija ADR-0005: un mensaje puede entregarse más
 de una vez (p. ej. si el proceso muere justo después de publicar pero antes
 de marcar `PUBLISHED`), nunca menos. Los consumidores externos deben ser
-idempotentes (deduplicar por `eventId`). No se introduce ningún broker de
+idempotentes: ver «Idempotencia de consumidores» en `event-catalog.md` y el
+puerto `ProcessedEventStore`.
+
+**El fallo de un consumidor interno se propaga** y hace que el mensaje se
+reintente con backoff, hasta acabar en `FAILED` si se agotan los intentos.
+Antes se registraba y se tragaba, de modo que el mensaje quedaba `PUBLISHED`
+aunque ningún consumidor lo hubiera procesado: con consumidores reales
+—los correos de verificación de alta y de recuperación de contraseña— eso
+significaba perder el correo en silencio. Se notifica a todos los consumidores
+antes de propagar, para que el fallo de uno no impida el trabajo de los demás.
+
+No se introduce ningún broker de
 mensajería (Kafka/RabbitMQ/...): la única implementación del puerto de
 publicación en este MVP es un log estructurado
 (`outbox.infrastructure.LoggingIntegrationEventPublisher`). Sustituirla por

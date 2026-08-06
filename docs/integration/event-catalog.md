@@ -66,18 +66,27 @@ Esto implica:
 
 ## Idempotencia de consumidores (obligatoria)
 
-Todo consumidor de estos eventos **debe** deduplicar por `eventId`: es la
-única forma de obtener semántica "efectivamente una vez" sobre un canal
-at-least-once. El patrón de referencia recomendado (y demostrado de extremo
-a extremo por T704) es:
+Todo consumidor de estos eventos **debe** deduplicar: es la única forma de
+obtener semántica "efectivamente una vez" sobre un canal at-least-once.
 
-1. Mantener una tabla propia del consumidor con `event_id` como clave
-   primaria (o única) de los eventos ya procesados.
-2. Antes de aplicar el efecto de negocio del evento, comprobar si
-   `event_id` ya existe; si existe, ignorar el evento (ya se procesó).
-3. Si no existe, aplicar el efecto e insertar la marca de "procesado" en la
-   **misma transacción** que el efecto (para que ambos ocurran atómicamente
-   o ninguno).
+Y no es teórico. El publicador propaga el fallo de cualquier consumidor para
+que el mensaje se reintente, y ese reintento vuelve a invocar **a todos** los
+consumidores, incluidos los que ya habían terminado bien. Sin deduplicación,
+el fallo de un consumidor duplica los efectos de los demás.
+
+El mecanismo compartido es el puerto `outbox.application.ProcessedEventStore`,
+respaldado por la tabla `processed_event`:
+
+1. Reservar el par `(eventId, consumidor)` con `tryClaim(...)`. La reserva es
+   atómica: si dos hilos compiten, solo uno recibe `true`.
+2. Si la reserva no es tuya, ignorar el evento: ya lo procesaste.
+3. Si es tuya, aplicar el efecto de negocio en la **misma transacción** que la
+   reserva, para que ambos ocurran o ninguno.
+
+La clave incluye el consumidor **a propósito**. Con una clave por evento —como
+estaba hasta V23, cuando solo existía el consumidor de demostración— el primero
+en marcarlo dejaría a los demás creyendo que ya estaba procesado, y sus efectos
+no se aplicarían nunca.
 4. Si la inserción falla por violación de la clave primaria (dos hilos/
    instancias procesando el mismo evento a la vez), tratarlo igual que un
    duplicado: no es un error, es la red de seguridad de la concurrencia.
