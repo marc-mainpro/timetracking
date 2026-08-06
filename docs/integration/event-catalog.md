@@ -786,6 +786,39 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
   el de `GET /api/v1/admin/calendar-assignments/effective`; el evento es una
   notificación, no la fuente de verdad.
 
+### `absence.absence-approved.v1` · `absence.absence-rejected.v1`
+
+- **Módulo productor:** `absence`, clase `absence.application.integration.AbsenceIntegrationEventMapper`.
+- **Disparador de negocio:** un `TENANT_ADMIN` o `TEAM_MANAGER` resuelve una solicitud de ausencia
+  (`POST /api/v1/admin/absences/{absenceId}/approve` o `/reject`).
+- **`aggregateId`:** identificador de la solicitud de ausencia.
+
+```json
+{
+  "eventId": "6f1d0c5e-6a1b-4f1e-9a2c-3b7d8e5f0a11",
+  "eventType": "absence.absence-approved.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-06T09:12:44Z",
+  "tenantId": "b0c1d2e3-f4a5-4b6c-8d9e-0f1a2b3c4d5e",
+  "aggregateId": "9c8b7a65-4d3e-4f21-b0a9-8c7d6e5f4a3b",
+  "payload": {
+    "absenceRequestId": "9c8b7a65-4d3e-4f21-b0a9-8c7d6e5f4a3b",
+    "employeeId": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+    "resolvedBy": "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e"
+  }
+}
+```
+
+| `payload` | Tipo | Descripción |
+|---|---|---|
+| `absenceRequestId` | `string` (UUID) | Solicitud resuelta. |
+| `employeeId` | `string` (UUID) | Empleado que solicitó la ausencia; es el destinatario del aviso. |
+| `resolvedBy` | `string` (UUID) | Usuario que aprobó o rechazó. |
+
+- **Idempotencia:** el consumidor de notificaciones reserva `(eventId, "notification-event-listener")`
+  antes de crear nada, así que una reentrega no genera un segundo aviso. Solo se publican la aprobación
+  y el rechazo: la solicitud y la cancelación las hace el propio empleado, que ya sabe que han ocurrido.
+
 ## Eventos de dominio sin traducción a integración
 
 Decisión de alcance del MVP (T702, reafirmada en T704): `BreakStarted` /

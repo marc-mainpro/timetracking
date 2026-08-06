@@ -52,3 +52,10 @@ app:
 registration:
   public:
     enabled: true
+
+# El envio de notificaciones se dispara a mano en los tests que lo prueban: un
+# job de fondo enviando correo haria la bateria no determinista (mismo motivo
+# que outbox.scheduler-enabled).
+notification:
+  delivery:
+    enabled: false

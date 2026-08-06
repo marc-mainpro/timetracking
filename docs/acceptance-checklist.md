@@ -119,3 +119,11 @@
   `ScheduledJobRunnerTest`.
 - Sin contraseñas, tokens ni cookies en los logs (RS-014):
   `NoSecretsInLogsTest`, `StructuredLoggingIntegrationTest`.
+- Notificaciones internas con contador de no leídas y marcado de lectura
+  (RF-NOT-001, T110-06/07): `NotificationControllerIntegrationTest`,
+  `frontend/src/app/features/notifications/`.
+- Notificaciones generadas desde eventos de integración e idempotentes ante
+  reentrega (RF-NOT-003, RF-OUT-005, T110-04): `NotificationEventListenerTest`.
+- Envío por correo con reintentos y estado final `FAILED` sin perder el aviso en
+  la aplicación (RF-NOT-002, RF-NOT-005, RF-NOT-006, T110-05):
+  `NotificationSenderTest`, `NotificationTest`.

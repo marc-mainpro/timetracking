@@ -29,6 +29,14 @@
         @if (showEmployeeLinks()) {
           <a routerLink="/shifts" routerLinkActive="active" (click)="closeMenu()">Turnos</a>
         }
+        @if (isAuthenticated()) {
+          <a routerLink="/notifications" routerLinkActive="active" (click)="closeMenu()">
+            Notificaciones
+            @if (unreadNotifications() > 0) {
+              <span class="badge">{{ unreadNotifications() }}</span>
+            }
+          </a>
+        }
         @if (showEmployeeLinks()) {
           <a routerLink="/reports" routerLinkActive="active" (click)="closeMenu()">Mis informes</a>
         }

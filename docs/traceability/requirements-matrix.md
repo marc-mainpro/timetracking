@@ -182,3 +182,15 @@ sesiones, calendarios, ausencias, turnos, informes, notificaciones).
 - T130-04/05 Auditoría de tenant ampliada y consulta avanzada.
 - RF-TEN-001: `número de usuarios` y `último acceso` en el listado (dependen de
   identity/sesiones — épica T60).
+
+## Notificaciones (RF-NOT)
+
+| Requisito | Tarea | Caso de uso / componente | Endpoint | Pruebas |
+|---|---|---|---|---|
+| RF-NOT-001 Notificaciones internas | T110-06 | `ListOwnNotificationsUseCase`, `NotificationController`, `NotificationsComponent` | `GET /api/v1/notifications`, `GET /api/v1/notifications/unread-count` | `NotificationControllerIntegrationTest`, `notifications.component.spec` |
+| RF-NOT-002 Notificaciones por correo | T110-05 | `NotificationSender`, `NotificationEmailComposer`, puerto `EmailSender` | — (tarea programada) | `NotificationSenderTest` |
+| RF-NOT-003 Eventos notificables | T110-04 | `NotificationEventListener`, `AbsenceIntegrationEventMapper` | — | `NotificationEventListenerTest` |
+| RF-NOT-004 Procesamiento asíncrono | T110-04, T110-05 | Outbox → `NotificationEventListener` → `NotificationDeliveryJob` | — | `NotificationEventListenerTest`, `NotificationSenderTest` |
+| RF-NOT-005 Reintentos | T110-05 | `Notification.markAttemptFailed`, `NotificationDeliveryProperties.maxAttempts` | — | `NotificationTest`, `NotificationSenderTest` |
+| RF-NOT-006 Trazabilidad del envío | T110-02 | `Notification` (estado, intentos, último error, fechas), migración V24 | — | `NotificationTest` |
+| RF-OUT-005 Consumidores idempotentes | T110-04 | `ProcessedEventStore` con clave `(eventId, consumidor)` | — | `NotificationEventListenerTest`, `JdbcProcessedEventStoreIntegrationTest` |
