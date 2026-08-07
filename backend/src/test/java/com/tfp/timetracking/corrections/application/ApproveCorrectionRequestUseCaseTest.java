@@ -66,7 +66,21 @@ class ApproveCorrectionRequestUseCaseTest {
 
         verify(workdayRepository).save(any(Workday.class));
         verify(correctionRepository).save(any(CorrectionRequest.class));
-        verify(auditRecorder).record(any(), any(), any(), any());
+        // Dos entradas: la resolución de la corrección y el ajuste de la
+        // jornada. Quien investiga qué le pasó a una jornada busca por la
+        // jornada y no tiene por qué saber que vino de una corrección (T130-04).
+        verify(auditRecorder)
+                .record(
+                        org.mockito.ArgumentMatchers.eq("CORRECTION_APPROVED"),
+                        org.mockito.ArgumentMatchers.eq("CorrectionRequest"),
+                        any(),
+                        any());
+        verify(auditRecorder)
+                .record(
+                        org.mockito.ArgumentMatchers.eq("WORKDAY_ADJUSTED"),
+                        org.mockito.ArgumentMatchers.eq("Workday"),
+                        any(),
+                        any());
     }
 
     @Test

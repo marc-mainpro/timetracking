@@ -59,6 +59,7 @@ backups. Lo que sigue abierto está al final, en «Pendiente».
 |---|---|---|---|---|
 | RF-AUD-001 Auditoría de plataforma | T130-03 | `ChangeTenantLifecycleUseCase` (registra), `PlatformAuditController` | `GET /api/v1/platform/audit` | `ChangeTenantLifecycleUseCaseTest`, `PlatformTenantControllerIntegrationTest` |
 | RF-AUD-003 Contenido (estado anterior/posterior, motivo) | T130-03 | metadata de `AuditRecorder` | — | `ChangeTenantLifecycleUseCaseTest` |
+| RF-AUD-002 Auditoría de tenant: jornadas y turnos | T130-04 | `WORKDAY_ADJUSTED` en `ApproveCorrectionRequestUseCase`; `SHIFT_TEMPLATE_CREATED/UPDATED/ARCHIVED` y `SHIFT_ASSIGNED` en los casos de uso de `shift` | — | `ApproveCorrectionRequestUseCaseTest`, `ShiftTemplateUseCasesTest` |
 
 ## Seguridad de autenticación (RS-007, RS-008, RF-USR-008)
 

@@ -69,6 +69,19 @@ public class ApproveCorrectionRequestUseCase {
         List<Object> events = mergeEvents(workday.pullDomainEvents(), correction.pullDomainEvents());
         events.addAll(evaluateClosedWorkdayService.evaluate(savedWorkday));
         domainEventPublisher.publish(events);
+        // Dos entradas de auditoría, no una: quien investiga qué le pasó a una
+        // jornada busca por la jornada, y no tiene por qué saber que el cambio
+        // vino de una corrección. Sin esta segunda entrada, el ajuste no
+        // aparecía en la auditoría de la entidad modificada (T130-04).
+        auditRecorder.record(
+                "WORKDAY_ADJUSTED",
+                "Workday",
+                savedWorkday.id(),
+                Map.of(
+                        "correctionId", saved.id().toString(),
+                        "startedAt", String.valueOf(savedWorkday.startedAt()),
+                        "endedAt", String.valueOf(savedWorkday.endedAt()),
+                        "adjustedBy", actorUserId.toString()));
         auditRecorder.record(
                 "CORRECTION_APPROVED",
                 "CorrectionRequest",

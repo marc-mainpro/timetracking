@@ -55,6 +55,7 @@ Requisitos para ejecutarlos: `docker compose up -d --build`,
 | `aislamiento.spec.ts` | Fuga entre tenants en listados y por identificador (404, no 403), empleado contra administración, administrador contra plataforma, y suspensión/reactivación de tenant |
 | `correccion.spec.ts` | Solicitud, aprobación con reevaluación de la jornada, rechazo que no la altera, y doble resolución rechazada (RT-006) |
 | `calendario-turno.spec.ts` | Creación y asignación de calendario por ámbito, turno nocturno que cruza medianoche, y turno como tiempo previsto de la jornada (T90-06) |
+| `sesiones.spec.ts` | Apertura de sesión por login, aislamiento entre usuarios, revocación masiva que deja el token inservible y revocación individual que no afecta a las demás |
 | `ausencia-notificacion.spec.ts` | Solicitud, aprobación y rechazo de ausencia con la notificación que generan a través del Outbox, lectura del aviso y aislamiento de notificaciones entre tenants |
 
 Se ejecutan con un solo worker: comparten base de datos y varias afirman sobre
