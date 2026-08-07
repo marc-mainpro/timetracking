@@ -43,3 +43,4 @@ GHSA-8x88-c5mf-7j5w|tar|build|2026-11-04|Idem GHSA-23hp-3jrh-7fpw.
 GHSA-9ppj-qmqm-q256|tar|build|2026-11-04|Idem GHSA-23hp-3jrh-7fpw.
 GHSA-qffp-2rhf-9h96|tar|build|2026-11-04|Idem GHSA-23hp-3jrh-7fpw.
 GHSA-r6q2-hw4h-h46w|tar|build|2026-11-04|Idem GHSA-23hp-3jrh-7fpw.
+GHSA-5p4m-2wfm-xmqj|js-yaml|build|2026-11-04|Transitiva de la cadena de build/test del frontend. La correccion todavia no esta retroportada a las ramas que consume Angular 19 y no llega al navegador ni a la imagen publicada.

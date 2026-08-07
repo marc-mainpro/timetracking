@@ -15,6 +15,9 @@ import com.tfp.timetracking.calendar.domain.model.DaySource;
 import com.tfp.timetracking.calendar.domain.model.EffectiveCalendar;
 import com.tfp.timetracking.calendar.domain.model.WorkCalendar;
 import com.tfp.timetracking.shift.application.ResolvePlannedShiftUseCase;
+import com.tfp.timetracking.tenant.domain.Tenant;
+import com.tfp.timetracking.tenant.domain.TenantRepository;
+import com.tfp.timetracking.tenant.domain.TenantStatus;
 import com.tfp.timetracking.timetracking.domain.HourlyRules;
 import com.tfp.timetracking.timetracking.domain.HourlyRulesRepository;
 import com.tfp.timetracking.timetracking.domain.Workday;
@@ -43,13 +46,16 @@ class EvaluateClosedWorkdayServiceTest {
             org.mockito.Mockito.mock(HourlyRulesRepository.class);
     private final WorkdayEvaluationRepository evaluationRepository =
             org.mockito.Mockito.mock(WorkdayEvaluationRepository.class);
+    private final TenantRepository tenantRepository =
+            org.mockito.Mockito.mock(TenantRepository.class);
 
     private final EvaluateClosedWorkdayService service = new EvaluateClosedWorkdayService(
             resolveEffectiveCalendarUseCase,
             absenceRequestRepository,
             resolvePlannedShiftUseCase,
             hourlyRulesRepository,
-            evaluationRepository);
+            evaluationRepository,
+            tenantRepository);
 
     private final UUID tenantId = UUID.randomUUID();
     private final UUID employeeId = UUID.randomUUID();
@@ -76,6 +82,32 @@ class EvaluateClosedWorkdayServiceTest {
         service.evaluate(workday);
 
         assertThat(savedEvaluation().expectedDuration()).isEqualTo(Duration.ZERO);
+    }
+
+    @Test
+    void resolvesTheCivilDateUsingTheTenantTimezone() {
+        Workday workday = Workday.reconstitute(
+                UUID.randomUUID(),
+                tenantId,
+                employeeId,
+                com.tfp.timetracking.timetracking.domain.WorkdayStatus.CLOSED,
+                Instant.parse("2026-08-09T22:30:00Z"),
+                Instant.parse("2026-08-10T06:30:00Z"),
+                0L,
+                Instant.parse("2026-08-09T22:30:00Z"),
+                Instant.parse("2026-08-10T06:30:00Z"),
+                List.of());
+        when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant("Europe/Madrid")));
+        givenCalendar();
+        givenNoAbsence();
+        givenNoShift();
+        givenDefaults();
+
+        service.evaluate(workday);
+
+        verify(resolveEffectiveCalendarUseCase).resolve(employeeId, null, DATE);
+        verify(absenceRequestRepository).findApprovedByEmployeeAndDateRange(tenantId, employeeId, DATE, DATE);
+        verify(resolvePlannedShiftUseCase).resolveExpectedWorkDuration(tenantId, employeeId, DATE);
     }
 
     @Test
@@ -157,8 +189,23 @@ class EvaluateClosedWorkdayServiceTest {
     }
 
     private void givenDefaults() {
+        when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant("Europe/Madrid")));
         when(hourlyRulesRepository.findByTenantId(tenantId)).thenReturn(Optional.of(HourlyRules.withoutLimits(tenantId)));
         when(evaluationRepository.save(any(WorkdayEvaluation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    }
+
+    private Tenant tenant(String timezone) {
+        return Tenant.reconstitute(
+                tenantId,
+                "Tenant",
+                TenantStatus.ACTIVE,
+                timezone,
+                Instant.parse("2026-01-01T00:00:00Z"),
+                Instant.parse("2026-01-01T00:00:00Z"),
+                Instant.parse("2026-01-01T00:00:00Z"),
+                null,
+                null,
+                null);
     }
 
     private WorkdayEvaluation savedEvaluation() {

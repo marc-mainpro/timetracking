@@ -1,6 +1,7 @@
 package com.tfp.timetracking.shift.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -10,6 +11,7 @@ import com.tfp.timetracking.audit.application.AuditRecorder;
 import com.tfp.timetracking.shared.application.TenantContext;
 import com.tfp.timetracking.shift.domain.model.ShiftAssignment;
 import com.tfp.timetracking.shift.domain.model.ShiftAssignmentRepository;
+import com.tfp.timetracking.shift.domain.model.OverlappingShiftAssignmentException;
 import com.tfp.timetracking.shift.domain.model.ShiftBreakPolicy;
 import com.tfp.timetracking.shift.domain.model.ShiftTemplate;
 import com.tfp.timetracking.shift.domain.model.ShiftTemplateRepository;
@@ -61,5 +63,47 @@ class ShiftAssignmentUseCasesTest {
         assertThat(new ListEmployeeShiftAssignmentsUseCase(assignmentRepository, tenantContext)
                         .listOwnEffective(LocalDate.of(2026, 9, 15)))
                 .hasSize(1);
+    }
+
+    @Test
+    void rejectsOverlappingAssignmentsForTheSameEmployee() {
+        ShiftAssignmentRepository assignmentRepository = org.mockito.Mockito.mock(ShiftAssignmentRepository.class);
+        ShiftTemplateRepository templateRepository = org.mockito.Mockito.mock(ShiftTemplateRepository.class);
+        UserRepository userRepository = org.mockito.Mockito.mock(UserRepository.class);
+        TenantContext tenantContext = org.mockito.Mockito.mock(TenantContext.class);
+
+        UUID tenantId = UUID.randomUUID();
+        UUID employeeId = UUID.randomUUID();
+        UUID templateId = UUID.randomUUID();
+        ShiftTemplate template = ShiftTemplate.reconstitute(
+                templateId,
+                tenantId,
+                "General",
+                LocalTime.of(8, 0),
+                LocalTime.of(16, 0),
+                new ShiftBreakPolicy(Duration.ofMinutes(30)),
+                ShiftTemplateStatus.ACTIVE);
+        ShiftAssignment existingAssignment = ShiftAssignment.create(
+                tenantId,
+                employeeId,
+                templateId,
+                LocalDate.of(2026, 9, 1),
+                LocalDate.of(2026, 9, 30),
+                UUID.randomUUID());
+
+        when(tenantContext.currentTenantId()).thenReturn(tenantId);
+        when(templateRepository.findById(tenantId, templateId)).thenReturn(Optional.of(template));
+        when(userRepository.findById(tenantId, employeeId))
+                .thenReturn(Optional.of(org.mockito.Mockito.mock(com.tfp.timetracking.identity.domain.User.class)));
+        when(assignmentRepository.findByEmployee(tenantId, employeeId)).thenReturn(List.of(existingAssignment));
+
+        assertThatThrownBy(() -> new AssignShiftUseCase(
+                        assignmentRepository, templateRepository, userRepository, tenantContext, auditRecorder)
+                        .assign(new AssignShiftCommand(
+                                employeeId,
+                                templateId,
+                                LocalDate.of(2026, 9, 15),
+                                LocalDate.of(2026, 10, 15))))
+                .isInstanceOf(OverlappingShiftAssignmentException.class);
     }
 }

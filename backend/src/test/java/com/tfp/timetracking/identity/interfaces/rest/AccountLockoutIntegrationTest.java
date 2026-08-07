@@ -1,6 +1,7 @@
 package com.tfp.timetracking.identity.interfaces.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -11,6 +12,7 @@ import com.tfp.timetracking.identity.domain.PasswordHasher;
 import com.tfp.timetracking.identity.domain.UserRepository;
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.IdGenerator;
+import com.tfp.timetracking.shared.infrastructure.security.CorrelationIdFilter;
 import com.tfp.timetracking.shared.infrastructure.security.TestTenantFactory;
 import com.tfp.timetracking.tenant.application.RegisterTenantUseCase;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -263,6 +265,24 @@ class AccountLockoutIntegrationTest {
         assertThat(auditRow.get("tenant_id")).isEqualTo(actors.tenantId());
         assertThat(auditRow.get("actor_user_id")).isEqualTo(actors.employee().userId());
         assertThat(auditRow.get("entity_type")).isEqualTo("User");
+    }
+
+    @Test
+    void aMalformedCorrelationIdDoesNotPreventCountingTheFailedAttempt() throws Exception {
+        TestTenantFactory.TenantActors actors = tenantFactory.createTenantActors("lockout-correlation");
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(CorrelationIdFilter.CORRELATION_ID_HEADER, "not-a-uuid")
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", actors.employee().email(),
+                                "password", "wrong-password"))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.errorCode").value("INVALID_CREDENTIALS"))
+                .andExpect(header().exists(CorrelationIdFilter.CORRELATION_ID_HEADER));
+
+        assertThat(failedAttempts(actors.employee().userId())).isEqualTo(1);
+        assertThat(auditActions(actors.employee().userId())).contains("LOGIN_FAILED");
     }
 
     private ResultActions login(String email, String password, String clientIp) throws Exception {

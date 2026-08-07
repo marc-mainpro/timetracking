@@ -10,6 +10,7 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Envía el correo de verificación del alta pública (T53-05, RF-REG-004).
@@ -46,6 +47,7 @@ public class TenantRegistrationEmailListener implements IntegrationEventListener
     }
 
     @Override
+    @Transactional
     public void onEvent(IntegrationEvent event) {
         if (!EVENT_TYPE.equals(event.eventType())) {
             return;

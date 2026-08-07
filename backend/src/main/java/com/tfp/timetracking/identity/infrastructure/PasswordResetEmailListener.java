@@ -10,6 +10,7 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class PasswordResetEmailListener implements IntegrationEventListener {
@@ -33,6 +34,7 @@ public class PasswordResetEmailListener implements IntegrationEventListener {
     }
 
     @Override
+    @Transactional
     public void onEvent(IntegrationEvent event) {
         if (!EVENT_TYPE.equals(event.eventType())) {
             return;

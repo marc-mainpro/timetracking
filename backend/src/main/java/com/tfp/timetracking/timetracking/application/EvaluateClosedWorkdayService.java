@@ -10,8 +10,11 @@ import com.tfp.timetracking.timetracking.domain.Workday;
 import com.tfp.timetracking.timetracking.domain.WorkdayEvaluation;
 import com.tfp.timetracking.timetracking.domain.WorkdayEvaluationRepository;
 import com.tfp.timetracking.timetracking.domain.service.WorkdayEvaluationEngine;
+import com.tfp.timetracking.tenant.domain.TenantRepository;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +27,7 @@ public class EvaluateClosedWorkdayService {
     private final ResolvePlannedShiftUseCase resolvePlannedShiftUseCase;
     private final HourlyRulesRepository hourlyRulesRepository;
     private final WorkdayEvaluationRepository workdayEvaluationRepository;
+    private final TenantRepository tenantRepository;
     private final WorkdayEvaluationEngine engine = new WorkdayEvaluationEngine();
 
     public EvaluateClosedWorkdayService(
@@ -31,17 +35,23 @@ public class EvaluateClosedWorkdayService {
             AbsenceRequestRepository absenceRequestRepository,
             ResolvePlannedShiftUseCase resolvePlannedShiftUseCase,
             HourlyRulesRepository hourlyRulesRepository,
-            WorkdayEvaluationRepository workdayEvaluationRepository) {
+            WorkdayEvaluationRepository workdayEvaluationRepository,
+            TenantRepository tenantRepository) {
         this.resolveEffectiveCalendarUseCase = resolveEffectiveCalendarUseCase;
         this.absenceRequestRepository = absenceRequestRepository;
         this.resolvePlannedShiftUseCase = resolvePlannedShiftUseCase;
         this.hourlyRulesRepository = hourlyRulesRepository;
         this.workdayEvaluationRepository = workdayEvaluationRepository;
+        this.tenantRepository = tenantRepository;
     }
 
     @Transactional
     public List<Object> evaluate(Workday workday) {
-        LocalDate localDate = LocalDate.ofInstant(workday.startedAt(), java.time.ZoneOffset.UTC);
+        ZoneId zone = tenantRepository
+                .findById(workday.tenantId())
+                .map(tenant -> ZoneId.of(tenant.timezone()))
+                .orElse(ZoneOffset.UTC);
+        LocalDate localDate = LocalDate.ofInstant(workday.startedAt(), zone);
         EffectiveCalendar effectiveCalendar = resolveEffectiveCalendarUseCase
                 .resolve(workday.employeeId(), null, localDate)
                 .orElse(null);

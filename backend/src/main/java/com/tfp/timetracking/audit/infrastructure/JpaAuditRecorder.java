@@ -56,6 +56,13 @@ public class JpaAuditRecorder implements AuditRecorder {
 
     private String currentCorrelationId() {
         String correlationId = MDC.get(CorrelationIdFilter.MDC_KEY);
-        return correlationId != null ? correlationId : UUID.randomUUID().toString();
+        if (correlationId == null || correlationId.isBlank()) {
+            return UUID.randomUUID().toString();
+        }
+        try {
+            return UUID.fromString(correlationId).toString();
+        } catch (IllegalArgumentException invalidUuid) {
+            return UUID.randomUUID().toString();
+        }
     }
 }

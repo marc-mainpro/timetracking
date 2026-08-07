@@ -6,6 +6,7 @@ import com.tfp.timetracking.audit.application.AuditRecorder;
 import com.tfp.timetracking.shared.application.TenantContext;
 import com.tfp.timetracking.shift.domain.model.ShiftAssignment;
 import com.tfp.timetracking.shift.domain.model.ShiftAssignmentRepository;
+import com.tfp.timetracking.shift.domain.model.OverlappingShiftAssignmentException;
 import com.tfp.timetracking.shift.domain.model.ShiftTemplate;
 import com.tfp.timetracking.shift.domain.model.ShiftTemplateArchivedException;
 import com.tfp.timetracking.shift.domain.model.ShiftTemplateRepository;
@@ -50,6 +51,12 @@ public class AssignShiftUseCase {
                 command.validFrom(),
                 command.validTo(),
                 java.util.UUID.randomUUID());
+        boolean overlapsExistingAssignment = assignmentRepository.findByEmployee(tenantContext.currentTenantId(), command.employeeId())
+                .stream()
+                .anyMatch(existing -> existing.overlaps(assignment));
+        if (overlapsExistingAssignment) {
+            throw new OverlappingShiftAssignmentException();
+        }
         var audited = assignmentRepository.save(assignment);
         auditRecorder.record("SHIFT_ASSIGNED", "ShiftAssignment", audited.id(), Map.of("employeeId", audited.employeeId().toString(), "shiftTemplateId", audited.shiftTemplateId().toString(), "validFrom", audited.validFrom().toString()));
         return audited;

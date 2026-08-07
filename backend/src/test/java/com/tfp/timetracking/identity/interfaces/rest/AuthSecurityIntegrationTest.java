@@ -280,7 +280,7 @@ class AuthSecurityIntegrationTest {
 
     @Test
     void correlationIdIsPropagatedIntoProblemDetails() throws Exception {
-        String correlationId = "corr-" + UUID.randomUUID();
+        String correlationId = UUID.randomUUID().toString();
 
         mockMvc.perform(post("/api/v1/auth/logout")
                         .header(CorrelationIdFilter.CORRELATION_ID_HEADER, correlationId)

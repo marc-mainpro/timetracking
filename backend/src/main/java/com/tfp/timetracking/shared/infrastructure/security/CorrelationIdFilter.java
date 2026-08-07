@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -43,7 +44,7 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String correlationId = request.getHeader(CORRELATION_ID_HEADER);
-        if (correlationId == null || correlationId.isBlank()) {
+        if (!isValidUuid(correlationId)) {
             correlationId = ObservabilityContext.newCorrelationId();
         }
         ObservabilityContext.put(ObservabilityContext.CORRELATION_ID, correlationId);
@@ -52,6 +53,18 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } finally {
             ObservabilityContext.clear();
+        }
+    }
+
+    private boolean isValidUuid(String correlationId) {
+        if (correlationId == null || correlationId.isBlank()) {
+            return false;
+        }
+        try {
+            UUID.fromString(correlationId);
+            return true;
+        } catch (IllegalArgumentException invalidUuid) {
+            return false;
         }
     }
 }
