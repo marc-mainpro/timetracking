@@ -1,5 +1,11 @@
 # Revisión OWASP
 
+## Alcance y fecha
+
+Revisión de la V2 completada el 2026-08-07 (T160-02). Recorre A01–A10 sobre el
+estado actual del código, no sobre el del MVP. Los hallazgos abiertos y los
+riesgos aceptados, con su fecha de revisión, están al final de cada sección.
+
 ## Resumen
 
 Checklist aplicado sobre el backend, frontend, `docker compose` y CI. La
@@ -10,10 +16,21 @@ seguridad específicas y análisis manual del código y configuración.
 
 - Aplica: sí.
 - Mitigación: Spring Security exige autenticación por defecto y `@PreAuthorize`
-  por rol en endpoints de negocio.
+  por rol en los endpoints privilegiados. El tenant y el usuario salen siempre
+  del principal, nunca de la petición. Un recurso ajeno responde 404 y no 403,
+  para no confirmar su existencia.
 - Evidencia: `RouteAuthorizationIntegrationTest`,
-  `CrossTenantSecurityIntegrationTest`, suites REST de empleados, workdays,
-  correcciones, auditoría e informes.
+  `CrossTenantSecurityIntegrationTest`, `PrivilegedEndpointsRequireRoleTest`,
+  `frontend/e2e/aislamiento.spec.ts`, suites REST de cada módulo.
+- Revisado en T160-02: se auditaron los 22 controladores uno a uno. Ninguno
+  carecía de control de rol por descuido; los cinco sin `@PreAuthorize` son
+  públicos o de recurso propio, acotados por el usuario del principal.
+- El riesgo real no era el estado actual sino el siguiente controlador: la
+  cadena solo garantiza `anyRequest().authenticated()`, así que un endpoint
+  nuevo bajo `/admin` o `/platform` sin `@PreAuthorize` quedaría abierto a
+  cualquier usuario autenticado, respondería 200 y nada fallaría. Convertido en
+  regla automática (`PrivilegedEndpointsRequireRoleTest`), con comprobación de
+  que no pasa por vacío y verificada con una violación inyectada a propósito.
 
 ## A02 Cryptographic Failures
 
@@ -35,8 +52,15 @@ seguridad específicas y análisis manual del código y configuración.
 
 - Aplica: sí.
 - Mitigación: tenant resuelto siempre desde el principal autenticado, outbox
-  transaccional, auditoría append-only, E2E de API del flujo completo.
-- Evidencia: ADR-0005, ADR-0008, ADR-0009, `EndToEndFlowIT`.
+  transaccional, auditoría append-only, bloqueo temporal de cuenta, rate
+  limiting por patrón de ruta, ciclo de vida del tenant que corta el acceso al
+  suspenderlo, y alta pública en tres pasos con aprobación explícita en lugar de
+  creación directa.
+- Evidencia: ADR-0005, ADR-0008, ADR-0009, ADR-0014, ADR-0016, `EndToEndFlowIT`,
+  `frontend/e2e/` (20 casos sobre la pila real).
+- Revisado en T160-02: el alta pública ya no crea un tenant operativo en un
+  paso; requiere verificar el correo, que plataforma apruebe y que active. Los
+  tres pasos están cubiertos por `registro-publico.spec.ts`.
 
 ## A05 Security Misconfiguration
 
@@ -121,16 +145,34 @@ descarte para igualar el coste. Cubierto por
 
 - Aplica: sí.
 - Mitigación: outbox persistido en la misma transacción que el negocio;
-  consumidores idempotentes y pruebas de atomicidad.
-- Evidencia: `OutboxGuaranteesIntegrationTest`, pruebas T702/T703.
+  consumidores idempotentes con deduplicación por `(eventId, consumidor)`;
+  el fallo de un consumidor propaga y reintenta en vez de darse por publicado;
+  escaneo de secretos y de dependencias en CI.
+- Evidencia: `OutboxGuaranteesIntegrationTest`,
+  `JdbcProcessedEventStoreIntegrationTest`, `LoggingIntegrationEventPublisherTest`.
+- Revisado en T160-02: hasta la Ola 2 el publicador se tragaba el fallo del
+  consumidor y marcaba el mensaje como publicado, de modo que la garantía de
+  reintento que documenta ADR-0012 no llegaba a aplicarse al correo. Corregido,
+  y con ello la deduplicación pasó a ser obligatoria: sin ella el reintento
+  duplicaba los efectos de los consumidores que sí habían terminado bien.
 
 ## A09 Security Logging and Monitoring Failures
 
 - Aplica: sí.
-- Mitigación: auditoría de aprobaciones/rechazos de correcciones, logs sin
-  contraseñas ni tokens, `correlationId` propagado por request.
+- Mitigación: auditoría append-only de las operaciones administrativas y de
+  plataforma, consultable por tenant y sin endpoints de modificación; logs
+  estructurados con `correlationId`, `tenantId`, `userId` y caso de uso;
+  métricas de login fallido y de cuentas bloqueadas; sondas de salud.
 - Evidencia: `AuditEventControllerIntegrationTest`,
-  `AuthControllerIntegrationTest`, `AuthSecurityIntegrationTest`.
+  `StructuredLoggingIntegrationTest`, `NoSecretsInLogsTest`,
+  `HealthEndpointIntegrationTest`, `AccountLockoutIntegrationTest`.
+- Revisado en T160-02: la prohibición de registrar secretos (RS-014) no depende
+  de la disciplina de quien escribe el log. `ObservabilityContext` limita las
+  claves del MDC —que es lo que el formateador vuelca— y `NoSecretsInLogsTest`
+  rastrea los argumentos de toda llamada al logger, incluido el caso de un
+  mensaje que anuncia el secreto con una variable de nombre neutro.
+- Limitación asumida: no hay alertado automático sobre esas métricas. El panel
+  técnico (T140-05) sigue sin implementar y está declarado como opcional (P3).
 
 ## A10 Server-Side Request Forgery
 

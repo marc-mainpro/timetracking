@@ -185,7 +185,10 @@ backups. Lo que sigue abierto está al final, en «Pendiente».
   solo la interfaz gráfica, que se cubre con las pruebas de componente.
 - **T160-03** Revisión de rendimiento, incluidos los índices de reporting
   (T100-02), que no tienen migración propia.
-- **T160-02** Revisión de seguridad OWASP y cierre del modelo de amenazas.
+- **T160-02** Completo. Revisión A01–A10 fechada en `docs/security/owasp-review.md`
+  con dos hallazgos cerrados (enumeración de cuentas en el login y ausencia de
+  regla automática de autorización en endpoints privilegiados) y los riesgos
+  aceptados con fecha de revisión.
 - **T100-06** Exportación PDF (P3, opcional).
 - **T140-05** Panel técnico básico (P3, opcional).
 - **RS-015** El escaneo de dependencias del backend requiere dar de alta el
