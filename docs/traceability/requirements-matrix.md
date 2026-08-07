@@ -178,13 +178,22 @@ backups. Lo que sigue abierto está al final, en «Pendiente».
 | RT-008 Restauración validada y documentada | T150-04 | Validación automática en el script (esquema, Flyway sin fallos, tablas de negocio con filas) y smoke tests | Simulacro 2026-08-04: 13 s, `TRUNCATE tenant CASCADE` recuperado a 3 tenants / 5 usuarios / 8 outbox, login HTTP 200, `scripts/smoke.sh` en verde. Acta completa en `docs/manuals/backup-restore.md` §4 |
 | RC-008 Sin alta disponibilidad (restricción asumida) | T150-01 | Backup lógico diario en lugar de PITR/réplica; RPO 24 h, RTO 1 h declarados | `docs/adr/ADR-0013-estrategia-backup-retencion.md` (alternativas descartadas) |
 
+## Rendimiento (RNF-017, RNF-018)
+
+| Requisito | Tarea | Componente | Evidencia |
+|---|---|---|---|
+| RNF-017 Tiempos adecuados para uso interactivo | T160-03 | Índices `ix_break_entry_workday_id` y `ix_correction_request_tenant_created_at` (V25) | `docs/reviews/performance-review.md`: informe mensual de un empleado de 17,7 ms a 0,33 ms, y coste que deja de crecer con el tamaño total de la tabla |
+| RNF-018 Listados paginados | T100-03, T130-05 | `PageQuery` con `@Min`/`@Max`, `PagedResult` en todos los listados | Suites REST de cada módulo |
+
 ## Pendiente
 
 - **T160-01** Completo para los diez flujos del plan: 20 casos en
   `frontend/e2e/` sobre la pila real. Sin recorrido de navegador propio queda
   solo la interfaz gráfica, que se cubre con las pruebas de componente.
-- **T160-03** Revisión de rendimiento, incluidos los índices de reporting
-  (T100-02), que no tienen migración propia.
+- **T160-03** Completo. Análisis de planes de ejecución sobre 100.000 jornadas
+  en `docs/reviews/performance-review.md`, con dos índices añadidos en V25 y las
+  siete claves ajenas descartadas con justificación. Sin prueba de carga con
+  concurrencia, declarado como limitación.
 - **T160-02** Completo. Revisión A01–A10 fechada en `docs/security/owasp-review.md`
   con dos hallazgos cerrados (enumeración de cuentas en el login y ausencia de
   regla automática de autorización en endpoints privilegiados) y los riesgos
