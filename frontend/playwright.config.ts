@@ -12,6 +12,7 @@ import { defineConfig, devices } from '@playwright/test';
  * Requisitos previos (ver `npm run e2e`):
  *   - `docker compose up -d --build`
  *   - `PUBLIC_REGISTRATION_ENABLED=true` para los flujos de alta pública
+ *     (ya es el valor por defecto)
  *   - `PLATFORM_ADMIN_EMAIL` / `PLATFORM_ADMIN_PASSWORD` para los de plataforma
  */
 export default defineConfig({

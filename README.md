@@ -10,9 +10,9 @@ construido como monolito modular.
 - **Administración de plataforma**: alta, activación, suspensión, reactivación y
   archivado de tenants por un `PLATFORM_ADMIN`, con auditoría de cada acción.
 - **Alta pública en tres pasos**: solicitud, verificación por correo y aprobación
-  desde plataforma. Deshabilitada por defecto
-  (`registration.public.enabled`); un tenant nunca nace operativo de un solo
-  paso.
+  desde plataforma. Puede apagarse por configuración
+  (`registration.public.enabled=false`); un tenant nunca nace operativo de un
+  solo paso.
 - **Autenticación**: JWT de vida corta, refresh token rotatorio en cookie
   `HttpOnly`, sesiones revocables, bloqueo temporal por intentos fallidos,
   recuperación de contraseña y rate limiting por ruta.
@@ -58,9 +58,9 @@ cd frontend && npm run test:coverage
 cd frontend && npm run e2e         # E2E de navegador contra la pila de Docker Compose
 ```
 
-Los E2E requieren la pila levantada (`docker compose up -d --build`),
-`PUBLIC_REGISTRATION_ENABLED=true` y las credenciales de `PLATFORM_ADMIN`. Ver
-`docs/testing/estrategia.md`.
+Los E2E requieren la pila levantada (`docker compose up -d --build`,
+`PUBLIC_REGISTRATION_ENABLED=true` por defecto) y las credenciales de
+`PLATFORM_ADMIN`. Ver `docs/testing/estrategia.md`.
 
 READMEs de cada subproyecto (stack, estructura y comandos de desarrollo):
 

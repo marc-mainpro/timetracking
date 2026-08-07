@@ -52,8 +52,10 @@ services:
       # Si se dejan vacios, no se crea ningun usuario de plataforma.
       PLATFORM_ADMIN_EMAIL: ${PLATFORM_ADMIN_EMAIL:-}
       PLATFORM_ADMIN_PASSWORD: ${PLATFORM_ADMIN_PASSWORD:-}
-      # Registro público autoservicio (RF-TEN-010): deshabilitado por defecto.
-      PUBLIC_REGISTRATION_ENABLED: ${PUBLIC_REGISTRATION_ENABLED:-false}
+      # Registro público autoservicio (RF-TEN-010): habilitado por defecto;
+      # cada solicitud sigue exigiendo verificación de correo y aprobación de
+      # un PLATFORM_ADMIN antes de que exista ningún tenant.
+      PUBLIC_REGISTRATION_ENABLED: ${PUBLIC_REGISTRATION_ENABLED:-true}
       APP_REQUEST_MAX_PAYLOAD_BYTES: ${APP_REQUEST_MAX_PAYLOAD_BYTES:-65536}
       # Correo saliente (T110-01). Apunta a mailpit en desarrollo.
       MAIL_ENABLED: ${MAIL_ENABLED:-true}

@@ -20,9 +20,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
- * Con el registro público deshabilitado (comportamiento por defecto en
- * producción, RF-TEN-010), el flujo público de solicitudes de la V2 responde
- * 403: los tenants solo se crean desde la administración de plataforma.
+ * Con el registro público deshabilitado explícitamente por configuración
+ * (RF-TEN-010; el valor por defecto es habilitado), el flujo público de
+ * solicitudes de la V2 responde 403: los tenants solo se crean desde la
+ * administración de plataforma.
  *
  * <p>La bandera se comprueba en las tres operaciones públicas, no solo en el
  * alta: si solo se cerrase la puerta de entrada, seguir verificando o reenviando

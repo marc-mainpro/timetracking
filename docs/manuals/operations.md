@@ -30,14 +30,17 @@
     no reescribe la contraseña de un `PLATFORM_ADMIN` ya existente; para
     cambiarla, usa el flujo de cambio de contraseña de la aplicación.
 - `PUBLIC_REGISTRATION_ENABLED`: habilita el registro público autoservicio
-  (`POST /api/v1/public/tenant-registrations`, RF-TEN-010). **Deshabilitado por defecto**: el
-  alta de tenants es una operación de `PLATFORM_ADMIN`.
-  - Con `false`, el endpoint responde 404/403 y **`scripts/smoke.sh` y
-    `scripts/seed-demo.sh` fallan**, porque ambos registran un tenant. Ponlo a
-    `true` antes de ejecutarlos.
-  - En una instalación real déjalo a `false` salvo que el producto ofrezca
-    explícitamente autoservicio: con `true`, cualquiera con acceso a la API
-    puede crear tenants.
+  (`POST /api/v1/public/tenant-registrations`, RF-TEN-010). **Habilitado por
+  defecto**: cualquiera puede enviar una solicitud de alta, pero esta solo crea
+  una `TenantRegistration` pendiente — el tenant no existe hasta que su correo
+  queda verificado y un `PLATFORM_ADMIN` aprueba la solicitud desde
+  `/platform/registrations` (T53-03).
+  - Con `false`, el endpoint responde 403 y **`scripts/smoke.sh` y
+    `scripts/seed-demo.sh` fallan**, porque ambos registran un tenant.
+  - Si el producto no debe ofrecer autoservicio todavía (p. ej. antes de un
+    lanzamiento anunciado), fija `PUBLIC_REGISTRATION_ENABLED=false` por
+    entorno: el alta de tenants queda entonces como una operación exclusiva de
+    `PLATFORM_ADMIN`.
 
 ### Backups (T150, ADR-0013)
 

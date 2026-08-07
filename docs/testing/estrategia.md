@@ -44,8 +44,8 @@ mailpit. No se simula el backend a propósito: el valor de estas pruebas está e
 atravesar todas las capas, y un backend simulado no detectaría una migración
 rota ni una fuga entre tenants.
 
-Requisitos para ejecutarlos: `docker compose up -d --build`,
-`PUBLIC_REGISTRATION_ENABLED=true` y `PLATFORM_ADMIN_EMAIL` /
+Requisitos para ejecutarlos: `docker compose up -d --build`
+(`PUBLIC_REGISTRATION_ENABLED=true` por defecto) y `PLATFORM_ADMIN_EMAIL` /
 `PLATFORM_ADMIN_PASSWORD`.
 
 | Fichero | Flujos cubiertos |

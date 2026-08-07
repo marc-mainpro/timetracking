@@ -42,11 +42,19 @@ a todos los tenants.
    operación de plataforma: `POST /api/v1/platform/tenants` (`PLATFORM_ADMIN`)
    crea el tenant y su primer `TENANT_ADMIN` (reutilizando
    `RegisterTenantUseCase`) y registra auditoría. El registro público
-   autoservicio (hoy `POST /api/v1/public/tenant-registrations`) queda **deshabilitado por
-   defecto** mediante la bandera `registration.public.enabled` (RF-TEN-010); se
-   conserva tras la bandera para poder reactivarlo sin cambios de código. El
-   perfil de test lo mantiene habilitado para no reescribir las suites que
-   arrancan tenants por esa vía.
+   autoservicio (hoy `POST /api/v1/public/tenant-registrations`) queda tras la
+   bandera `registration.public.enabled` (RF-TEN-010), que permite apagarlo por
+   configuración sin cambios de código.
+
+   > **Actualización (2026-08-07).** La bandera nació **apagada** por defecto:
+   > el alta pública solo se activaba explícitamente por entorno. Se cambió a
+   > **encendida** por defecto — cada solicitud pública sigue exigiendo
+   > verificación de correo y aprobación de un `PLATFORM_ADMIN` antes de que
+   > exista ningún tenant (T53-03), así que encenderla por defecto no salta
+   > ese control, solo abre la puerta de entrada de solicitudes. Quien
+   > necesite mantener el alta pública cerrada
+   > (p. ej. producción antes de anunciar el autoservicio) fija
+   > `PUBLIC_REGISTRATION_ENABLED=false` por entorno.
 
 5. **API de plataforma.** Vive **dentro del módulo `tenant`** (que posee el
    agregado y su repositorio), exponiendo `/api/v1/platform/tenants` (listado

@@ -44,7 +44,7 @@ public class PublicTenantRegistrationController {
             VerifyTenantRegistrationEmailUseCase verifyUseCase,
             ResendTenantRegistrationVerificationUseCase resendUseCase,
             TenantRegistrationRestMapper mapper,
-            @Value("${registration.public.enabled:false}") boolean publicRegistrationEnabled) {
+            @Value("${registration.public.enabled:true}") boolean publicRegistrationEnabled) {
         this.requestUseCase = requestUseCase;
         this.verifyUseCase = verifyUseCase;
         this.resendUseCase = resendUseCase;
