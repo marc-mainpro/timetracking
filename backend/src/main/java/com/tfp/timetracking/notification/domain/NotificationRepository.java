@@ -24,4 +24,12 @@ public interface NotificationRepository {
      * excepcion justificada que ya aplica el publicador del outbox.
      */
     List<Notification> findPendingForDelivery(int limit);
+
+    /**
+     * Cuenta las notificaciones en un estado de entrega, en todos los tenants.
+     *
+     * <p>No lleva {@code tenantId}: la consume el panel técnico de plataforma,
+     * que vigila la salud del envío del sistema entero, no la de un tenant.
+     */
+    long countByStatus(NotificationStatus status);
 }

@@ -1100,6 +1100,33 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/TenantEmployeeSummaryResponse'
+  /api/v1/reports/tenant/export.pdf:
+    get:
+      tags:
+      - Reports
+      summary: Exporta el informe agregado del tenant en PDF
+      operationId: tenantSummaryPdf
+      parameters:
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
   /api/v1/reports/tenant/export.csv:
     get:
       tags:
@@ -1178,6 +1205,19 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/PlatformTenantDetailResponse'
+  /api/v1/platform/system-status:
+    get:
+      tags:
+      - Platform - System status
+      summary: 'Estado técnico del sistema: outbox y notificaciones atascadas'
+      operationId: get_5
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SystemStatusResponse'
   /api/v1/platform/registrations:
     get:
       tags:
@@ -1344,7 +1384,7 @@ paths:
     get:
       tags:
       - Corrections
-      operationId: get_5
+      operationId: get_6
       parameters:
       - name: correctionId
         in: path
@@ -1469,7 +1509,7 @@ paths:
     get:
       tags:
       - Admin Workdays
-      operationId: get_6
+      operationId: get_7
       parameters:
       - name: workdayId
         in: path
@@ -2553,6 +2593,35 @@ components:
         suspendedAt:
           type: string
           format: date-time
+        userCount:
+          type: integer
+          format: int64
+        lastAccessAt:
+          type: string
+          format: date-time
+    QueueStatusResponse:
+      type: object
+      properties:
+        name:
+          type: string
+        pending:
+          type: integer
+          format: int64
+        failed:
+          type: integer
+          format: int64
+    SystemStatusResponse:
+      type: object
+      properties:
+        queues:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueueStatusResponse'
+        totalFailed:
+          type: integer
+          format: int64
+        needsAttention:
+          type: boolean
     PagedTenantRegistrationsResponse:
       type: object
       properties:

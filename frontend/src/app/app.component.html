@@ -64,6 +64,9 @@
         @if (showPlatformLinks()) {
           <a routerLink="/platform/registrations" routerLinkActive="active" (click)="closeMenu()">Solicitudes</a>
         }
+        @if (showPlatformLinks()) {
+          <a routerLink="/platform/system-status" routerLinkActive="active" (click)="closeMenu()">Estado</a>
+        }
       </div>
     </nav>
     <button type="button" class="logout ghost" (click)="logout()">Salir</button>

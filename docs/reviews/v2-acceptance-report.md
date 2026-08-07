@@ -21,7 +21,7 @@ completo se marca como tal.
 | 8 | Calendarios laborales | ✅ | Festivos, jornadas especiales, vigencia y resolución por ámbito más específico (ADR-0017). `calendario-turno.spec.ts` |
 | 9 | Gestión de ausencias | ✅ | Solicitud, aprobación, rechazo y efecto sobre el tiempo esperado. `ausencia-notificacion.spec.ts` |
 | 10 | Turnos básicos | ✅ | Plantillas, asignaciones, cruce de medianoche y previsto-real (T90-06). `calendario-turno.spec.ts` |
-| 11 | Informes avanzados | ⚠️ Parcial | Por empleado, equipo y periodo, con horas, pausas, extras, desviación y CSV. **PDF no implementado** (T100-06, P3 y declarado opcional en el plan) |
+| 11 | Informes avanzados | ✅ | Por empleado, equipo y periodo, con horas, pausas, extras, desviación, y exportación CSV y PDF. `TimeSummaryPdfWriterTest` |
 | 12 | Notificaciones | ✅ | Internas con contador de no leídas y envío por correo con reintentos, vía Outbox. `NotificationControllerIntegrationTest`, `ausencia-notificacion.spec.ts` |
 | 13 | Operaciones críticas auditadas | ✅ | Auditoría append-only de plataforma y de tenant, sin endpoints de modificación. `AuditEventControllerIntegrationTest` |
 | 14 | Outbox transaccional | ✅ | Mensaje y cambio de negocio en la misma transacción, con pruebas de rollback conjunto. `OutboxGuaranteesIntegrationTest`, `*AtomicityIntegrationTest` |
@@ -35,7 +35,7 @@ completo se marca como tal.
 | 22 | Sin secretos en el repositorio | ✅ | gitleaks en CI sobre todo el historial, con allowlist por literal y no por ruta, verificada con una clave inyectada a propósito |
 | 23 | CI en verde | ⚠️ Parcial | Backend, frontend, Docker, E2E, secret scanning y `npm audit` en verde. **El análisis de dependencias del backend no se ejecuta** hasta dar de alta `NVD_API_KEY` |
 
-**20 de 23 completos; 2 parciales con causa declarada; ninguno incumplido.**
+**22 de 23 completos; 1 parcial con causa declarada (`NVD_API_KEY`); ninguno incumplido.**
 
 ## Riesgos pendientes y deuda aceptada
 
@@ -43,7 +43,7 @@ completo se marca como tal.
 |---|---|---|---|
 | `NVD_API_KEY` sin dar de alta | RS-015 solo cubre frontend; las dependencias Java no se analizan | Requiere acceso a la configuración del repositorio en GitHub y una cuenta en el NIST: no puede resolverse desde el código | Al dar de alta el secreto |
 | 24 advisories *high/critical* de `npm audit` | 5 de runtime (cadena Angular 19, corregibles solo con Angular 21) y 19 de la cadena de build, que no se empaqueta | Excepción aprobada por advisory en `scripts/security/npm-audit-allowlist.txt` | 2026-11-04 |
-| Sin alertado sobre las métricas de seguridad | Hay métricas de login fallido y cuentas bloqueadas, pero nadie las vigila | El panel técnico (T140-05) es P3 y queda sin implementar | Próxima iteración |
+| Sin alertado automático | El panel técnico muestra las colas atascadas, pero hay que entrar a mirarlo: no envía avisos | Alertar exigiría un canal externo (correo o webhook) y una política de umbrales; se deja fuera por no tener destinatario definido | Próxima iteración |
 | Sin prueba de carga con concurrencia | Se analizaron planes de ejecución, no comportamiento bajo peticiones simultáneas | Fuera de alcance de una V2 sin alta disponibilidad ni escalado horizontal (RC-008, RC-009) | Si se plantea producción con carga real |
 | Rate limiting en memoria | No funciona con varias instancias | Coherente con el despliegue de instancia única; introducir Redis exigiría ADR (ADR-0014) | Si se despliega más de una instancia |
 | Token de verificación en el payload del Outbox | Quien pueda leer `outbox_message` puede secuestrar un alta sin verificar | Consecuencia de sacar el envío de la transacción (ADR-0012); acotado por el acceso a la base de datos | Próxima iteración |
@@ -60,9 +60,5 @@ que un equipo aprenda a ignorar la CI.
 
 ## Tareas del plan sin completar
 
-- **T100-06** Exportación PDF (P3, declarada opcional).
-- **T140-05** Panel técnico básico (P3, declarada opcional).
-
-Ambas están marcadas como opcionales en `tareas-dependencias-v2-control-horario.md`,
-de modo que su ausencia no bloquea el criterio de finalización (§31: «las tareas
-P2 pendientes estén documentadas»).
+Ninguna. Las dos que quedaban marcadas como opcionales (P3) —exportación PDF
+(T100-06) y panel técnico (T140-05)— también están implementadas.

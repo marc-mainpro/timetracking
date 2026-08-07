@@ -1,0 +1,50 @@
+<section class="admin-shell">
+  <header class="card admin-header">
+    <p class="eyebrow">Plataforma</p>
+    <h1>Estado del sistema</h1>
+  </header>
+
+  @if (error(); as err) {
+    <p class="error">{{ err }}</p>
+  }
+  @if (loading()) {
+    <p class="info">Cargando…</p>
+  }
+
+  @if (status(); as status) {
+    <div class="card">
+      @if (status.needsAttention) {
+        <p class="error">
+          {{ status.totalFailed }}
+          {{ status.totalFailed === 1 ? 'elemento agotó' : 'elementos agotaron' }} sus reintentos.
+          No se recuperan solos: requieren intervención.
+        </p>
+      } @else {
+        <p class="info">Sin incidencias. Nada ha agotado sus reintentos.</p>
+      }
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Cola</th>
+              <th>Pendiente</th>
+              <th>Fallido</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (queue of status.queues; track queue.name) {
+              <tr>
+                <td>{{ queueLabel(queue.name) }}</td>
+                <td>{{ queue.pending }}</td>
+                <td [class.failed]="queue.failed > 0">{{ queue.failed }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <button type="button" (click)="load()" [disabled]="loading()">Actualizar</button>
+    </div>
+  }
+</section>

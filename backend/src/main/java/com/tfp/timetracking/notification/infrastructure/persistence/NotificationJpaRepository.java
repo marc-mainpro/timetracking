@@ -17,6 +17,8 @@ interface NotificationJpaRepository extends JpaRepository<NotificationJpaEntity,
 
     long countByTenantIdAndRecipientUserIdAndReadAtIsNull(UUID tenantId, UUID recipientUserId);
 
+    long countByStatus(String status);
+
     @Query("""
             select n from NotificationJpaEntity n
             where n.status = 'PENDING' and n.recipientEmail is not null

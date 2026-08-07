@@ -83,6 +83,15 @@
             <version>8.10.1</version>
         </dependency>
 
+        <!-- PDF de informes (T100-06). Apache PDFBox y no iText: iText 7 es
+             AGPL y obligaria a liberar el servicio o a comprar licencia
+             comercial; PDFBox es Apache 2.0 y no impone condiciones al uso. -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+
         <!-- Correo: verificacion de alta, recuperacion de contrasena y
              notificaciones (T110-01, ADR-0012). El adaptador SMTP solo se
              activa con mail.enabled=true. -->

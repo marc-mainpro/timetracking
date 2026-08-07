@@ -185,6 +185,13 @@ backups. Lo que sigue abierto está al final, en «Pendiente».
 | RNF-017 Tiempos adecuados para uso interactivo | T160-03 | Índices `ix_break_entry_workday_id` y `ix_correction_request_tenant_created_at` (V25) | `docs/reviews/performance-review.md`: informe mensual de un empleado de 17,7 ms a 0,33 ms, y coste que deja de crecer con el tamaño total de la tabla |
 | RNF-018 Listados paginados | T100-03, T130-05 | `PageQuery` con `@Min`/`@Max`, `PagedResult` en todos los listados | Suites REST de cada módulo |
 
+## Informes y operación (T100-06, T140-05)
+
+| Requisito | Tarea | Caso de uso / componente | Endpoint | Pruebas |
+|---|---|---|---|---|
+| RF-REP-006 Exportación PDF | T100-06 | `ExportTimeSummaryPdfUseCase`, puerto `TimeSummaryPdfRenderer`, `TimeSummaryPdfWriter` (PDFBox) | `GET /api/v1/reports/tenant/export.pdf` | `TimeSummaryPdfWriterTest` (abre el PDF y lee su texto) |
+| RO-004 Panel técnico | T140-05 | `GetSystemStatusUseCase` con contribución `QueueStatusContributor`, `SystemStatusComponent` | `GET /api/v1/platform/system-status` | `GetSystemStatusUseCaseTest`, `system-status.component.spec` |
+
 ## Pendiente
 
 - **T160-01** Completo para los diez flujos del plan: 20 casos en
@@ -198,8 +205,6 @@ backups. Lo que sigue abierto está al final, en «Pendiente».
   con dos hallazgos cerrados (enumeración de cuentas en el login y ausencia de
   regla automática de autorización en endpoints privilegiados) y los riesgos
   aceptados con fecha de revisión.
-- **T100-06** Exportación PDF (P3, opcional).
-- **T140-05** Panel técnico básico (P3, opcional).
 - **RS-015** El escaneo de dependencias del backend requiere dar de alta el
   secreto `NVD_API_KEY` en GitHub; hasta entonces cubre solo el frontend.
 

@@ -43,6 +43,13 @@ export class ReportsService {
     });
   }
 
+  exportTenantPdf(from: string, to: string): Observable<Blob> {
+    return this.http.get('/api/v1/reports/tenant/export.pdf', {
+      params: this.rangeParams(from, to),
+      responseType: 'blob'
+    });
+  }
+
   private rangeParams(from: string, to: string): HttpParams {
     return new HttpParams().set('from', from).set('to', to);
   }

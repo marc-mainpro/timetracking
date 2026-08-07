@@ -48,6 +48,11 @@ public class NotificationRepositoryAdapter implements NotificationRepository {
     }
 
     @Override
+    public long countByStatus(com.tfp.timetracking.notification.domain.NotificationStatus status) {
+        return jpaRepository.countByStatus(status.name());
+    }
+
+    @Override
     public List<Notification> findPendingForDelivery(int limit) {
         return jpaRepository.findPendingForDelivery(PageRequest.of(0, limit)).stream()
                 .map(NotificationMapper::toDomain)
