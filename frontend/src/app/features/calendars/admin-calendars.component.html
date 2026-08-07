@@ -1,0 +1,244 @@
+<section class="admin-shell">
+  <header class="card admin-header">
+    <div>
+      <p class="eyebrow">Administración</p>
+      <h1>Calendarios laborales</h1>
+    </div>
+    <button type="button" (click)="startCreate()">Nuevo calendario</button>
+  </header>
+
+  @if (message(); as info) {
+    <p class="info">{{ info }}</p>
+  }
+  @if (error(); as err) {
+    <p class="error">{{ err }}</p>
+  }
+
+  <section class="layout">
+    <article class="card list-card">
+      <div class="toolbar">
+        @for (status of statusFilters; track status) {
+          <button
+            type="button"
+            [class.active]="selectedStatus() === status"
+            (click)="applyStatus(status)">
+            {{ statusLabel(status) }}
+          </button>
+        }
+      </div>
+
+      @if (loading()) {
+        <p class="eyebrow">Cargando…</p>
+      }
+
+      @for (calendar of result()?.content ?? []; track calendar.id) {
+        <div class="calendar-row">
+          <div class="calendar-main">
+            <strong>{{ calendar.name }}</strong>
+            <small>
+              {{ calendar.timezone }} · vigencia {{ calendar.validFrom }} →
+              {{ calendar.validTo ?? 'indefinida' }}
+            </small>
+            <small>{{ calendar.holidayCount }} festivos · {{ calendar.specialDayCount }} jornadas especiales</small>
+          </div>
+          <span class="pill pill--{{ calendar.status.toLowerCase() }}">{{ calendar.status }}</span>
+          <div class="row-actions">
+            <button type="button" (click)="startEdit(calendar)">Editar</button>
+            @if (calendar.status === 'ACTIVE') {
+              <button type="button" class="danger" (click)="archive(calendar)">Archivar</button>
+            }
+          </div>
+        </div>
+      } @empty {
+        @if (!loading()) {
+          <p class="eyebrow">No hay calendarios para este filtro.</p>
+        }
+      }
+
+      @if (result(); as result) {
+        <footer class="pager">
+          <button type="button" (click)="previousPage()" [disabled]="page() === 0 || loading()">Anterior</button>
+          <span>Página {{ result.page + 1 }} de {{ result.totalPages || 1 }}</span>
+          <button
+            type="button"
+            (click)="nextPage()"
+            [disabled]="result.page + 1 >= result.totalPages || loading()">
+            Siguiente
+          </button>
+        </footer>
+      }
+    </article>
+
+    <aside class="card edit-card">
+      <h2>{{ editingId() ? 'Editar calendario' : 'Nuevo calendario' }}</h2>
+
+      <form [formGroup]="form" (ngSubmit)="save()" class="stacked-form">
+        <label>
+          Nombre
+          <input type="text" formControlName="name" />
+        </label>
+        <label>
+          Zona horaria (IANA)
+          <input type="text" formControlName="timezone" />
+        </label>
+        <div class="two-cols">
+          <label>
+            Vigencia desde
+            <input type="date" formControlName="validFrom" />
+          </label>
+          <label>
+            Vigencia hasta (opcional)
+            <input type="date" formControlName="validTo" />
+          </label>
+        </div>
+
+        <h3>Días laborables</h3>
+        @for (rule of dayRules(); track rule.dayOfWeek) {
+          <div class="day-rule">
+            <label class="day-toggle">
+              <input
+                type="checkbox"
+                [checked]="rule.working"
+                (change)="toggleWorking(rule.dayOfWeek)" />
+              {{ dayLabel(rule.dayOfWeek) }}
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="1440"
+              [disabled]="!rule.working"
+              [value]="rule.expectedMinutes"
+              (change)="changeMinutes(rule.dayOfWeek, $any($event.target).value)" />
+            <small>min</small>
+          </div>
+        }
+
+        @if (formError(); as err) {
+          <p class="error">{{ err }}</p>
+        }
+        <button type="submit" [disabled]="saving()">
+          {{ saving() ? 'Guardando…' : editingId() ? 'Guardar cambios' : 'Crear calendario' }}
+        </button>
+      </form>
+
+      <h3>Festivos</h3>
+      <form [formGroup]="holidayForm" (ngSubmit)="addHoliday()" class="inline-form">
+        <input type="date" formControlName="date" />
+        <input type="text" formControlName="name" placeholder="Nombre del festivo" />
+        <button type="submit">Añadir</button>
+      </form>
+      @for (holiday of holidays(); track holiday.date) {
+        <div class="entry-row">
+          <span>{{ holiday.date }} · {{ holiday.name }}</span>
+          <button type="button" class="danger" (click)="removeHoliday(holiday.date)">Quitar</button>
+        </div>
+      } @empty {
+        <p class="eyebrow">Sin festivos.</p>
+      }
+
+      <h3>Jornadas especiales</h3>
+      <form [formGroup]="specialDayForm" (ngSubmit)="addSpecialDay()" class="inline-form">
+        <input type="date" formControlName="date" />
+        <input type="text" formControlName="name" placeholder="Descripción" />
+        <input type="number" formControlName="expectedMinutes" min="0" max="1440" />
+        <button type="submit">Añadir</button>
+      </form>
+      @for (specialDay of specialDays(); track specialDay.date) {
+        <div class="entry-row">
+          <span>
+            {{ specialDay.date }} · {{ specialDay.name }} ·
+            {{ formatMinutes(specialDay.expectedMinutes) }}
+          </span>
+          <button type="button" class="danger" (click)="removeSpecialDay(specialDay.date)">Quitar</button>
+        </div>
+      } @empty {
+        <p class="eyebrow">Sin jornadas especiales.</p>
+      }
+    </aside>
+  </section>
+
+  <section class="layout">
+    <article class="card">
+      <h2>Asignaciones</h2>
+      <p class="eyebrow">
+        Prevalece siempre la asignación más específica: empleado, luego equipo, luego organización.
+      </p>
+
+      <form [formGroup]="assignForm" (ngSubmit)="assign()" class="inline-form">
+        <select formControlName="calendarId">
+          <option value="">Calendario…</option>
+          @for (calendar of result()?.content ?? []; track calendar.id) {
+            <option [value]="calendar.id">{{ calendar.name }}</option>
+          }
+        </select>
+        <select formControlName="scope">
+          @for (scope of scopes; track scope.value) {
+            <option [value]="scope.value">{{ scope.label }}</option>
+          }
+        </select>
+        <!-- El ámbito de organización ignora el destinatario: el componente lo
+             envía como null aunque el campo tenga texto. -->
+        <input type="text" formControlName="targetId" placeholder="Id de equipo o empleado" />
+        <button type="submit">Asignar</button>
+      </form>
+      @if (assignError(); as err) {
+        <p class="error">{{ err }}</p>
+      }
+
+      @for (assignment of assignments()?.content ?? []; track assignment.id) {
+        <div class="entry-row">
+          <span>
+            <strong>{{ scopeLabel(assignment.scope) }}</strong>
+            {{ assignment.targetId ? ' · ' + assignment.targetId : '' }} →
+            {{ calendarName(assignment.calendarId) }}
+          </span>
+          <button type="button" class="danger" (click)="removeAssignment(assignment.id)">Retirar</button>
+        </div>
+      } @empty {
+        <p class="eyebrow">Sin asignaciones.</p>
+      }
+    </article>
+
+    <aside class="card">
+      <h2>Calendario efectivo</h2>
+      <p class="eyebrow">
+        Comprueba qué calendario rige para un empleado en una fecha concreta. El equipo es opcional.
+      </p>
+      <form [formGroup]="effectiveForm" (ngSubmit)="resolveEffective()" class="stacked-form">
+        <label>
+          Id de empleado
+          <input type="text" formControlName="employeeId" />
+        </label>
+        <label>
+          Id de equipo (opcional)
+          <input type="text" formControlName="teamId" />
+        </label>
+        <label>
+          Fecha
+          <input type="date" formControlName="date" />
+        </label>
+        <button type="submit">Resolver</button>
+      </form>
+
+      @if (effectiveError(); as err) {
+        <p class="error">{{ err }}</p>
+      }
+      @if (effective(); as effective) {
+        <dl>
+          <dt>Calendario</dt>
+          <dd>{{ effective.calendarName }}</dd>
+          <dt>Ámbito ganador</dt>
+          <dd>{{ scopeLabel(effective.scope) }}</dd>
+          <dt>Zona horaria</dt>
+          <dd>{{ effective.timezone }}</dd>
+          <dt>Laborable</dt>
+          <dd>{{ effective.working ? 'Sí' : 'No' }}</dd>
+          <dt>Jornada esperada</dt>
+          <dd>{{ formatMinutes(effective.expectedMinutes) }}</dd>
+          <dt>Decidido por</dt>
+          <dd>{{ sourceLabel(effective.source) }}</dd>
+        </dl>
+      }
+    </aside>
+  </section>
+</section>

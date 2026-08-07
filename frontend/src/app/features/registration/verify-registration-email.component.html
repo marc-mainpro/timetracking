@@ -1,0 +1,46 @@
+<section class="verify-shell">
+  <div class="card verify-card">
+    <p class="eyebrow">Control horario</p>
+
+    @switch (state()) {
+      @case ('verifying') {
+        <h1>Confirmando tu correo…</h1>
+        <p class="lede">Un momento, estamos comprobando el enlace.</p>
+      }
+      @case ('verified') {
+        <h1>Correo confirmado.</h1>
+        <p class="lede">{{ message() }}</p>
+        <p class="hint">
+          Te avisaremos cuando un administrador revise la solicitud y active tu organización.
+        </p>
+        <a routerLink="/auth/login">Ir al acceso</a>
+      }
+      @case ('missing-token') {
+        <h1>Falta el enlace de confirmación.</h1>
+        <p class="lede">Abre el enlace tal cual aparece en el correo que te enviamos.</p>
+      }
+      @default {
+        <h1>Ese enlace ya no sirve.</h1>
+        <p class="lede">{{ error() }}</p>
+      }
+    }
+
+    @if (state() === 'failed' || state() === 'missing-token') {
+      <form [formGroup]="resendForm" (ngSubmit)="resend()" class="resend-form">
+        <label>
+          <span>Tu correo</span>
+          <input type="email" formControlName="email" placeholder="ana@acme.test" />
+        </label>
+        <button type="submit" [disabled]="resending()">
+          {{ resending() ? 'Enviando…' : 'Enviarme otro enlace' }}
+        </button>
+      </form>
+      @if (resendMessage(); as info) {
+        <p class="info">{{ info }}</p>
+      }
+      <p class="hint">
+        ¿Todavía no has solicitado el alta? <a routerLink="/registro">Hazlo aquí</a>.
+      </p>
+    }
+  </div>
+</section>

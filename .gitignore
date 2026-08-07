@@ -33,3 +33,12 @@ Thumbs.db
 .classpath
 .project
 .settings/
+
+# Informes de escaneo de seguridad (T30-05)
+security-reports/
+
+# Backups locales de PostgreSQL (T150)
+backups/
+
+# Worktrees de agentes (trabajo en paralelo de la V2)
+.claude/worktrees/

@@ -7,11 +7,14 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.tfp.timetracking.identity.domain.AccountLockedException;
 import com.tfp.timetracking.identity.domain.InvalidCredentialsException;
 import com.tfp.timetracking.identity.domain.PasswordHasher;
 import com.tfp.timetracking.identity.domain.RefreshToken;
 import com.tfp.timetracking.identity.domain.RefreshTokenRepository;
 import com.tfp.timetracking.identity.domain.Role;
+import com.tfp.timetracking.identity.domain.Session;
+import com.tfp.timetracking.identity.domain.SessionRepository;
 import com.tfp.timetracking.identity.domain.TenantAccessRepository;
 import com.tfp.timetracking.identity.domain.TenantInactiveException;
 import com.tfp.timetracking.identity.domain.User;
@@ -20,6 +23,7 @@ import com.tfp.timetracking.identity.domain.UserRepository;
 import com.tfp.timetracking.identity.domain.UserStatus;
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.IdGenerator;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Set;
@@ -35,9 +39,13 @@ class AuthenticateUserUseCaseTest {
     private final TenantAccessRepository tenantAccessRepository = org.mockito.Mockito.mock(TenantAccessRepository.class);
     private final PasswordHasher passwordHasher = org.mockito.Mockito.mock(PasswordHasher.class);
     private final RefreshTokenRepository refreshTokenRepository = org.mockito.Mockito.mock(RefreshTokenRepository.class);
+    private final SessionRepository sessionRepository = org.mockito.Mockito.mock(SessionRepository.class);
     private final AccessTokenGenerator accessTokenGenerator = org.mockito.Mockito.mock(AccessTokenGenerator.class);
     private final RefreshTokenGenerator refreshTokenGenerator = org.mockito.Mockito.mock(RefreshTokenGenerator.class);
     private final RefreshTokenHasher refreshTokenHasher = org.mockito.Mockito.mock(RefreshTokenHasher.class);
+    private final AccountLockoutService accountLockoutService = org.mockito.Mockito.mock(AccountLockoutService.class);
+    private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+    private final AuthenticationMetrics authenticationMetrics = new AuthenticationMetrics(meterRegistry);
     private final Clock clock = () -> NOW;
     private final IdGenerator idGenerator = () -> UUID.fromString("33333333-3333-3333-3333-333333333333");
 
@@ -50,9 +58,12 @@ class AuthenticateUserUseCaseTest {
                 tenantAccessRepository,
                 passwordHasher,
                 refreshTokenRepository,
+                sessionRepository,
                 accessTokenGenerator,
                 refreshTokenGenerator,
                 refreshTokenHasher,
+                accountLockoutService,
+                authenticationMetrics,
                 clock,
                 idGenerator,
                 Duration.ofDays(14));
@@ -64,7 +75,9 @@ class AuthenticateUserUseCaseTest {
         when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.of(user));
         when(tenantAccessRepository.isActive(user.tenantId())).thenReturn(true);
         when(passwordHasher.matches("secret", "hash")).thenReturn(true);
-        when(accessTokenGenerator.generate(user)).thenReturn(new IssuedAccessToken("jwt", NOW.plusSeconds(900)));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(accessTokenGenerator.generate(any(User.class), any(UUID.class)))
+                .thenReturn(new IssuedAccessToken("jwt", NOW.plusSeconds(900)));
         when(refreshTokenGenerator.generate()).thenReturn("opaque-refresh");
         when(refreshTokenHasher.hash("opaque-refresh")).thenReturn("refresh-hash");
         when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -73,13 +86,17 @@ class AuthenticateUserUseCaseTest {
 
         assertThat(session.accessToken()).isEqualTo("jwt");
         assertThat(session.refreshToken()).isEqualTo("opaque-refresh");
+        verify(sessionRepository).save(any(Session.class));
         verify(refreshTokenRepository).save(any(RefreshToken.class));
     }
 
     @Test
-    void rejectsInactiveUser() {
+    void tellsTheOwnerOfAnInactiveAccountWhyItCannotEnter() {
+        // El estado de la cuenta solo se revela a quien ha acertado la
+        // contrasena: es el dueno, y necesita saber por que no puede entrar.
         User user = activeUser(UserStatus.INACTIVE);
         when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.of(user));
+        when(passwordHasher.matches("secret", "hash")).thenReturn(true);
 
         assertThatThrownBy(() -> useCase.authenticate(new AuthenticateUserCommand("jane@example.com", "secret")))
                 .isInstanceOf(UserInactiveException.class);
@@ -88,13 +105,50 @@ class AuthenticateUserUseCaseTest {
     }
 
     @Test
-    void rejectsInactiveTenant() {
+    void tellsTheOwnerOfASuspendedTenantWhyItCannotEnter() {
         User user = activeUser(UserStatus.ACTIVE);
         when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.of(user));
+        when(passwordHasher.matches("secret", "hash")).thenReturn(true);
         when(tenantAccessRepository.isActive(user.tenantId())).thenReturn(false);
 
         assertThatThrownBy(() -> useCase.authenticate(new AuthenticateUserCommand("jane@example.com", "secret")))
                 .isInstanceOf(TenantInactiveException.class);
+    }
+
+    @Test
+    void doesNotRevealThatADeactivatedAccountExists() {
+        // Con la contrasena equivocada, una cuenta desactivada responde igual
+        // que un correo inexistente: si no, el codigo de error convertia el
+        // login en un oraculo de existencia de cuentas (T160-02).
+        User user = activeUser(UserStatus.INACTIVE);
+        when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.of(user));
+        when(passwordHasher.matches("wrong", "hash")).thenReturn(false);
+
+        assertThatThrownBy(() -> useCase.authenticate(new AuthenticateUserCommand("jane@example.com", "wrong")))
+                .isInstanceOf(InvalidCredentialsException.class);
+    }
+
+    @Test
+    void doesNotRevealThatASuspendedTenantExists() {
+        User user = activeUser(UserStatus.ACTIVE);
+        when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.of(user));
+        when(passwordHasher.matches("wrong", "hash")).thenReturn(false);
+        when(tenantAccessRepository.isActive(user.tenantId())).thenReturn(false);
+
+        assertThatThrownBy(() -> useCase.authenticate(new AuthenticateUserCommand("jane@example.com", "wrong")))
+                .isInstanceOf(InvalidCredentialsException.class);
+    }
+
+    @Test
+    void hashesEvenWhenTheEmailDoesNotExist() {
+        // Sin esta comparacion de descarte, un correo inexistente responde sin
+        // pasar por BCrypt y el tiempo de respuesta delata que no existe.
+        when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.empty());
+
+        assertThatThrownBy(() -> useCase.authenticate(new AuthenticateUserCommand("nadie@example.com", "secret")))
+                .isInstanceOf(InvalidCredentialsException.class);
+
+        verify(passwordHasher).matches(org.mockito.ArgumentMatchers.eq("secret"), any());
     }
 
     @Test
@@ -106,6 +160,102 @@ class AuthenticateUserUseCaseTest {
 
         assertThatThrownBy(() -> useCase.authenticate(new AuthenticateUserCommand("jane@example.com", "wrong")))
                 .isInstanceOf(InvalidCredentialsException.class);
+    }
+
+    @Test
+    void successfulLoginResetsTheLockoutCounter() {
+        User user = activeUser(UserStatus.ACTIVE);
+        when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.of(user));
+        when(tenantAccessRepository.isActive(user.tenantId())).thenReturn(true);
+        when(passwordHasher.matches("secret", "hash")).thenReturn(true);
+        when(accountLockoutService.isLocked(user)).thenReturn(false);
+        when(sessionRepository.save(any(Session.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(accessTokenGenerator.generate(any(User.class), any(UUID.class)))
+                .thenReturn(new IssuedAccessToken("jwt", NOW.plusSeconds(900)));
+        when(refreshTokenGenerator.generate()).thenReturn("opaque-refresh");
+        when(refreshTokenHasher.hash("opaque-refresh")).thenReturn("refresh-hash");
+        when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        useCase.authenticate(new AuthenticateUserCommand("jane@example.com", "secret"));
+
+        verify(accountLockoutService).registerSuccessfulAttempt(user);
+        verify(accountLockoutService, never()).registerFailedAttempt(any());
+        assertThat(counter("auth.login.succeeded", null)).isEqualTo(1.0);
+    }
+
+    @Test
+    void wrongPasswordRegistersAFailedAttempt() {
+        User user = activeUser(UserStatus.ACTIVE);
+        when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.of(user));
+        when(tenantAccessRepository.isActive(user.tenantId())).thenReturn(true);
+        when(passwordHasher.matches("wrong", "hash")).thenReturn(false);
+        when(accountLockoutService.isLocked(user)).thenReturn(false);
+
+        assertThatThrownBy(() -> useCase.authenticate(new AuthenticateUserCommand("jane@example.com", "wrong")))
+                .isInstanceOf(InvalidCredentialsException.class);
+
+        verify(accountLockoutService).registerFailedAttempt(user);
+        assertThat(counter("auth.login.failed", AuthenticationMetrics.REASON_BAD_CREDENTIALS)).isEqualTo(1.0);
+    }
+
+    /**
+     * RS-008, anti-enumeracion: quien no acierta la contrasena recibe siempre
+     * {@code INVALID_CREDENTIALS}, este la cuenta bloqueada o no exista. Ver la
+     * comprobacion equivalente extremo a extremo en
+     * {@code AccountLockoutIntegrationTest}.
+     */
+    @Test
+    void lockedAccountWithWrongPasswordIsIndistinguishableFromAnUnknownEmail() {
+        User user = activeUser(UserStatus.ACTIVE);
+        when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.of(user));
+        when(tenantAccessRepository.isActive(user.tenantId())).thenReturn(true);
+        when(passwordHasher.matches("wrong", "hash")).thenReturn(false);
+        when(accountLockoutService.isLocked(user)).thenReturn(true);
+
+        assertThatThrownBy(() -> useCase.authenticate(new AuthenticateUserCommand("jane@example.com", "wrong")))
+                .isInstanceOf(InvalidCredentialsException.class)
+                .isNotInstanceOf(AccountLockedException.class);
+
+        // Un intento contra una cuenta ya bloqueada no alarga el bloqueo.
+        verify(accountLockoutService, never()).registerFailedAttempt(any());
+        verify(accountLockoutService).registerBlockedAttempt(user);
+    }
+
+    @Test
+    void lockedAccountWithTheRightPasswordIsToldThatItIsLocked() {
+        User user = activeUser(UserStatus.ACTIVE);
+        when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.of(user));
+        when(tenantAccessRepository.isActive(user.tenantId())).thenReturn(true);
+        when(passwordHasher.matches("secret", "hash")).thenReturn(true);
+        when(accountLockoutService.isLocked(user)).thenReturn(true);
+
+        assertThatThrownBy(() -> useCase.authenticate(new AuthenticateUserCommand("jane@example.com", "secret")))
+                .isInstanceOf(AccountLockedException.class)
+                .extracting(ex -> ((AccountLockedException) ex).errorCode())
+                .isEqualTo("ACCOUNT_LOCKED");
+
+        verify(refreshTokenRepository, never()).save(any());
+        assertThat(counter("auth.login.failed", AuthenticationMetrics.REASON_LOCKED)).isEqualTo(1.0);
+    }
+
+    @Test
+    void unknownEmailFailsWithoutTouchingTheLockoutStore() {
+        when(userRepository.findByEmail(any())).thenReturn(java.util.Optional.empty());
+
+        assertThatThrownBy(() -> useCase.authenticate(new AuthenticateUserCommand("ghost@example.com", "secret")))
+                .isInstanceOf(InvalidCredentialsException.class);
+
+        verify(accountLockoutService, never()).isLocked(any());
+        verify(accountLockoutService, never()).registerFailedAttempt(any());
+        assertThat(counter("auth.login.failed", AuthenticationMetrics.REASON_UNKNOWN_EMAIL)).isEqualTo(1.0);
+    }
+
+    private double counter(String name, String reason) {
+        io.micrometer.core.instrument.search.Search search = meterRegistry.find(name);
+        if (reason != null) {
+            search = search.tag("reason", reason);
+        }
+        return search.counter().count();
     }
 
     private User activeUser(UserStatus status) {

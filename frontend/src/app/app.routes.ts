@@ -33,10 +33,31 @@ export const routes: Routes = [
       import('./features/corrections/corrections.routes').then((m) => m.CORRECTIONS_ROUTES)
   },
   {
+    path: 'absences',
+    canActivate: [authGuard, roleGuard(['EMPLOYEE'])],
+    loadChildren: () => import('./features/absences/absences.routes').then((m) => m.ABSENCES_ROUTES)
+  },
+  {
+    path: 'shifts',
+    canActivate: [authGuard, roleGuard(['EMPLOYEE'])],
+    loadChildren: () => import('./features/shifts/shifts.routes').then((m) => m.SHIFTS_ROUTES)
+  },
+  {
+    path: 'registro',
+    loadChildren: () =>
+      import('./features/registration/registration.routes').then((m) => m.REGISTRATION_ROUTES)
+  },
+  {
     path: 'reports',
     canActivate: [authGuard, roleGuard(['EMPLOYEE'])],
     loadChildren: () =>
       import('./features/reports/employee-report.routes').then((m) => m.EMPLOYEE_REPORT_ROUTES)
+  },
+  {
+    path: 'admin/calendars',
+    canActivate: [authGuard, roleGuard(['TENANT_ADMIN'])],
+    loadChildren: () =>
+      import('./features/calendars/calendars.routes').then((m) => m.CALENDARS_ROUTES)
   },
   {
     path: 'admin/employees',
@@ -55,9 +76,31 @@ export const routes: Routes = [
       )
   },
   {
+    path: 'admin/absences',
+    canActivate: [authGuard, roleGuard(['TENANT_ADMIN'])],
+    loadChildren: () =>
+      import('./features/absences/absences.routes').then((m) => m.ADMIN_ABSENCES_ROUTES)
+  },
+  {
+    path: 'admin/shifts',
+    canActivate: [authGuard, roleGuard(['TENANT_ADMIN'])],
+    loadChildren: () => import('./features/shifts/shifts.routes').then((m) => m.ADMIN_SHIFTS_ROUTES)
+  },
+  {
     path: 'admin/reports',
     canActivate: [authGuard, roleGuard(['TENANT_ADMIN'])],
     loadChildren: () => import('./features/reports/reports.routes').then((m) => m.REPORTS_ROUTES)
+  },
+  {
+    path: 'notifications',
+    canActivate: [authGuard],
+    loadChildren: () =>
+      import('./features/notifications/notifications.routes').then((m) => m.NOTIFICATIONS_ROUTES)
+  },
+  {
+    path: 'platform',
+    canActivate: [authGuard, roleGuard(['PLATFORM_ADMIN'])],
+    loadChildren: () => import('./features/platform/platform.routes').then((m) => m.PLATFORM_ROUTES)
   },
   {
     path: '**',

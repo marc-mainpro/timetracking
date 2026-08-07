@@ -9,9 +9,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tfp.timetracking.identity.interfaces.rest.AuthLoginRequest;
 import com.tfp.timetracking.identity.interfaces.rest.AuthTokenResponse;
+import com.tfp.timetracking.tenant.application.RegisterTenantCommand;
+import com.tfp.timetracking.tenant.application.RegisterTenantResult;
+import com.tfp.timetracking.tenant.application.RegisterTenantUseCase;
 import com.tfp.timetracking.shared.application.TenantContext;
-import com.tfp.timetracking.tenant.interfaces.rest.RegisterTenantRequest;
-import com.tfp.timetracking.tenant.interfaces.rest.RegisterTenantResponse;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -57,6 +58,9 @@ class JwtTenantContextIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private RegisterTenantUseCase registerTenantUseCase;
+
     @Test
     void resolvesTenantContextFromAuthenticatedRequest() throws Exception {
         RegisteredAdmin admin = registerAdmin();
@@ -74,16 +78,8 @@ class JwtTenantContextIntegrationTest {
         long suffix = Instant.now().toEpochMilli();
         String email = "admin+" + suffix + "@acme.test";
         String password = "supersecretpwd";
-        RegisterTenantRequest request =
-                new RegisterTenantRequest("Acme Corp " + suffix, "Europe/Madrid", email, password, "Jane", "Doe");
-        String responseBody = mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        RegisterTenantResponse response = objectMapper.readValue(responseBody, RegisterTenantResponse.class);
+        RegisterTenantResult response =
+                registerTenantUseCase.register(new RegisterTenantCommand("Acme Corp " + suffix, "Europe/Madrid", email, password, "Jane", "Doe"));
         return new RegisteredAdmin(response.tenantId(), response.adminUserId(), email, password);
     }
 

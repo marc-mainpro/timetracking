@@ -18,12 +18,23 @@ export class ErrorMessagesService {
     ['BREAK_NOT_OPEN', 'No hay una pausa activa que finalizar.'],
     ['WORKDAY_OPEN_BREAK', 'No puedes finalizar la jornada con una pausa abierta.'],
     ['RATE_LIMIT_EXCEEDED', 'Has realizado demasiados intentos. Espera un momento e inténtalo otra vez.'],
+    // El backend solo devuelve ACCOUNT_LOCKED a quien ha acertado la contraseña
+    // (anti-enumeración, RS-008), así que aquí se puede ser explícito: quien lee
+    // este mensaje es el titular de la cuenta.
+    [
+      'ACCOUNT_LOCKED',
+      'Tu cuenta está bloqueada temporalmente por varios intentos fallidos. Vuelve a intentarlo dentro de unos minutos.'
+    ],
     ['LAST_ADMIN', 'La organización debe mantener al menos un administrador activo.'],
     ['EMAIL_ALREADY_IN_USE', 'Ese correo ya está en uso.'],
     ['CORRECTION_ALREADY_PENDING', 'Ya existe una corrección pendiente para esa jornada.'],
     ['CORRECTION_ALREADY_RESOLVED', 'La corrección ya fue resuelta por otro administrador.'],
+    ['SHIFT_TEMPLATE_ALREADY_EXISTS', 'Ya existe una plantilla de turno con ese nombre.'],
+    ['SHIFT_TEMPLATE_ARCHIVED', 'La plantilla de turno está archivada y no puede asignarse.'],
     ['CONCURRENT_MODIFICATION', 'Otra persona modificó este recurso al mismo tiempo. Recargamos el estado más reciente.'],
     ['RESOURCE_NOT_FOUND', 'No se encontró el recurso solicitado.'],
+    ['ABSENCE_TYPE_INACTIVE', 'El tipo de ausencia seleccionado ya no está disponible.'],
+    ['ABSENCE_REQUEST_ALREADY_RESOLVED', 'La solicitud de ausencia ya fue resuelta por otra persona.'],
     ['UNAUTHORIZED', 'Necesitas iniciar sesión para continuar.']
   ]);
 

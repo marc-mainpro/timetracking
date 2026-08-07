@@ -9,7 +9,6 @@ import com.tfp.timetracking.shared.application.ResourceNotFoundException;
 import com.tfp.timetracking.shared.application.TenantContext;
 import com.tfp.timetracking.shared.domain.Clock;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,8 +31,13 @@ public class AssignRoleUseCase {
     public User assign(EmployeeRolesCommand command) {
         User user = userRepository.findById(tenantContext.currentTenantId(), command.employeeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado"));
-        Set<Role> roles = command.roles().stream().map(Role::valueOf).collect(Collectors.toSet());
+        // tenantAssignableRoles rechaza PLATFORM_ADMIN: es un rol global y no debe
+        // poder concederse desde la administracion de un tenant (T50-04, ADR-0010).
+        Set<Role> roles = Role.tenantAssignableRoles(command.roles());
         if (user.isActive() && user.hasRole(Role.TENANT_ADMIN) && !roles.contains(Role.TENANT_ADMIN)) {
+            // El bloqueo previo serializa a los administradores activos del tenant:
+            // sin el, dos degradaciones simultaneas pueden contarse la una a la otra
+            // como "todavia queda un admin" y dejar el tenant sin ninguno.
             userRepository.lockActiveAdmins(tenantContext.currentTenantId());
             if (userRepository.countActiveAdminsExcludingUser(tenantContext.currentTenantId(), user.id()) == 0) {
                 throw new LastAdminException();

@@ -11,10 +11,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tfp.timetracking.shared.infrastructure.security.CorrelationIdFilter;
-import com.tfp.timetracking.tenant.interfaces.rest.RegisterTenantRequest;
-import com.tfp.timetracking.tenant.interfaces.rest.RegisterTenantResponse;
 import jakarta.servlet.http.Cookie;
+import com.tfp.timetracking.tenant.application.RegisterTenantCommand;
+import com.tfp.timetracking.tenant.application.RegisterTenantResult;
+import com.tfp.timetracking.tenant.application.RegisterTenantUseCase;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,6 +65,9 @@ class AuthSecurityIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private RegisterTenantUseCase registerTenantUseCase;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -116,7 +121,7 @@ class AuthSecurityIntegrationTest {
     void inactiveTenantWithValidTokenGets401OnAuthenticatedRequest() throws Exception {
         RegisteredAdmin admin = registerAdmin(ip("token-tenant-register"));
         LoginResult login = login(admin, ip("token-tenant-login"));
-        jdbcTemplate.update("UPDATE tenant SET status = 'INACTIVE' WHERE id = ?", admin.tenantId());
+        jdbcTemplate.update("UPDATE tenant SET status = 'SUSPENDED' WHERE id = ?", admin.tenantId());
 
         mockMvc.perform(post("/api/v1/auth/logout").header(HttpHeaders.AUTHORIZATION, "Bearer " + login.accessToken()))
                 .andExpect(status().isUnauthorized())
@@ -177,8 +182,8 @@ class AuthSecurityIntegrationTest {
     void registerIsRateLimited() throws Exception {
         String ip = ip("limit-register-only");
 
-        register(ip, 1).result().andExpect(status().isCreated());
-        register(ip, 2).result().andExpect(status().isCreated());
+        register(ip, 1).result().andExpect(status().isAccepted());
+        register(ip, 2).result().andExpect(status().isAccepted());
         register(ip, 3).result()
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.errorCode").value("RATE_LIMIT_EXCEEDED"));
@@ -200,7 +205,7 @@ class AuthSecurityIntegrationTest {
                 .andExpect(header().string(HttpHeaders.PRAGMA, "no-cache"));
 
         register(ip("headers-register-public"), 4).result()
-                .andExpect(status().isCreated())
+                .andExpect(status().isAccepted())
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"))
                 .andExpect(header().string("X-Frame-Options", "SAMEORIGIN"))
                 .andExpect(header().string("Referrer-Policy", "no-referrer"))
@@ -228,46 +233,54 @@ class AuthSecurityIntegrationTest {
     void registerDoesNotRevealWhetherEmailAlreadyExists() throws Exception {
         String clientIp = ip("register-enum");
         RegisterAttempt first = register(clientIp, 10);
-        first.result().andExpect(status().isCreated());
+        String firstBody = first.result()
+                .andExpect(status().isAccepted())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
 
-        RegisterTenantRequest duplicateRequest = new RegisterTenantRequest(
-                "Acme Duplicate",
-                "Europe/Madrid",
-                first.email(),
-                "supersecretpwd",
-                "Jane",
-                "Doe");
-
-        mockMvc.perform(post("/api/v1/auth/register")
+        // Repetir con el mismo correo devuelve exactamente la misma respuesta:
+        // ni codigo distinto ni cuerpo distinto revelan que ya existe.
+        String duplicateBody = mockMvc.perform(post("/api/v1/public/tenant-registrations")
                         .header("X-Forwarded-For", ip("register-enum-2"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(duplicateRequest)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.errorCode").value("EMAIL_ALREADY_IN_USE"))
-                .andExpect(jsonPath("$.detail", not(containsString(first.email()))));
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "companyName", "Acme Duplicate",
+                                "timezone", "Europe/Madrid",
+                                "firstName", "Jane",
+                                "lastName", "Doe",
+                                "email", first.email(),
+                                "password", "supersecretpwd",
+                                "acceptTerms", true))))
+                .andExpect(status().isAccepted())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        org.assertj.core.api.Assertions.assertThat(duplicateBody).isEqualTo(firstBody);
     }
 
     @Test
     void oversizedPayloadIsRejected() throws Exception {
-        String hugeTenantName = "A".repeat(70_000);
-        RegisterTenantRequest request = new RegisterTenantRequest(
-                hugeTenantName,
-                "Europe/Madrid",
-                "oversized@acme.test",
-                "supersecretpwd",
-                "Jane",
-                "Doe");
+        String hugeName = "A".repeat(70_000);
 
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/v1/public/tenant-registrations")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "companyName", hugeName,
+                                "timezone", "Europe/Madrid",
+                                "firstName", "Jane",
+                                "lastName", "Doe",
+                                "email", "oversized@acme.test",
+                                "password", "supersecretpwd",
+                                "acceptTerms", true))))
                 .andExpect(status().isPayloadTooLarge())
                 .andExpect(jsonPath("$.errorCode").value("PAYLOAD_TOO_LARGE"));
     }
 
     @Test
     void correlationIdIsPropagatedIntoProblemDetails() throws Exception {
-        String correlationId = "corr-" + UUID.randomUUID();
+        String correlationId = UUID.randomUUID().toString();
 
         mockMvc.perform(post("/api/v1/auth/logout")
                         .header(CorrelationIdFilter.CORRELATION_ID_HEADER, correlationId)
@@ -277,27 +290,37 @@ class AuthSecurityIntegrationTest {
                 .andExpect(jsonPath("$.correlationId").value(correlationId));
     }
 
+    /**
+     * Crea un tenant con su administrador ya operativo. Usa el caso de uso y no
+     * el alta publica porque esta exige verificar el correo y que plataforma la
+     * apruebe, y estos tests necesitan un usuario con el que iniciar sesion.
+     */
     private RegisteredAdmin registerAdmin(String clientIp) throws Exception {
-        RegisterAttempt attempt = register(clientIp, 0);
-        String responseBody = attempt.result().andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
-        RegisterTenantResponse response = objectMapper.readValue(responseBody, RegisterTenantResponse.class);
-        return new RegisteredAdmin(response.tenantId(), response.adminUserId(), attempt.email(), "supersecretpwd");
+        long suffix = Instant.now().toEpochMilli() + Math.abs(clientIp.hashCode());
+        String email = "admin+" + suffix + "@acme.test";
+        RegisterTenantResult result = registerTenantUseCase.register(new RegisterTenantCommand(
+                "Acme Corp " + suffix, "Europe/Madrid", email, "supersecretpwd", "Jane", "Doe"));
+        return new RegisteredAdmin(result.tenantId(), result.adminUserId(), email, "supersecretpwd");
     }
 
+    /**
+     * Solicitud de alta por el flujo publico V2. Responde siempre 202 con el
+     * mismo cuerpo: es la respuesta anti-enumeracion (RF-REG-005).
+     */
     private RegisterAttempt register(String clientIp, int offset) throws Exception {
         long suffix = Instant.now().toEpochMilli() + offset;
         String email = "admin+" + suffix + "@acme.test";
-        RegisterTenantRequest request = new RegisterTenantRequest(
-                "Acme Corp " + suffix,
-                "Europe/Madrid",
-                email,
-                "supersecretpwd",
-                "Jane",
-                "Doe");
-        return new RegisterAttempt(email, mockMvc.perform(post("/api/v1/auth/register")
+        return new RegisterAttempt(email, mockMvc.perform(post("/api/v1/public/tenant-registrations")
                 .header("X-Forwarded-For", clientIp)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request))));
+                .content(objectMapper.writeValueAsString(Map.of(
+                        "companyName", "Acme Corp " + suffix,
+                        "timezone", "Europe/Madrid",
+                        "firstName", "Jane",
+                        "lastName", "Doe",
+                        "email", email,
+                        "password", "supersecretpwd",
+                        "acceptTerms", true)))));
     }
 
     private LoginResult login(RegisteredAdmin admin, String clientIp) throws Exception {

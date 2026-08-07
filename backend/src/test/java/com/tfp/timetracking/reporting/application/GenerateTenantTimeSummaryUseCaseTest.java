@@ -29,7 +29,7 @@ class GenerateTenantTimeSummaryUseCaseTest {
     void aggregatesEntriesByEmployeeForTheCurrentTenant() {
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         WorkdayReportEntry entry = new WorkdayReportEntry(
-                UUID.randomUUID(), employeeId, false, false, Instant.parse("2026-01-05T08:00:00Z"), Instant.parse("2026-01-05T10:00:00Z"), List.of());
+                UUID.randomUUID(), employeeId, false, false, Instant.parse("2026-01-05T08:00:00Z"), Instant.parse("2026-01-05T10:00:00Z"), List.of(), null, null, null, null, false);
         when(workdaySummaryQueryPort.findByTenant(tenantId, from, to)).thenReturn(List.of(entry));
 
         assertThat(useCase.generate(from, to)).hasSize(1).first().satisfies(summary -> assertThat(summary.employeeId()).isEqualTo(employeeId));

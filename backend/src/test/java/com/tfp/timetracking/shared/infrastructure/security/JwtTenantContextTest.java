@@ -26,10 +26,12 @@ class JwtTenantContextTest {
     void resolvesTenantUserAndRolesFromJwtClaims() {
         UUID tenantId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        SecurityContextHolder.getContext().setAuthentication(authentication(userId, tenantId, List.of("TENANT_ADMIN")));
+        UUID sessionId = UUID.randomUUID();
+        SecurityContextHolder.getContext().setAuthentication(authentication(userId, tenantId, sessionId, List.of("TENANT_ADMIN")));
 
         assertThat(tenantContext.currentTenantId()).isEqualTo(tenantId);
         assertThat(tenantContext.currentUserId()).isEqualTo(userId);
+        assertThat(tenantContext.currentSessionId()).isEqualTo(sessionId);
         assertThat(tenantContext.currentRoles()).containsExactly("TENANT_ADMIN");
     }
 
@@ -67,12 +69,13 @@ class JwtTenantContextTest {
         assertThatThrownBy(tenantContext::currentRoles).isInstanceOf(IllegalStateException.class);
     }
 
-    private JwtAuthenticationToken authentication(UUID userId, UUID tenantId, List<String> roles) {
+    private JwtAuthenticationToken authentication(UUID userId, UUID tenantId, UUID sessionId, List<String> roles) {
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "none")
                 .subject(userId.toString())
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plusSeconds(60))
+                .claim("sid", sessionId.toString())
                 .claim("tenantId", tenantId.toString())
                 .claim("roles", roles)
                 .build();

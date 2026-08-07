@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test;
 
 class IdentityIntegrationEventMapperTest {
 
+    private static final IdentityIntegrationEventMapper MAPPER = new IdentityIntegrationEventMapper();
+
     @Test
     void mapsEmployeeCreatedToIntegrationEventWithFullEnvelope() {
         UUID eventId = UUID.randomUUID();
@@ -22,7 +24,7 @@ class IdentityIntegrationEventMapperTest {
         EmployeeCreated domainEvent = new EmployeeCreated(
                 eventId, occurredAt, tenantId, employeeId, "jane.doe@acme.test", Set.of("EMPLOYEE"));
 
-        Optional<IntegrationEvent> mapped = IdentityIntegrationEventMapper.map(domainEvent);
+        Optional<IntegrationEvent> mapped = MAPPER.map(domainEvent);
 
         assertThat(mapped).isPresent();
         IntegrationEvent event = mapped.orElseThrow();
@@ -48,7 +50,7 @@ class IdentityIntegrationEventMapperTest {
         Instant occurredAt = Instant.parse("2026-07-20T09:00:00Z");
         EmployeeDeactivated domainEvent = new EmployeeDeactivated(eventId, occurredAt, tenantId, employeeId);
 
-        Optional<IntegrationEvent> mapped = IdentityIntegrationEventMapper.map(domainEvent);
+        Optional<IntegrationEvent> mapped = MAPPER.map(domainEvent);
 
         assertThat(mapped).isPresent();
         IntegrationEvent event = mapped.orElseThrow();
@@ -60,7 +62,7 @@ class IdentityIntegrationEventMapperTest {
 
     @Test
     void ignoresUnknownDomainEvents() {
-        Optional<IntegrationEvent> mapped = IdentityIntegrationEventMapper.map(new Object());
+        Optional<IntegrationEvent> mapped = MAPPER.map(new Object());
 
         assertThat(mapped).isEmpty();
     }

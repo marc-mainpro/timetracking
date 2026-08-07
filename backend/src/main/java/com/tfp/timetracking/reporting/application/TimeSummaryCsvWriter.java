@@ -24,7 +24,17 @@ public final class TimeSummaryCsvWriter {
 
     private static final String LINE_SEPARATOR = "\r\n";
     private static final String[] HEADERS = {
-        "employeeId", "workedSeconds", "pausedSeconds", "workdayCount", "adjustedWorkdayCount", "openWorkdays"
+        "employeeId",
+        "workedSeconds",
+        "pausedSeconds",
+        "expectedSeconds",
+        "effectiveWorkedSeconds",
+        "overtimeSeconds",
+        "deviationSeconds",
+        "workdayCount",
+        "adjustedWorkdayCount",
+        "openWorkdays",
+        "evaluatedWorkdayCount"
     };
 
     private TimeSummaryCsvWriter() {}
@@ -44,9 +54,14 @@ public final class TimeSummaryCsvWriter {
                 escape(summary.employeeId().toString()),
                 escape(Long.toString(summary.worked().getSeconds())),
                 escape(Long.toString(summary.paused().getSeconds())),
+                escape(Long.toString(summary.expected().getSeconds())),
+                escape(Long.toString(summary.effectiveWorked().getSeconds())),
+                escape(Long.toString(summary.overtime().getSeconds())),
+                escape(Long.toString(summary.deviation().getSeconds())),
                 escape(Integer.toString(summary.workdayCount())),
                 escape(Integer.toString(summary.adjustedWorkdayCount())),
-                escape(Integer.toString(summary.openWorkdays())));
+                escape(Integer.toString(summary.openWorkdays())),
+                escape(Integer.toString(summary.evaluatedWorkdayCount())));
     }
 
     static String escape(String value) {

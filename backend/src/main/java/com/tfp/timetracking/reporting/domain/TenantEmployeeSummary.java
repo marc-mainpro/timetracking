@@ -15,11 +15,25 @@ import java.util.UUID;
  * caigan los limites de dia (ver {@code TimeSummaryCalculator}).
  */
 public record TenantEmployeeSummary(
-        UUID employeeId, Duration worked, Duration paused, int workdayCount, int adjustedWorkdayCount, int openWorkdays) {
+        UUID employeeId,
+        Duration worked,
+        Duration paused,
+        Duration expected,
+        Duration effectiveWorked,
+        Duration overtime,
+        Duration deviation,
+        int workdayCount,
+        int adjustedWorkdayCount,
+        int openWorkdays,
+        int evaluatedWorkdayCount) {
 
     public TenantEmployeeSummary {
         Objects.requireNonNull(employeeId, "employeeId no puede ser null");
         Objects.requireNonNull(worked, "worked no puede ser null");
         Objects.requireNonNull(paused, "paused no puede ser null");
+        Objects.requireNonNull(expected, "expected no puede ser null");
+        Objects.requireNonNull(effectiveWorked, "effectiveWorked no puede ser null");
+        Objects.requireNonNull(overtime, "overtime no puede ser null");
+        Objects.requireNonNull(deviation, "deviation no puede ser null");
     }
 }

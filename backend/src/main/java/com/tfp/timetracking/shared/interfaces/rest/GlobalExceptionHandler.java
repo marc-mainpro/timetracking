@@ -23,6 +23,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
@@ -72,7 +74,9 @@ public class GlobalExceptionHandler {
 
     private boolean authenticationErrorCode(String errorCode) {
         return java.util.Set.of(
+                        "ACCOUNT_LOCKED",
                         "INVALID_CREDENTIALS",
+                        "INVALID_PASSWORD_RESET_TOKEN",
                         "INVALID_REFRESH_TOKEN",
                         "REFRESH_TOKEN_REUSED",
                         "USER_INACTIVE",
@@ -123,6 +127,40 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ProblemDetail handleNotFound(ResourceNotFoundException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Resource not found");
+        enrich(problem, "RESOURCE_NOT_FOUND");
+        return problem;
+    }
+
+    /**
+     * Parametro de peticion con un valor que no se puede convertir al tipo
+     * esperado (una fecha donde se espera un instante, texto donde se espera un
+     * UUID...).
+     *
+     * <p>Es un error del cliente: devolvia 500 porque no habia manejador, lo que
+     * ademas de mentir sobre la causa ensuciaba las metricas de error del
+     * servidor y ocultaba incidencias reales. No se incluye el valor recibido en
+     * la respuesta para no reflejar entrada del cliente.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ProblemDetail handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, "El parametro '" + ex.getName() + "' tiene un formato invalido");
+        problem.setTitle("Validation failed");
+        enrich(problem, "VALIDATION_ERROR");
+        return problem;
+    }
+
+    /**
+     * Ruta inexistente bajo la API.
+     *
+     * <p>Spring la resuelve como "recurso estatico no encontrado" y, sin
+     * manejador, terminaba en 500. Un 404 es la respuesta correcta y evita que
+     * un simple error de URL parezca una caida del servidor.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ProblemDetail handleNoResource(NoResourceFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "El recurso no existe");
         problem.setTitle("Resource not found");
         enrich(problem, "RESOURCE_NOT_FOUND");
         return problem;

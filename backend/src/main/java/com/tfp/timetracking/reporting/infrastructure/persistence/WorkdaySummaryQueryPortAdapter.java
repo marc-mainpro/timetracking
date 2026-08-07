@@ -3,6 +3,7 @@ package com.tfp.timetracking.reporting.infrastructure.persistence;
 import com.tfp.timetracking.reporting.domain.BreakInterval;
 import com.tfp.timetracking.reporting.domain.WorkdayReportEntry;
 import com.tfp.timetracking.reporting.domain.WorkdaySummaryQueryPort;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -60,11 +61,20 @@ class WorkdaySummaryQueryPortAdapter implements WorkdaySummaryQueryPort {
                         ADJUSTED_STATUS.equals(row.status()),
                         row.startedAt(),
                         row.endedAt(),
-                        breaksByWorkday.getOrDefault(row.id(), List.of())))
+                        breaksByWorkday.getOrDefault(row.id(), List.of()),
+                        duration(row.expectedMinutes()),
+                        duration(row.effectiveWorkedMinutes()),
+                        duration(row.overtimeMinutes()),
+                        duration(row.deviationMinutes()),
+                        row.expectedMinutes() != null))
                 .toList();
     }
 
     private boolean isOpen(String status) {
         return OPEN_STATUS_OPEN.equals(status) || OPEN_STATUS_ON_BREAK.equals(status);
+    }
+
+    private Duration duration(Long minutes) {
+        return minutes == null ? null : Duration.ofMinutes(minutes);
     }
 }

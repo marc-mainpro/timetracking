@@ -1,1129 +1,2931 @@
-openapi: "3.1.0"
+openapi: 3.1.0
 info:
-  title: "OpenAPI definition"
-  version: "v0"
+  title: OpenAPI definition
+  version: v0
 servers:
-  -
-    url: "http://localhost:8080"
-    description: "Generated server url"
+- url: http://localhost:8080
+  description: Generated server url
 paths:
   /api/v1/employees/{employeeId}:
     get:
       tags:
-        - "Employees"
-      operationId: "get"
+      - Employees
+      operationId: get
       parameters:
-        -
-          name: "employeeId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-            format: "uuid"
+      - name: employeeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/EmployeeResponse"
+                $ref: '#/components/schemas/EmployeeResponse'
     put:
       tags:
-        - "Employees"
-      operationId: "update"
+      - Employees
+      operationId: update
       parameters:
-        -
-          name: "employeeId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-            format: "uuid"
+      - name: employeeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateEmployeeRequest"
+              $ref: '#/components/schemas/UpdateEmployeeRequest'
         required: true
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/EmployeeResponse"
+                $ref: '#/components/schemas/EmployeeResponse'
   /api/v1/employees/{employeeId}/roles:
     put:
       tags:
-        - "Employees"
-      operationId: "assignRoles"
+      - Employees
+      operationId: assignRoles
       parameters:
-        -
-          name: "employeeId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-            format: "uuid"
+      - name: employeeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AssignRolesRequest"
+              $ref: '#/components/schemas/AssignRolesRequest'
         required: true
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/EmployeeResponse"
+                $ref: '#/components/schemas/EmployeeResponse'
+  /api/v1/admin/hourly-rules:
+    get:
+      tags:
+      - Admin - Hourly rules
+      summary: Consulta las reglas horarias del tenant autenticado
+      operationId: get_1
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/HourlyRulesResponse'
+    put:
+      tags:
+      - Admin - Hourly rules
+      summary: Sustituye las reglas horarias del tenant autenticado
+      operationId: update_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HourlyRulesRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/HourlyRulesResponse'
+  /api/v1/admin/calendars/{calendarId}:
+    get:
+      tags:
+      - Admin - Calendars
+      summary: Consulta el detalle de un calendario
+      operationId: get_2
+      parameters:
+      - name: calendarId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CalendarDetailResponse'
+    put:
+      tags:
+      - Admin - Calendars
+      summary: 'Edita un calendario: sustituye reglas, festivos y jornadas especiales'
+      operationId: update_2
+      parameters:
+      - name: calendarId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveCalendarRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CalendarDetailResponse'
+    delete:
+      tags:
+      - Admin - Calendars
+      summary: Archiva un calendario (borrado logico)
+      operationId: archive
+      parameters:
+      - name: calendarId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
   /api/v1/workdays/{workdayId}/corrections:
     post:
       tags:
-        - "Corrections"
-      operationId: "request"
+      - Corrections
+      operationId: request
       parameters:
-        -
-          name: "workdayId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-            format: "uuid"
+      - name: workdayId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CorrectionRequestDto"
+              $ref: '#/components/schemas/CorrectionRequestDto'
         required: true
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/CorrectionResponse"
+                $ref: '#/components/schemas/CorrectionResponse'
   /api/v1/workdays/start:
     post:
       tags:
-        - "Workdays"
-      operationId: "start"
+      - Workdays
+      operationId: start
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/WorkdayResponse"
+                $ref: '#/components/schemas/WorkdayResponse'
   /api/v1/workdays/current/end:
     post:
       tags:
-        - "Workdays"
-      operationId: "endWorkday"
+      - Workdays
+      operationId: endWorkday
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/WorkdayResponse"
+                $ref: '#/components/schemas/WorkdayResponse'
   /api/v1/workdays/current/breaks/start:
     post:
       tags:
-        - "Workdays"
-      operationId: "startBreak"
+      - Workdays
+      operationId: startBreak
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/WorkdayResponse"
+                $ref: '#/components/schemas/WorkdayResponse'
   /api/v1/workdays/current/breaks/end:
     post:
       tags:
-        - "Workdays"
-      operationId: "endBreak"
+      - Workdays
+      operationId: endBreak
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/WorkdayResponse"
+                $ref: '#/components/schemas/WorkdayResponse'
+  /api/v1/public/tenant-registrations:
+    post:
+      tags:
+      - Public - Tenant registrations
+      summary: Solicita el alta de una organización (RF-REG-001)
+      operationId: request_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantRegistrationRequestBody'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TenantRegistrationAcceptedResponse'
+  /api/v1/public/tenant-registrations/verify-email:
+    post:
+      tags:
+      - Public - Tenant registrations
+      summary: Confirma la dirección de correo de una solicitud (RF-REG-004)
+      operationId: verifyEmail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRegistrationEmailRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TenantRegistrationAcceptedResponse'
+  /api/v1/public/tenant-registrations/resend-verification:
+    post:
+      tags:
+      - Public - Tenant registrations
+      summary: Reenvía el correo de verificación de una solicitud (RF-REG-004)
+      operationId: resendVerification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendVerificationRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TenantRegistrationAcceptedResponse'
+  /api/v1/platform/tenants:
+    get:
+      tags:
+      - Platform - Tenants
+      summary: Lista los tenants, con filtro opcional por estado
+      operationId: list
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PagedPlatformTenantsResponse'
+    post:
+      tags:
+      - Platform - Tenants
+      summary: Crea un tenant y su primer TENANT_ADMIN (solo PLATFORM_ADMIN)
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTenantRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CreateTenantResponse'
+  /api/v1/platform/tenants/{tenantId}/suspend:
+    post:
+      tags:
+      - Platform - Tenants
+      summary: Suspende un tenant activo con motivo obligatorio
+      operationId: suspend
+      parameters:
+      - name: tenantId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuspendTenantRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PlatformTenantDetailResponse'
+  /api/v1/platform/tenants/{tenantId}/reactivate:
+    post:
+      tags:
+      - Platform - Tenants
+      summary: Reactiva un tenant suspendido
+      operationId: reactivate
+      parameters:
+      - name: tenantId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PlatformTenantDetailResponse'
+  /api/v1/platform/tenants/{tenantId}/archive:
+    post:
+      tags:
+      - Platform - Tenants
+      summary: Archiva un tenant de forma permanente
+      operationId: archive_1
+      parameters:
+      - name: tenantId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArchiveTenantRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PlatformTenantDetailResponse'
+  /api/v1/platform/tenants/{tenantId}/activate:
+    post:
+      tags:
+      - Platform - Tenants
+      summary: Activa un tenant pendiente
+      operationId: activate
+      parameters:
+      - name: tenantId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PlatformTenantDetailResponse'
+  /api/v1/platform/registrations/{registrationId}/reject:
+    post:
+      tags:
+      - Platform - Tenant registrations
+      summary: Rechaza una solicitud indicando el motivo
+      operationId: reject
+      parameters:
+      - name: registrationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectRegistrationRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TenantRegistrationResponse'
+  /api/v1/platform/registrations/{registrationId}/approve:
+    post:
+      tags:
+      - Platform - Tenant registrations
+      summary: Aprueba una solicitud y crea el tenant en estado PENDING
+      operationId: approve
+      parameters:
+      - name: registrationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TenantRegistrationResponse'
+  /api/v1/notifications/{notificationId}/read:
+    post:
+      tags:
+      - Notifications
+      summary: Marca como leida una notificacion propia
+      operationId: markRead
+      parameters:
+      - name: notificationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
   /api/v1/employees:
     get:
       tags:
-        - "Employees"
-      operationId: "list"
+      - Employees
+      operationId: list_1
       parameters:
-        -
-          name: "page"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            format: "int32"
-            default: 0
-            minimum: 0
-        -
-          name: "size"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            format: "int32"
-            default: 20
-            minimum: 1
-            maximum: 100
-        -
-          name: "status"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/PagedEmployeesResponse"
+                $ref: '#/components/schemas/PagedEmployeesResponse'
     post:
       tags:
-        - "Employees"
-      operationId: "create"
+      - Employees
+      operationId: create_1
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateEmployeeRequest"
+              $ref: '#/components/schemas/CreateEmployeeRequest'
         required: true
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/EmployeeResponse"
+                $ref: '#/components/schemas/EmployeeResponse'
   /api/v1/corrections/{correctionId}/reject:
     post:
       tags:
-        - "Corrections"
-      operationId: "reject"
+      - Corrections
+      operationId: reject_1
       parameters:
-        -
-          name: "correctionId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-            format: "uuid"
+      - name: correctionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CorrectionRejectRequest"
+              $ref: '#/components/schemas/CorrectionRejectRequest'
         required: true
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/CorrectionResponse"
+                $ref: '#/components/schemas/CorrectionResponse'
   /api/v1/corrections/{correctionId}/approve:
     post:
       tags:
-        - "Corrections"
-      operationId: "approve"
+      - Corrections
+      operationId: approve_1
       parameters:
-        -
-          name: "correctionId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-            format: "uuid"
+      - name: correctionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CorrectionResolutionRequest"
+              $ref: '#/components/schemas/CorrectionResolutionRequest'
         required: true
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/CorrectionResponse"
-  /api/v1/auth/register:
-    post:
-      tags:
-        - "auth-register-controller"
-      operationId: "register"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RegisterTenantRequest"
-        required: true
-      responses:
-        200:
-          description: "OK"
-          content:
-            */*:
-              schema:
-                $ref: "#/components/schemas/RegisterTenantResponse"
+                $ref: '#/components/schemas/CorrectionResponse'
   /api/v1/auth/refresh:
     post:
       tags:
-        - "Authentication"
-      summary: "Rota el refresh token y devuelve un nuevo access token"
-      operationId: "refresh"
+      - Authentication
+      summary: Rota el refresh token y devuelve un nuevo access token
+      operationId: refresh
       parameters:
-        -
-          name: "refresh_token"
-          in: "cookie"
-          required: false
-          schema:
-            type: "string"
+      - name: refresh_token
+        in: cookie
+        required: false
+        schema:
+          type: string
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/AuthTokenResponse"
-  /api/v1/auth/logout:
+                $ref: '#/components/schemas/AuthTokenResponse'
+  /api/v1/auth/password/reset:
     post:
       tags:
-        - "Authentication"
-      summary: "Revoca el refresh token actual y limpia la cookie"
-      operationId: "logout"
-      parameters:
-        -
-          name: "refresh_token"
-          in: "cookie"
-          required: false
-          schema:
-            type: "string"
-      responses:
-        200:
-          description: "OK"
-  /api/v1/auth/login:
-    post:
-      tags:
-        - "Authentication"
-      summary: "Autentica un usuario y emite access token + refresh cookie"
-      operationId: "login"
+      - Authentication
+      summary: Restablece la contrasena usando un token de un solo uso
+      operationId: reset
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AuthLoginRequest"
+              $ref: '#/components/schemas/PasswordResetRequest'
         required: true
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
+  /api/v1/auth/password/forgot:
+    post:
+      tags:
+      - Authentication
+      summary: Solicita un correo de recuperacion de contrasena
+      operationId: forgot
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordForgotRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/AuthTokenResponse"
+                $ref: '#/components/schemas/PasswordResetAcceptedResponse'
+  /api/v1/auth/logout:
+    post:
+      tags:
+      - Authentication
+      summary: Revoca el refresh token actual y limpia la cookie
+      operationId: logout
+      parameters:
+      - name: refresh_token
+        in: cookie
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/auth/login:
+    post:
+      tags:
+      - Authentication
+      summary: Autentica un usuario y emite access token + refresh cookie
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLoginRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+  /api/v1/app/absences:
+    get:
+      tags:
+      - Absences
+      operationId: list_2
+      parameters:
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AbsenceResponse'
+    post:
+      tags:
+      - Absences
+      operationId: request_2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbsenceRequestBody'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AbsenceResponse'
+  /api/v1/app/absences/{absenceId}/cancel:
+    post:
+      tags:
+      - Absences
+      operationId: cancel
+      parameters:
+      - name: absenceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AbsenceResponse'
+  /api/v1/admin/shifts/templates:
+    get:
+      tags:
+      - Admin - Shifts
+      operationId: listTemplates
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShiftTemplateResponse'
+    post:
+      tags:
+      - Admin - Shifts
+      operationId: createTemplate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShiftTemplateRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ShiftTemplateResponse'
+  /api/v1/admin/shifts/assignments:
+    post:
+      tags:
+      - Admin - Shifts
+      operationId: assign
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignShiftRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ShiftAssignmentResponse'
+  /api/v1/admin/calendars:
+    get:
+      tags:
+      - Admin - Calendars
+      summary: Lista los calendarios del tenant, con filtro opcional por estado
+      operationId: list_3
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PagedCalendarsResponse'
+    post:
+      tags:
+      - Admin - Calendars
+      summary: Crea un calendario laboral
+      operationId: create_2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveCalendarRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CalendarDetailResponse'
+  /api/v1/admin/calendar-assignments:
+    get:
+      tags:
+      - Admin - Calendar assignments
+      summary: Lista las asignaciones del tenant, con filtro opcional por calendario
+      operationId: list_4
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: calendarId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PagedCalendarAssignmentsResponse'
+    post:
+      tags:
+      - Admin - Calendar assignments
+      summary: Asigna un calendario a todo el tenant, a un equipo o a un empleado
+      operationId: assign_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignCalendarRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CalendarAssignmentResponse'
+  /api/v1/admin/absences/{absenceId}/reject:
+    post:
+      tags:
+      - Admin - Absences
+      operationId: reject_2
+      parameters:
+      - name: absenceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbsenceResolutionRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AbsenceResponse'
+  /api/v1/admin/absences/{absenceId}/approve:
+    post:
+      tags:
+      - Admin - Absences
+      operationId: approve_2
+      parameters:
+      - name: absenceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbsenceResolutionRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AbsenceResponse'
   /api/v1/employees/{employeeId}/deactivate:
     patch:
       tags:
-        - "Employees"
-      operationId: "deactivate"
+      - Employees
+      operationId: deactivate
       parameters:
-        -
-          name: "employeeId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-            format: "uuid"
+      - name: employeeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/EmployeeResponse"
+                $ref: '#/components/schemas/EmployeeResponse'
   /api/v1/employees/{employeeId}/activate:
     patch:
       tags:
-        - "Employees"
-      operationId: "activate"
+      - Employees
+      operationId: activate_1
       parameters:
-        -
-          name: "employeeId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-            format: "uuid"
+      - name: employeeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/EmployeeResponse"
+                $ref: '#/components/schemas/EmployeeResponse'
   /api/v1/workdays:
     get:
       tags:
-        - "Workdays"
-      operationId: "listOwn"
+      - Workdays
+      operationId: listOwn
       parameters:
-        -
-          name: "page"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            format: "int32"
-            default: 0
-            minimum: 0
-        -
-          name: "size"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            format: "int32"
-            default: 20
-            minimum: 1
-            maximum: 100
-        -
-          name: "from"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
-            format: "date-time"
-        -
-          name: "to"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
-            format: "date-time"
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/PagedResponseWorkdayResponse"
+                $ref: '#/components/schemas/PagedResponseWorkdayResponse'
   /api/v1/workdays/{workdayId}:
     get:
       tags:
-        - "Workdays"
-      operationId: "get_1"
+      - Workdays
+      operationId: get_3
       parameters:
-        -
-          name: "workdayId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-            format: "uuid"
+      - name: workdayId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/WorkdayResponse"
+                $ref: '#/components/schemas/WorkdayResponse'
   /api/v1/workdays/current:
     get:
       tags:
-        - "Workdays"
-      operationId: "current"
+      - Workdays
+      operationId: current
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/WorkdayResponse"
+                $ref: '#/components/schemas/WorkdayResponse'
   /api/v1/reports/tenant/summary:
     get:
       tags:
-        - "Reports"
-      operationId: "tenantSummary"
+      - Reports
+      operationId: tenantSummary
       parameters:
-        -
-          name: "from"
-          in: "query"
-          required: true
-          schema:
-            type: "string"
-            format: "date-time"
-        -
-          name: "to"
-          in: "query"
-          required: true
-          schema:
-            type: "string"
-            format: "date-time"
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                type: "array"
+                type: array
                 items:
-                  $ref: "#/components/schemas/TenantEmployeeSummaryResponse"
+                  $ref: '#/components/schemas/TenantEmployeeSummaryResponse'
+  /api/v1/reports/tenant/export.pdf:
+    get:
+      tags:
+      - Reports
+      summary: Exporta el informe agregado del tenant en PDF
+      operationId: tenantSummaryPdf
+      parameters:
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
   /api/v1/reports/tenant/export.csv:
     get:
       tags:
-        - "Reports"
-      operationId: "tenantSummaryCsv"
+      - Reports
+      operationId: tenantSummaryCsv
       parameters:
-        -
-          name: "from"
-          in: "query"
-          required: true
-          schema:
-            type: "string"
-            format: "date-time"
-        -
-          name: "to"
-          in: "query"
-          required: true
-          schema:
-            type: "string"
-            format: "date-time"
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                type: "string"
+                type: string
   /api/v1/reports/employees/{employeeId}/summary:
     get:
       tags:
-        - "Reports"
-      operationId: "employeeSummary"
+      - Reports
+      operationId: employeeSummary
       parameters:
-        -
-          name: "employeeId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-            format: "uuid"
-        -
-          name: "from"
-          in: "query"
-          required: true
-          schema:
-            type: "string"
-            format: "date-time"
-        -
-          name: "to"
-          in: "query"
-          required: true
-          schema:
-            type: "string"
-            format: "date-time"
+      - name: employeeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                type: "array"
+                type: array
                 items:
-                  $ref: "#/components/schemas/EmployeeDaySummaryResponse"
+                  $ref: '#/components/schemas/EmployeeDaySummaryResponse'
+  /api/v1/platform/tenants/{tenantId}:
+    get:
+      tags:
+      - Platform - Tenants
+      summary: Consulta el detalle de un tenant
+      operationId: get_4
+      parameters:
+      - name: tenantId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PlatformTenantDetailResponse'
+  /api/v1/platform/system-status:
+    get:
+      tags:
+      - Platform - System status
+      summary: 'Estado técnico del sistema: outbox y notificaciones atascadas'
+      operationId: get_5
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SystemStatusResponse'
+  /api/v1/platform/registrations:
+    get:
+      tags:
+      - Platform - Tenant registrations
+      summary: Lista las solicitudes de alta, con filtro opcional por estado
+      operationId: list_5
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PagedTenantRegistrationsResponse'
+  /api/v1/platform/audit:
+    get:
+      tags:
+      - Platform - Audit
+      operationId: list_6
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: action
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PagedAuditEventsResponse'
+  /api/v1/notifications:
+    get:
+      tags:
+      - Notifications
+      summary: Lista las notificaciones del usuario autenticado
+      operationId: list_7
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PagedNotificationsResponse'
+  /api/v1/notifications/unread-count:
+    get:
+      tags:
+      - Notifications
+      summary: Numero de notificaciones sin leer del usuario autenticado
+      operationId: unreadCount
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/UnreadCountResponse'
   /api/v1/corrections:
     get:
       tags:
-        - "Corrections"
-      operationId: "list_1"
+      - Corrections
+      operationId: list_8
       parameters:
-        -
-          name: "page"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            format: "int32"
-            default: 0
-            minimum: 0
-        -
-          name: "size"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            format: "int32"
-            default: 20
-            minimum: 1
-            maximum: 100
-        -
-          name: "status"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/PagedCorrectionsResponse"
+                $ref: '#/components/schemas/PagedCorrectionsResponse'
   /api/v1/corrections/{correctionId}:
     get:
       tags:
-        - "Corrections"
-      operationId: "get_2"
+      - Corrections
+      operationId: get_6
       parameters:
-        -
-          name: "correctionId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-            format: "uuid"
+      - name: correctionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/CorrectionResponse"
+                $ref: '#/components/schemas/CorrectionResponse'
+  /api/v1/auth/sessions:
+    get:
+      tags:
+      - Authentication
+      summary: Lista las sesiones activas del usuario autenticado
+      operationId: list_9
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionResponse'
+    delete:
+      tags:
+      - Authentication
+      summary: Revoca todas las sesiones del usuario autenticado
+      operationId: revokeAll
+      responses:
+        '200':
+          description: OK
+  /api/v1/app/shifts:
+    get:
+      tags:
+      - Shifts
+      operationId: list_10
+      parameters:
+      - name: date
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AppShiftResponse'
+  /api/v1/app/absence-types:
+    get:
+      tags:
+      - Absences
+      operationId: types
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AbsenceTypeResponse'
   /api/v1/admin/workdays:
     get:
       tags:
-        - "Admin Workdays"
-      operationId: "list_2"
+      - Admin Workdays
+      operationId: list_11
       parameters:
-        -
-          name: "page"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            format: "int32"
-            default: 0
-            minimum: 0
-        -
-          name: "size"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            format: "int32"
-            default: 20
-            minimum: 1
-            maximum: 100
-        -
-          name: "employeeId"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
-            format: "uuid"
-        -
-          name: "from"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
-            format: "date-time"
-        -
-          name: "to"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
-            format: "date-time"
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: employeeId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/PagedResponseWorkdayResponse"
+                $ref: '#/components/schemas/PagedResponseWorkdayResponse'
   /api/v1/admin/workdays/{workdayId}:
     get:
       tags:
-        - "Admin Workdays"
-      operationId: "get_3"
+      - Admin Workdays
+      operationId: get_7
       parameters:
-        -
-          name: "workdayId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-            format: "uuid"
+      - name: workdayId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/WorkdayResponse"
+                $ref: '#/components/schemas/WorkdayResponse'
+  /api/v1/admin/calendar-assignments/effective:
+    get:
+      tags:
+      - Admin - Calendar assignments
+      summary: Resuelve el calendario efectivo de un empleado en una fecha
+      operationId: effective
+      parameters:
+      - name: employeeId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: teamId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: date
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EffectiveCalendarResponse'
   /api/v1/admin/audit-events:
     get:
       tags:
-        - "Audit"
-      operationId: "list_3"
+      - Audit
+      operationId: list_12
       parameters:
-        -
-          name: "page"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            format: "int32"
-            default: 0
-            minimum: 0
-        -
-          name: "size"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            format: "int32"
-            default: 20
-            minimum: 1
-            maximum: 100
-        -
-          name: "action"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
-        -
-          name: "from"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
-            format: "date-time"
-        -
-          name: "to"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
-            format: "date-time"
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      - name: action
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
       responses:
-        200:
-          description: "OK"
+        '200':
+          description: OK
           content:
-            */*:
+            '*/*':
               schema:
-                $ref: "#/components/schemas/PagedAuditEventsResponse"
+                $ref: '#/components/schemas/PagedAuditEventsResponse'
+  /api/v1/admin/absences:
+    get:
+      tags:
+      - Admin - Absences
+      operationId: list_13
+      parameters:
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AbsenceResponse'
+  /api/v1/auth/sessions/{sessionId}:
+    delete:
+      tags:
+      - Authentication
+      summary: Revoca una sesion concreta del usuario autenticado
+      operationId: revoke
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/calendar-assignments/{assignmentId}:
+    delete:
+      tags:
+      - Admin - Calendar assignments
+      summary: Retira una asignacion de calendario
+      operationId: remove
+      parameters:
+      - name: assignmentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
 components:
   schemas:
     UpdateEmployeeRequest:
-      type: "object"
+      type: object
       properties:
         firstName:
-          type: "string"
+          type: string
           minLength: 1
         lastName:
-          type: "string"
+          type: string
           minLength: 1
     EmployeeResponse:
-      type: "object"
+      type: object
       properties:
         id:
-          type: "string"
-          format: "uuid"
+          type: string
+          format: uuid
         email:
-          type: "string"
+          type: string
         firstName:
-          type: "string"
+          type: string
         lastName:
-          type: "string"
+          type: string
         status:
-          type: "string"
+          type: string
         roles:
-          type: "array"
+          type: array
           items:
-            type: "string"
+            type: string
           uniqueItems: true
         createdAt:
-          type: "string"
-          format: "date-time"
+          type: string
+          format: date-time
         updatedAt:
-          type: "string"
-          format: "date-time"
+          type: string
+          format: date-time
     AssignRolesRequest:
-      type: "object"
+      type: object
       properties:
         roles:
-          type: "array"
+          type: array
           items:
-            type: "string"
+            type: string
           minItems: 1
           uniqueItems: true
+    HourlyRulesRequest:
+      type: object
+      description: Configuracion de reglas horarias del tenant
+      properties:
+        maxDailyWorkMinutes:
+          type: integer
+          format: int32
+          description: Maximo de minutos trabajados por jornada
+          example: 480
+        requiredBreakMinutes:
+          type: integer
+          format: int32
+          description: Minimo de minutos de pausa requeridos
+          example: 30
+        roundingStepMinutes:
+          type: integer
+          format: int32
+          description: Paso de redondeo en minutos
+          example: 15
+        toleranceMinutes:
+          type: integer
+          format: int32
+          description: Tolerancia en minutos
+          example: 5
+    HourlyRulesResponse:
+      type: object
+      description: Reglas horarias efectivas del tenant
+      properties:
+        maxDailyWorkMinutes:
+          type: integer
+          format: int32
+          description: Maximo de minutos trabajados por jornada
+          example: 480
+        requiredBreakMinutes:
+          type: integer
+          format: int32
+          description: Minimo de minutos de pausa requeridos
+          example: 30
+        roundingStepMinutes:
+          type: integer
+          format: int32
+          description: Paso de redondeo en minutos
+          example: 15
+        toleranceMinutes:
+          type: integer
+          format: int32
+          description: Tolerancia en minutos
+          example: 5
+    DayRulePayload:
+      type: object
+      description: 'Regla semanal: si el dia de la semana es laborable y cuantos minutos se esperan'
+      properties:
+        dayOfWeek:
+          type: string
+          enum:
+          - MONDAY
+          - TUESDAY
+          - WEDNESDAY
+          - THURSDAY
+          - FRIDAY
+          - SATURDAY
+          - SUNDAY
+          example: MONDAY
+        working:
+          type: boolean
+        expectedMinutes:
+          type: integer
+          format: int32
+          example: 480
+          maximum: 1440
+          minimum: 0
+      required:
+      - dayOfWeek
+    HolidayPayload:
+      type: object
+      description: Festivo en una fecha local del calendario
+      properties:
+        date:
+          type: string
+          format: date
+          example: '2026-01-06'
+        name:
+          type: string
+          example: Reyes
+          maxLength: 120
+          minLength: 0
+      required:
+      - date
+    SaveCalendarRequest:
+      type: object
+      description: Estado completo de un calendario laboral
+      properties:
+        name:
+          type: string
+          example: Calendario general
+          maxLength: 120
+          minLength: 0
+        timezone:
+          type: string
+          description: Zona horaria IANA; por defecto la configurada
+          example: Europe/Madrid
+          maxLength: 60
+          minLength: 0
+        validFrom:
+          type: string
+          format: date
+          example: '2026-01-01'
+        validTo:
+          type: string
+          format: date
+          description: Fin de vigencia inclusivo; null = indefinida
+          example: '2026-12-31'
+        dayRules:
+          type: array
+          items:
+            $ref: '#/components/schemas/DayRulePayload'
+        holidays:
+          type: array
+          items:
+            $ref: '#/components/schemas/HolidayPayload'
+        specialDays:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecialDayPayload'
+      required:
+      - validFrom
+    SpecialDayPayload:
+      type: object
+      description: Jornada especial que sustituye la regla semanal en una fecha concreta
+      properties:
+        date:
+          type: string
+          format: date
+          example: '2026-12-24'
+        name:
+          type: string
+          example: Jornada intensiva de Nochebuena
+          maxLength: 120
+          minLength: 0
+        expectedMinutes:
+          type: integer
+          format: int32
+          example: 300
+          maximum: 1440
+          minimum: 0
+      required:
+      - date
+    CalendarDetailResponse:
+      type: object
+      description: Detalle de un calendario laboral
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        timezone:
+          type: string
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+        status:
+          type: string
+        dayRules:
+          type: array
+          items:
+            $ref: '#/components/schemas/DayRulePayload'
+        holidays:
+          type: array
+          items:
+            $ref: '#/components/schemas/HolidayPayload'
+        specialDays:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecialDayPayload'
+        version:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     CorrectionRequestDto:
-      type: "object"
+      type: object
       properties:
         reason:
-          type: "string"
+          type: string
           maxLength: 500
           minLength: 0
         proposedChanges:
-          $ref: "#/components/schemas/ProposedChangesDto"
+          $ref: '#/components/schemas/ProposedChangesDto'
       required:
-        - "proposedChanges"
+      - proposedChanges
     ProposedBreakDto:
-      type: "object"
+      type: object
       properties:
         startedAt:
-          type: "string"
-          format: "date-time"
+          type: string
+          format: date-time
         endedAt:
-          type: "string"
-          format: "date-time"
+          type: string
+          format: date-time
       required:
-        - "endedAt"
-        - "startedAt"
+      - endedAt
+      - startedAt
     ProposedChangesDto:
-      type: "object"
+      type: object
       properties:
         startedAt:
-          type: "string"
-          format: "date-time"
+          type: string
+          format: date-time
         endedAt:
-          type: "string"
-          format: "date-time"
+          type: string
+          format: date-time
         breaks:
-          type: "array"
+          type: array
           items:
-            $ref: "#/components/schemas/ProposedBreakDto"
+            $ref: '#/components/schemas/ProposedBreakDto'
           maxItems: 24
           minItems: 0
       required:
-        - "breaks"
-        - "endedAt"
-        - "startedAt"
+      - breaks
+      - endedAt
+      - startedAt
     CorrectionResponse:
-      type: "object"
+      type: object
       properties:
         id:
-          type: "string"
-          format: "uuid"
+          type: string
+          format: uuid
         workdayId:
-          type: "string"
-          format: "uuid"
+          type: string
+          format: uuid
         requestedBy:
-          type: "string"
-          format: "uuid"
+          type: string
+          format: uuid
         reason:
-          type: "string"
+          type: string
         proposedChanges:
-          $ref: "#/components/schemas/ProposedChangesResponse"
+          $ref: '#/components/schemas/ProposedChangesResponse'
         status:
-          type: "string"
+          type: string
         resolvedBy:
-          type: "string"
-          format: "uuid"
+          type: string
+          format: uuid
         resolvedAt:
-          type: "string"
-          format: "date-time"
+          type: string
+          format: date-time
         resolutionComment:
-          type: "string"
+          type: string
         createdAt:
-          type: "string"
-          format: "date-time"
+          type: string
+          format: date-time
     ProposedBreakResponse:
-      type: "object"
+      type: object
       properties:
         startedAt:
-          type: "string"
-          format: "date-time"
+          type: string
+          format: date-time
         endedAt:
-          type: "string"
-          format: "date-time"
+          type: string
+          format: date-time
     ProposedChangesResponse:
-      type: "object"
+      type: object
       properties:
         startedAt:
-          type: "string"
-          format: "date-time"
+          type: string
+          format: date-time
         endedAt:
-          type: "string"
-          format: "date-time"
+          type: string
+          format: date-time
         breaks:
-          type: "array"
+          type: array
           items:
-            $ref: "#/components/schemas/ProposedBreakResponse"
+            $ref: '#/components/schemas/ProposedBreakResponse'
     BreakEntryResponse:
-      type: "object"
+      type: object
       properties:
         id:
-          type: "string"
-          format: "uuid"
+          type: string
+          format: uuid
         startedAt:
-          type: "string"
-          format: "date-time"
+          type: string
+          format: date-time
         endedAt:
-          type: "string"
-          format: "date-time"
-    WorkdayResponse:
-      type: "object"
+          type: string
+          format: date-time
+    WorkdayEvaluationResponse:
+      type: object
       properties:
-        id:
-          type: "string"
-          format: "uuid"
-        status:
-          type: "string"
-        startedAt:
-          type: "string"
-          format: "date-time"
-        endedAt:
-          type: "string"
-          format: "date-time"
-        breaks:
-          type: "array"
-          items:
-            $ref: "#/components/schemas/BreakEntryResponse"
+        expectedDuration:
+          type: string
+          example: PT2H30M
         workedDuration:
-          type: "string"
-          example: "PT2H30M"
-    CreateEmployeeRequest:
-      type: "object"
+          type: string
+          example: PT2H30M
+        effectiveWorkedDuration:
+          type: string
+          example: PT2H30M
+        pausedDuration:
+          type: string
+          example: PT2H30M
+        overtimeDuration:
+          type: string
+          example: PT2H30M
+        deviationDuration:
+          type: string
+          example: PT2H30M
+        anomalies:
+          type: array
+          items:
+            type: string
+    WorkdayResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        breaks:
+          type: array
+          items:
+            $ref: '#/components/schemas/BreakEntryResponse'
+        workedDuration:
+          type: string
+          example: PT2H30M
+        evaluation:
+          $ref: '#/components/schemas/WorkdayEvaluationResponse'
+    TenantRegistrationRequestBody:
+      type: object
+      properties:
+        companyName:
+          type: string
+          maxLength: 200
+          minLength: 0
+        timezone:
+          type: string
+          minLength: 1
+        firstName:
+          type: string
+          maxLength: 200
+          minLength: 0
+        lastName:
+          type: string
+          maxLength: 200
+          minLength: 0
+        email:
+          type: string
+          maxLength: 255
+          minLength: 0
+        password:
+          type: string
+          maxLength: 200
+          minLength: 10
+        acceptTerms:
+          type: boolean
+    TenantRegistrationAcceptedResponse:
+      type: object
+      properties:
+        message:
+          type: string
+    VerifyRegistrationEmailRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          maxLength: 200
+          minLength: 0
+    ResendVerificationRequest:
+      type: object
       properties:
         email:
-          type: "string"
+          type: string
+          maxLength: 255
+          minLength: 0
+    CreateTenantRequest:
+      type: object
+      properties:
+        tenantName:
+          type: string
           minLength: 1
-        password:
-          type: "string"
+        timezone:
+          type: string
+          minLength: 1
+        adminEmail:
+          type: string
+          minLength: 1
+        adminPassword:
+          type: string
           maxLength: 2147483647
           minLength: 10
         firstName:
-          type: "string"
+          type: string
           minLength: 1
         lastName:
-          type: "string"
+          type: string
+          minLength: 1
+    CreateTenantResponse:
+      type: object
+      properties:
+        tenantId:
+          type: string
+          format: uuid
+        adminUserId:
+          type: string
+          format: uuid
+    SuspendTenantRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+          minLength: 0
+    PlatformTenantDetailResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        status:
+          type: string
+        timezone:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        activatedAt:
+          type: string
+          format: date-time
+        suspendedAt:
+          type: string
+          format: date-time
+        archivedAt:
+          type: string
+          format: date-time
+        suspensionReason:
+          type: string
+    ArchiveTenantRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+          minLength: 0
+    RejectRegistrationRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+          minLength: 0
+    TenantRegistrationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        companyName:
+          type: string
+        ownerFirstName:
+          type: string
+        ownerLastName:
+          type: string
+        email:
+          type: string
+        timezone:
+          type: string
+        status:
+          type: string
+        source:
+          type: string
+        decisionReason:
+          type: string
+        createdTenantId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        verifiedAt:
+          type: string
+          format: date-time
+        decidedAt:
+          type: string
+          format: date-time
+    CreateEmployeeRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          maxLength: 2147483647
+          minLength: 10
+        firstName:
+          type: string
+          minLength: 1
+        lastName:
+          type: string
           minLength: 1
         roles:
-          type: "array"
+          type: array
           items:
-            type: "string"
+            type: string
           minItems: 1
           uniqueItems: true
     CorrectionRejectRequest:
-      type: "object"
+      type: object
       properties:
         resolutionComment:
-          type: "string"
+          type: string
           maxLength: 500
           minLength: 0
     CorrectionResolutionRequest:
-      type: "object"
+      type: object
       properties:
         resolutionComment:
-          type: "string"
+          type: string
           maxLength: 500
           minLength: 0
-    RegisterTenantRequest:
-      type: "object"
-      properties:
-        tenantName:
-          type: "string"
-          minLength: 1
-        timezone:
-          type: "string"
-          minLength: 1
-        adminEmail:
-          type: "string"
-          minLength: 1
-        adminPassword:
-          type: "string"
-          maxLength: 2147483647
-          minLength: 10
-        firstName:
-          type: "string"
-          minLength: 1
-        lastName:
-          type: "string"
-          minLength: 1
-    RegisterTenantResponse:
-      type: "object"
-      properties:
-        tenantId:
-          type: "string"
-          format: "uuid"
-        adminUserId:
-          type: "string"
-          format: "uuid"
     AuthTokenResponse:
-      type: "object"
+      type: object
       properties:
         accessToken:
-          type: "string"
+          type: string
         expiresAt:
-          type: "string"
-          format: "date-time"
-    AuthLoginRequest:
-      type: "object"
+          type: string
+          format: date-time
+    PasswordResetRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+        newPassword:
+          type: string
+          maxLength: 200
+          minLength: 10
+    PasswordForgotRequest:
+      type: object
       properties:
         email:
-          type: "string"
+          type: string
+          minLength: 1
+    PasswordResetAcceptedResponse:
+      type: object
+      properties:
+        message:
+          type: string
+    AuthLoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
           minLength: 1
         password:
-          type: "string"
+          type: string
           minLength: 1
-    PagedResponseWorkdayResponse:
-      type: "object"
+    AbsenceRequestBody:
+      type: object
       properties:
-        content:
-          type: "array"
-          items:
-            $ref: "#/components/schemas/WorkdayResponse"
-        page:
-          type: "integer"
-          format: "int32"
-        size:
-          type: "integer"
-          format: "int32"
-        totalElements:
-          type: "integer"
-          format: "int64"
-        totalPages:
-          type: "integer"
-          format: "int32"
-    TenantEmployeeSummaryResponse:
-      type: "object"
-      properties:
-        employeeId:
-          type: "string"
-          format: "uuid"
-        worked:
-          type: "string"
-          example: "PT2H30M"
-        paused:
-          type: "string"
-          example: "PT2H30M"
-        workdayCount:
-          type: "integer"
-          format: "int32"
-        adjustedWorkdayCount:
-          type: "integer"
-          format: "int32"
-        openWorkdays:
-          type: "integer"
-          format: "int32"
-    EmployeeDaySummaryResponse:
-      type: "object"
-      properties:
-        day:
-          type: "string"
-          format: "date"
-        worked:
-          type: "string"
-          example: "PT2H30M"
-        paused:
-          type: "string"
-          example: "PT2H30M"
-        workdayCount:
-          type: "integer"
-          format: "int32"
-        adjustedWorkdayCount:
-          type: "integer"
-          format: "int32"
-        openWorkdays:
-          type: "integer"
-          format: "int32"
-    PagedEmployeesResponse:
-      type: "object"
-      properties:
-        content:
-          type: "array"
-          items:
-            $ref: "#/components/schemas/EmployeeResponse"
-        page:
-          type: "integer"
-          format: "int32"
-        size:
-          type: "integer"
-          format: "int32"
-        totalElements:
-          type: "integer"
-          format: "int64"
-        totalPages:
-          type: "integer"
-          format: "int32"
-    PagedCorrectionsResponse:
-      type: "object"
-      properties:
-        content:
-          type: "array"
-          items:
-            $ref: "#/components/schemas/CorrectionResponse"
-        page:
-          type: "integer"
-          format: "int32"
-        size:
-          type: "integer"
-          format: "int32"
-        totalElements:
-          type: "integer"
-          format: "int64"
-        totalPages:
-          type: "integer"
-          format: "int32"
-    AuditEventResponse:
-      type: "object"
+        absenceTypeId:
+          type: string
+          format: uuid
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        reason:
+          type: string
+          maxLength: 500
+          minLength: 0
+      required:
+      - absenceTypeId
+      - endDate
+      - startDate
+    AbsenceResponse:
+      type: object
       properties:
         id:
-          type: "string"
-          format: "uuid"
-        tenantId:
-          type: "string"
-          format: "uuid"
-        actorUserId:
-          type: "string"
-          format: "uuid"
-        action:
-          type: "string"
-        entityType:
-          type: "string"
-        entityId:
-          type: "string"
-          format: "uuid"
-        correlationId:
-          type: "string"
-          format: "uuid"
-        metadata:
-          type: "object"
-          additionalProperties:
-            type: "object"
-        occurredAt:
-          type: "string"
-          format: "date-time"
-    PagedAuditEventsResponse:
-      type: "object"
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        absenceTypeId:
+          type: string
+          format: uuid
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        reason:
+          type: string
+        status:
+          type: string
+        resolvedBy:
+          type: string
+          format: uuid
+        resolvedAt:
+          type: string
+          format: date-time
+        resolutionComment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    ShiftTemplateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
+          minLength: 0
+        startTime:
+          type: string
+          example: '14:30:00'
+        endTime:
+          type: string
+          example: '14:30:00'
+        plannedBreakMinutes:
+          type: integer
+          format: int32
+          maximum: 1440
+          minimum: 0
+      required:
+      - endTime
+      - plannedBreakMinutes
+      - startTime
+    ShiftTemplateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        startTime:
+          type: string
+          example: '14:30:00'
+        endTime:
+          type: string
+          example: '14:30:00'
+        plannedBreakMinutes:
+          type: integer
+          format: int32
+        status:
+          type: string
+        crossesMidnight:
+          type: boolean
+    AssignShiftRequest:
+      type: object
+      properties:
+        employeeId:
+          type: string
+          format: uuid
+        shiftTemplateId:
+          type: string
+          format: uuid
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+      required:
+      - employeeId
+      - shiftTemplateId
+      - validFrom
+    ShiftAssignmentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+          format: uuid
+        shiftTemplateId:
+          type: string
+          format: uuid
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+    AssignCalendarRequest:
+      type: object
+      description: Asignacion de un calendario a un ambito
+      properties:
+        calendarId:
+          type: string
+          format: uuid
+        scope:
+          type: string
+          enum:
+          - TENANT
+          - TEAM
+          - EMPLOYEE
+          example: EMPLOYEE
+        targetId:
+          type: string
+          format: uuid
+          description: Equipo o empleado destinatario; null en ambito TENANT
+      required:
+      - calendarId
+      - scope
+    CalendarAssignmentResponse:
+      type: object
+      description: Asignacion de calendario
+      properties:
+        id:
+          type: string
+          format: uuid
+        calendarId:
+          type: string
+          format: uuid
+        scope:
+          type: string
+        targetId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+    AbsenceResolutionRequest:
+      type: object
+      properties:
+        resolutionComment:
+          type: string
+          maxLength: 500
+          minLength: 0
+    PagedResponseWorkdayResponse:
+      type: object
       properties:
         content:
-          type: "array"
+          type: array
           items:
-            $ref: "#/components/schemas/AuditEventResponse"
+            $ref: '#/components/schemas/WorkdayResponse'
         page:
-          type: "integer"
-          format: "int32"
+          type: integer
+          format: int32
         size:
-          type: "integer"
-          format: "int32"
+          type: integer
+          format: int32
         totalElements:
-          type: "integer"
-          format: "int64"
+          type: integer
+          format: int64
         totalPages:
-          type: "integer"
-          format: "int32"
+          type: integer
+          format: int32
+    TenantEmployeeSummaryResponse:
+      type: object
+      properties:
+        employeeId:
+          type: string
+          format: uuid
+        worked:
+          type: string
+          example: PT2H30M
+        paused:
+          type: string
+          example: PT2H30M
+        expected:
+          type: string
+          example: PT2H30M
+        effectiveWorked:
+          type: string
+          example: PT2H30M
+        overtime:
+          type: string
+          example: PT2H30M
+        deviation:
+          type: string
+          example: PT2H30M
+        workdayCount:
+          type: integer
+          format: int32
+        adjustedWorkdayCount:
+          type: integer
+          format: int32
+        openWorkdays:
+          type: integer
+          format: int32
+        evaluatedWorkdayCount:
+          type: integer
+          format: int32
+    EmployeeDaySummaryResponse:
+      type: object
+      properties:
+        day:
+          type: string
+          format: date
+        worked:
+          type: string
+          example: PT2H30M
+        paused:
+          type: string
+          example: PT2H30M
+        expected:
+          type: string
+          example: PT2H30M
+        effectiveWorked:
+          type: string
+          example: PT2H30M
+        overtime:
+          type: string
+          example: PT2H30M
+        deviation:
+          type: string
+          example: PT2H30M
+        workdayCount:
+          type: integer
+          format: int32
+        adjustedWorkdayCount:
+          type: integer
+          format: int32
+        openWorkdays:
+          type: integer
+          format: int32
+        evaluatedWorkdayCount:
+          type: integer
+          format: int32
+    PagedPlatformTenantsResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlatformTenantSummaryResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    PlatformTenantSummaryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        status:
+          type: string
+        timezone:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        activatedAt:
+          type: string
+          format: date-time
+        suspendedAt:
+          type: string
+          format: date-time
+        userCount:
+          type: integer
+          format: int64
+        lastAccessAt:
+          type: string
+          format: date-time
+    QueueStatusResponse:
+      type: object
+      properties:
+        name:
+          type: string
+        pending:
+          type: integer
+          format: int64
+        failed:
+          type: integer
+          format: int64
+    SystemStatusResponse:
+      type: object
+      properties:
+        queues:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueueStatusResponse'
+        totalFailed:
+          type: integer
+          format: int64
+        needsAttention:
+          type: boolean
+    PagedTenantRegistrationsResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantRegistrationResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    AuditEventResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        actorUserId:
+          type: string
+          format: uuid
+        action:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: string
+          format: uuid
+        correlationId:
+          type: string
+          format: uuid
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
+        occurredAt:
+          type: string
+          format: date-time
+    PagedAuditEventsResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEventResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    NotificationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        readAt:
+          type: string
+          format: date-time
+        read:
+          type: boolean
+    PagedNotificationsResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    UnreadCountResponse:
+      type: object
+      properties:
+        unread:
+          type: integer
+          format: int64
+    PagedEmployeesResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmployeeResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    PagedCorrectionsResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CorrectionResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    SessionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        revokedAt:
+          type: string
+          format: date-time
+        current:
+          type: boolean
+    AppShiftResponse:
+      type: object
+      properties:
+        assignmentId:
+          type: string
+          format: uuid
+        shiftTemplateId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        startTime:
+          type: string
+          example: '14:30:00'
+        endTime:
+          type: string
+          example: '14:30:00'
+        crossesMidnight:
+          type: boolean
+        plannedDuration:
+          type: string
+        plannedBreakDuration:
+          type: string
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+    AbsenceTypeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        requiresApproval:
+          type: boolean
+        allowsAttachment:
+          type: boolean
+        active:
+          type: boolean
+    CalendarSummaryResponse:
+      type: object
+      description: Resumen de un calendario laboral
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        timezone:
+          type: string
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+        status:
+          type: string
+        holidayCount:
+          type: integer
+          format: int32
+        specialDayCount:
+          type: integer
+          format: int32
+    PagedCalendarsResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CalendarSummaryResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    PagedCalendarAssignmentsResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CalendarAssignmentResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    EffectiveCalendarResponse:
+      type: object
+      description: Calendario que rige para un empleado en una fecha, con el dia ya evaluado
+      properties:
+        calendarId:
+          type: string
+          format: uuid
+        calendarName:
+          type: string
+        timezone:
+          type: string
+        assignmentId:
+          type: string
+          format: uuid
+        scope:
+          type: string
+        targetId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        working:
+          type: boolean
+        expectedMinutes:
+          type: integer
+          format: int32
+        source:
+          type: string

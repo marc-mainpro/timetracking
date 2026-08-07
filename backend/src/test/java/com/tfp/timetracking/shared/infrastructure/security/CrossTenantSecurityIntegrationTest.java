@@ -111,7 +111,7 @@ class CrossTenantSecurityIntegrationTest {
         TestTenantFactory.TenantActors tenantA = testTenantFactory.createTenantActors("A-active");
         TestTenantFactory.TenantActors tenantB = testTenantFactory.createTenantActors("B-inactive");
 
-        jdbcTemplate.update("UPDATE tenant SET status = 'INACTIVE' WHERE id = ?", tenantB.tenantId());
+        jdbcTemplate.update("UPDATE tenant SET status = 'SUSPENDED' WHERE id = ?", tenantB.tenantId());
 
         mockMvc.perform(get("/api/v1/test/admin/users")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenantA.admin().token()))
@@ -205,11 +205,13 @@ class CrossTenantSecurityIntegrationTest {
         TestTenantFactory testTenantFactory(
                 MockMvc mockMvc,
                 com.fasterxml.jackson.databind.ObjectMapper objectMapper,
+                com.tfp.timetracking.tenant.application.RegisterTenantUseCase registerTenantUseCase,
                 UserRepository userRepository,
                 com.tfp.timetracking.identity.domain.PasswordHasher passwordHasher,
                 com.tfp.timetracking.shared.domain.Clock clock,
                 com.tfp.timetracking.shared.domain.IdGenerator idGenerator) {
-            return new TestTenantFactory(mockMvc, objectMapper, userRepository, passwordHasher, clock, idGenerator);
+            return new TestTenantFactory(
+                    mockMvc, objectMapper, registerTenantUseCase, userRepository, passwordHasher, clock, idGenerator);
         }
 
         @Bean

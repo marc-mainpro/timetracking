@@ -57,6 +57,18 @@ export class ReportsComponent {
   }
 
   exportCsv(): void {
+    this.export('csv');
+  }
+
+  exportPdf(): void {
+    this.export('pdf');
+  }
+
+  /**
+   * CSV para procesar, PDF para leer. Comparten validación, estado y manejo de
+   * error porque solo cambia el formato de salida.
+   */
+  private export(format: 'csv' | 'pdf'): void {
     if (this.form.invalid || this.exporting()) {
       this.form.markAllAsTouched();
       return;
@@ -65,10 +77,15 @@ export class ReportsComponent {
     this.exporting.set(true);
     this.formError.set(null);
     const { from, to } = this.isoRange();
-    this.reportsService.exportTenantCsv(from, to).subscribe({
+    const request =
+      format === 'csv'
+        ? this.reportsService.exportTenantCsv(from, to)
+        : this.reportsService.exportTenantPdf(from, to);
+
+    request.subscribe({
       next: (blob) => {
         this.exporting.set(false);
-        this.triggerDownload(blob, 'tenant-summary.csv');
+        this.triggerDownload(blob, `tenant-summary.${format}`);
       },
       error: (error) => {
         this.exporting.set(false);

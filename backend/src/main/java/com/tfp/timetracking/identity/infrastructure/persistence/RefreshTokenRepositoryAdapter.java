@@ -35,4 +35,9 @@ public class RefreshTokenRepositoryAdapter implements RefreshTokenRepository {
     public List<RefreshToken> findByUserId(UUID userId) {
         return jpaRepository.findByUserId(userId).stream().map(RefreshTokenMapper::toDomain).toList();
     }
+
+    @Override
+    public List<RefreshToken> findBySessionId(UUID sessionId) {
+        return jpaRepository.findBySessionId(sessionId).stream().map(RefreshTokenMapper::toDomain).toList();
+    }
 }

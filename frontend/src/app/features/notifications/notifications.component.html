@@ -1,0 +1,50 @@
+<section class="admin-shell">
+  <header class="card admin-header">
+    <p class="eyebrow">Avisos</p>
+    <h1>Notificaciones</h1>
+  </header>
+
+  @if (error(); as err) {
+    <p class="error">{{ err }}</p>
+  }
+
+  @if (loading()) {
+    <p class="info">Cargando…</p>
+  }
+
+  <div class="card">
+    @for (notification of result()?.content ?? []; track notification.id) {
+      <article class="notification" [class.notification--unread]="!notification.read">
+        <div class="notification-main">
+          <span class="pill">{{ typeLabel(notification.type) }}</span>
+          <strong>{{ notification.title }}</strong>
+          <p>{{ notification.body }}</p>
+          <small>{{ notification.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+        </div>
+        @if (!notification.read) {
+          <button type="button" (click)="markRead(notification)">Marcar como leída</button>
+        }
+      </article>
+    } @empty {
+      @if (!loading()) {
+        <p class="info">No tienes notificaciones.</p>
+      }
+    }
+  </div>
+
+  @if (result(); as result) {
+    <footer class="pager">
+      <button type="button" (click)="previousPage()" [disabled]="result.page === 0 || loading()">
+        Anterior
+      </button>
+      <span>Página {{ result.page + 1 }} de {{ result.totalPages || 1 }}</span>
+      <button
+        type="button"
+        (click)="nextPage()"
+        [disabled]="result.page + 1 >= result.totalPages || loading()"
+      >
+        Siguiente
+      </button>
+    </footer>
+  }
+</section>

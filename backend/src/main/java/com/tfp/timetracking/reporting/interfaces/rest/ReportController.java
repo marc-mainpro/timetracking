@@ -1,8 +1,10 @@
 package com.tfp.timetracking.reporting.interfaces.rest;
 
 import com.tfp.timetracking.reporting.application.ExportTimeSummaryCsvUseCase;
+import com.tfp.timetracking.reporting.application.ExportTimeSummaryPdfUseCase;
 import com.tfp.timetracking.reporting.application.GenerateEmployeeTimeSummaryUseCase;
 import com.tfp.timetracking.reporting.application.GenerateTenantTimeSummaryUseCase;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -32,16 +34,19 @@ public class ReportController {
     private final GenerateEmployeeTimeSummaryUseCase generateEmployeeTimeSummaryUseCase;
     private final GenerateTenantTimeSummaryUseCase generateTenantTimeSummaryUseCase;
     private final ExportTimeSummaryCsvUseCase exportTimeSummaryCsvUseCase;
+    private final ExportTimeSummaryPdfUseCase exportTimeSummaryPdfUseCase;
     private final ReportRestMapper reportRestMapper;
 
     public ReportController(
             GenerateEmployeeTimeSummaryUseCase generateEmployeeTimeSummaryUseCase,
             GenerateTenantTimeSummaryUseCase generateTenantTimeSummaryUseCase,
             ExportTimeSummaryCsvUseCase exportTimeSummaryCsvUseCase,
+            ExportTimeSummaryPdfUseCase exportTimeSummaryPdfUseCase,
             ReportRestMapper reportRestMapper) {
         this.generateEmployeeTimeSummaryUseCase = generateEmployeeTimeSummaryUseCase;
         this.generateTenantTimeSummaryUseCase = generateTenantTimeSummaryUseCase;
         this.exportTimeSummaryCsvUseCase = exportTimeSummaryCsvUseCase;
+        this.exportTimeSummaryPdfUseCase = exportTimeSummaryPdfUseCase;
         this.reportRestMapper = reportRestMapper;
     }
 
@@ -60,6 +65,19 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
         return reportRestMapper.toTenantResponse(generateTenantTimeSummaryUseCase.generate(from, to));
+    }
+
+    @GetMapping("/tenant/export.pdf")
+    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    @Operation(summary = "Exporta el informe agregado del tenant en PDF")
+    public ResponseEntity<byte[]> tenantSummaryPdf(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
+        byte[] pdf = exportTimeSummaryPdfUseCase.export(from, to);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"tenant-summary.pdf\"")
+                .body(pdf);
     }
 
     @GetMapping("/tenant/export.csv")

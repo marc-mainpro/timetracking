@@ -1,18 +1,66 @@
-# TFP — MVP control horario
+# TFP — SaaS multitenant de control horario
 
 [![CI](https://github.com/marc-mainpro/timetracking/actions/workflows/ci.yml/badge.svg)](https://github.com/marc-mainpro/timetracking/actions/workflows/ci.yml)
 
-MVP SaaS multitenant de control horario con Spring Boot, Angular y PostgreSQL.
-Incluye registro de tenant, autenticación JWT con refresh token, gestión de
-empleados, fichajes, correcciones, informes, auditoría y Transactional Outbox.
+SaaS multitenant de control horario con Spring Boot, Angular y PostgreSQL,
+construido como monolito modular.
+
+## Qué hace
+
+- **Administración de plataforma**: alta, activación, suspensión, reactivación y
+  archivado de tenants por un `PLATFORM_ADMIN`, con auditoría de cada acción.
+- **Alta pública en tres pasos**: solicitud, verificación por correo y aprobación
+  desde plataforma. Deshabilitada por defecto
+  (`registration.public.enabled`); un tenant nunca nace operativo de un solo
+  paso.
+- **Autenticación**: JWT de vida corta, refresh token rotatorio en cookie
+  `HttpOnly`, sesiones revocables, bloqueo temporal por intentos fallidos,
+  recuperación de contraseña y rate limiting por ruta.
+- **Control horario**: jornadas y pausas, correcciones con aprobación, reglas
+  horarias configurables (redondeo, tolerancias, jornada máxima, descanso
+  obligatorio) y evaluación automática de cada jornada cerrada.
+- **Planificación**: calendarios laborales con festivos y jornadas especiales,
+  asignables por tenant, equipo o empleado; y turnos, incluidos los que cruzan
+  medianoche, que prevalecen sobre el calendario como tiempo previsto.
+- **Ausencias**: solicitud, aprobación y rechazo, con efecto sobre el tiempo
+  esperado de la jornada.
+- **Informes** por empleado, equipo y periodo, con exportación CSV.
+- **Notificaciones** internas y por correo, entregadas mediante Transactional
+  Outbox con reintentos e idempotencia.
+- **Operación**: logs estructurados con correlation ID, métricas, sondas de
+  salud, backup automatizado y procedimiento de restauración probado.
+
+## Fuera de alcance (decisión, no omisión)
+
+MFA, SSO, API pública para terceros, broker de mensajería, facturación, alta
+disponibilidad, escalado horizontal, Kubernetes, event sourcing y CQRS completo.
+Están descartados en `requisitos-v2-control-horario.md` §11 para no condicionar
+la arquitectura con abstracciones anticipadas.
 
 ## Arquitectura
 
 - Monolito modular con separación dominio/aplicación/infraestructura.
 - Backend: Spring Boot 3.5.9, Java 21, PostgreSQL, Flyway, Spring Security (JWT).
 - Frontend: Angular 19 (mobile-first) servido por nginx con CSP estricta.
-- Multitenancy por `tenantId` derivado del principal autenticado.
-- Eventos de integración persistidos en outbox transaccional.
+- Multitenancy por `tenantId` derivado del principal autenticado, nunca de la
+  petición.
+- Eventos de integración persistidos en outbox transaccional, con consumidores
+  idempotentes.
+- Reglas de arquitectura verificadas en cada build por ArchUnit: dominio sin
+  Spring, controladores sin repositorios, módulos sin ciclos y autorización
+  obligatoria en los endpoints privilegiados.
+
+## Pruebas
+
+```bash
+cd backend && mvn -B verify        # unitarias, integración con Testcontainers, ArchUnit y cobertura
+cd frontend && npm run test:coverage
+cd frontend && npm run e2e         # E2E de navegador contra la pila de Docker Compose
+```
+
+Los E2E requieren la pila levantada (`docker compose up -d --build`),
+`PUBLIC_REGISTRATION_ENABLED=true` y las credenciales de `PLATFORM_ADMIN`. Ver
+`docs/testing/estrategia.md`.
 
 READMEs de cada subproyecto (stack, estructura y comandos de desarrollo):
 
@@ -39,7 +87,8 @@ Requisitos: Docker y Docker Compose.
    cp .env.example .env
    ```
 
-   Editar `.env` si se quieren credenciales distintas de las de ejemplo (nunca commitear `.env`).
+   Editar `.env` si se quieren credenciales distintas de las de ejemplo (nunca
+   commitear `.env`).
 
 2. Levantar los servicios (Postgres + backend + frontend):
 

@@ -66,18 +66,27 @@ Esto implica:
 
 ## Idempotencia de consumidores (obligatoria)
 
-Todo consumidor de estos eventos **debe** deduplicar por `eventId`: es la
-única forma de obtener semántica "efectivamente una vez" sobre un canal
-at-least-once. El patrón de referencia recomendado (y demostrado de extremo
-a extremo por T704) es:
+Todo consumidor de estos eventos **debe** deduplicar: es la única forma de
+obtener semántica "efectivamente una vez" sobre un canal at-least-once.
 
-1. Mantener una tabla propia del consumidor con `event_id` como clave
-   primaria (o única) de los eventos ya procesados.
-2. Antes de aplicar el efecto de negocio del evento, comprobar si
-   `event_id` ya existe; si existe, ignorar el evento (ya se procesó).
-3. Si no existe, aplicar el efecto e insertar la marca de "procesado" en la
-   **misma transacción** que el efecto (para que ambos ocurran atómicamente
-   o ninguno).
+Y no es teórico. El publicador propaga el fallo de cualquier consumidor para
+que el mensaje se reintente, y ese reintento vuelve a invocar **a todos** los
+consumidores, incluidos los que ya habían terminado bien. Sin deduplicación,
+el fallo de un consumidor duplica los efectos de los demás.
+
+El mecanismo compartido es el puerto `outbox.application.ProcessedEventStore`,
+respaldado por la tabla `processed_event`:
+
+1. Reservar el par `(eventId, consumidor)` con `tryClaim(...)`. La reserva es
+   atómica: si dos hilos compiten, solo uno recibe `true`.
+2. Si la reserva no es tuya, ignorar el evento: ya lo procesaste.
+3. Si es tuya, aplicar el efecto de negocio en la **misma transacción** que la
+   reserva, para que ambos ocurran o ninguno.
+
+La clave incluye el consumidor **a propósito**. Con una clave por evento —como
+estaba hasta V23, cuando solo existía el consumidor de demostración— el primero
+en marcarlo dejaría a los demás creyendo que ya estaba procesado, y sus efectos
+no se aplicarían nunca.
 4. Si la inserción falla por violación de la clave primaria (dos hilos/
    instancias procesando el mismo evento a la vez), tratarlo igual que un
    duplicado: no es un error, es la red de seguridad de la concurrencia.
@@ -123,11 +132,72 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
 
 ## Tipos de evento
 
+### `time-tracking.workday-anomaly-detected.v1`
+
+- **Módulo productor:** `timetracking` (`timetracking.application.integration.TimeTrackingIntegrationEventMapper`).
+- **Disparador de negocio:** al cerrar una jornada o aprobar una corrección, la
+  evaluación horaria detecta alguna anomalía de reglas (`T72`).
+- **`aggregateId`:** id de la jornada evaluada.
+
+```json
+{
+  "eventId": "cbfdad45-9e43-4b32-b13f-1c3d567b9460",
+  "eventType": "time-tracking.workday-anomaly-detected.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-05T13:41:10Z",
+  "tenantId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+  "aggregateId": "52b41007-29f5-4f03-bd91-5561dbff4d62",
+  "payload": {
+    "workdayId": "52b41007-29f5-4f03-bd91-5561dbff4d62",
+    "employeeId": "af4cf18a-f94d-4636-bc79-c25c01c5f4c5",
+    "anomalies": ["MAX_DAILY_WORK_EXCEEDED", "REQUIRED_BREAK_NOT_MET"],
+    "expectedMinutes": 480,
+    "workedMinutes": 540,
+    "pausedMinutes": 15,
+    "overtimeMinutes": 60
+  }
+}
+```
+
+- **Notas:** el primer incremento de `T72` solo publica anomalías derivadas de
+  jornada máxima y descanso obligatorio. Redondeos y tolerancias quedan para
+  iteraciones posteriores.
+
+### `identity.password-reset-requested.v1`
+
+- **Módulo productor:** `identity` (`identity.application.integration.PasswordResetIntegrationEventMapper`).
+- **Disparador de negocio:** una solicitud de recuperación de contraseña
+  aceptada (`POST /api/v1/auth/password/forgot`) para una cuenta existente y
+  operativa.
+- **`aggregateId`:** id del token de recuperación creado.
+
+```json
+{
+  "eventId": "9d14e45f-ceea-4e6e-a2f4-2f6f7b7b1a99",
+  "eventType": "identity.password-reset-requested.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-05T10:00:00Z",
+  "tenantId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+  "aggregateId": "52b41007-29f5-4f03-bd91-5561dbff4d62",
+  "payload": {
+    "userId": "af4cf18a-f94d-4636-bc79-c25c01c5f4c5",
+    "email": "jane@example.com",
+    "firstName": "Jane",
+    "resetToken": "raw-token",
+    "expiresAt": "2026-08-05T11:00:00Z"
+  }
+}
+```
+
+- **Sensibilidad:** `payload.resetToken` es secreto de un solo uso. Puede viajar
+  en el outbox para que el correo se envíe fuera de la transacción (ADR-0012),
+  pero no debe registrarse en logs ni exponerse en respuestas HTTP.
+
 ### `tenant.registered.v1`
 
 - **Módulo productor:** `tenant` (`tenant.application.integration.TenantIntegrationEventMapper`).
 - **Disparador de negocio:** alta de un tenant nuevo (registro público,
-  `POST /api/v1/auth/register`), junto con su usuario administrador inicial
+  `POST /api/v1/platform/tenants` o la aprobación de una solicitud de alta), junto con su usuario administrador inicial
   (que además dispara `identity.employee-created.v1` en la misma operación).
 - **`aggregateId`:** id del tenant creado.
 
@@ -158,6 +228,41 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
   debe usar `eventId` (o, si necesita idempotencia por tenant en vez de por
   evento, `tenantId`, que es estable y único por tenant) para no duplicar el
   alta ante una redelivery.
+
+### `tenant.activated.v1`, `tenant.suspended.v1`, `tenant.reactivated.v1`, `tenant.archived.v1`
+
+- **Módulo productor:** `tenant` (`TenantIntegrationEventMapper`).
+- **Disparador de negocio:** transiciones del ciclo de vida del tenant
+  ejecutadas por un `PLATFORM_ADMIN` desde la API de plataforma
+  (`POST /api/v1/platform/tenants/{id}/{activate|suspend|reactivate|archive}`,
+  ADR-0010). Cada transición valida el estado de origen en el agregado
+  `Tenant` y, tras persistir, emite el evento correspondiente vía Outbox.
+- **`aggregateId`:** id del tenant afectado (igual que `tenantId`).
+
+```json
+{
+  "eventId": "9c1e0b2a-2d3f-4a5b-8c7d-1e2f3a4b5c6d",
+  "eventType": "tenant.suspended.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-07-24T10:00:00Z",
+  "tenantId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+  "aggregateId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+  "payload": {
+    "tenantId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+    "reason": "Impago reiterado"
+  }
+}
+```
+
+| `payload`  | Tipo   | Descripción                                                        |
+| ---------- | ------ | ------------------------------------------------------------------ |
+| `tenantId` | UUID   | Igual que `aggregateId`.                                           |
+| `reason`   | string | Solo en `suspended` (obligatorio) y `archived` (opcional). Ausente en `activated`/`reactivated`. |
+
+- **Idempotencia:** un consumidor que reaccione a la suspensión/archivado
+  (p.ej. cortar accesos externos) debe deduplicar por `eventId`. El estado
+  operativo autoritativo es siempre el del propio tenant; el evento es una
+  notificación, no la fuente de verdad.
 
 ### `identity.employee-created.v1`
 
@@ -390,6 +495,329 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
 
 - **Idempotencia:** igual que en `.approved`, deduplicar por `eventId` evita
   notificaciones o efectos duplicados en sistemas externos.
+
+### `tenant.registration-requested.v1`
+
+- **Módulo productor:** `tenant` (`tenant.application.integration.TenantIntegrationEventMapper`).
+- **Disparador de negocio:** alguien envía el formulario público de alta
+  (`POST /api/v1/public/tenant-registrations`, RF-REG-001). **Todavía no existe
+  ningún tenant**: solo una solicitud pendiente de verificar el correo.
+- **`tenantId`:** el tenant de plataforma
+  (`00000000-0000-0000-0000-000000000001`). Una solicitud es anterior al tenant,
+  así que no hay otro al que atribuirla.
+- **`aggregateId`:** id de la solicitud (`tenant_registration.id`).
+
+```json
+{
+  "eventId": "0d4f8a2c-3b91-4d67-8f2e-1a6b9c0d3e45",
+  "eventType": "tenant.registration-requested.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-01T10:00:00Z",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "aggregateId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+  "payload": {
+    "registrationId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+    "companyName": "Acme Corp",
+    "email": "owner@acme.test",
+    "source": "PUBLIC_WEB"
+### `calendar.calendar-created.v1`, `calendar.calendar-updated.v1`
+
+- **Módulo productor:** `calendar` (`calendar.application.integration.CalendarIntegrationEventMapper`).
+- **Disparador de negocio:** un `TENANT_ADMIN` crea o edita un calendario
+  laboral (`POST` / `PUT /api/v1/admin/calendars`, T70-04, ADR-0017).
+- **`aggregateId`:** id del calendario.
+
+```json
+{
+  "eventId": "4d5e6f70-8192-4a3b-8c4d-5e6f70819304",
+  "eventType": "calendar.calendar-created.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-04T09:00:00Z",
+  "tenantId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+  "aggregateId": "7e8f9012-3456-4789-a012-3456789abcde",
+  "payload": {
+    "calendarId": "7e8f9012-3456-4789-a012-3456789abcde",
+    "name": "Calendario general",
+    "timezone": "Europe/Madrid",
+    "validFrom": "2026-01-01",
+    "validTo": "2026-12-31"
+  }
+}
+```
+
+| `payload`        | Tipo   | Descripción                                            |
+| ---------------- | ------ | ------------------------------------------------------ |
+| `registrationId` | UUID   | Igual que `aggregateId`.                               |
+| `companyName`    | string | Nombre de la organización solicitada.                  |
+| `email`          | string | Correo del propietario, normalizado a minúsculas.      |
+| `source`         | string | Canal de entrada de la solicitud (`PUBLIC_WEB`).       |
+
+- **Idempotencia:** deduplicar por `eventId`. Un consumidor de métricas o
+  antifraude no debe contar dos veces la misma solicitud ante una redelivery.
+
+### `tenant.registration-verification-requested.v1`
+
+- **Módulo productor:** `tenant` (`tenant.application.integration.TenantIntegrationEventMapper`).
+- **Disparador de negocio:** hay que hacer llegar al solicitante un token de
+  verificación, ya sea en el alta inicial o en un reenvío (RF-REG-004).
+- **Consumidor:** `tenant.infrastructure.TenantRegistrationEmailListener`, que
+  invoca el puerto `EmailSender` fuera de la transacción de negocio (ADR-0012).
+- **`aggregateId`:** id de la solicitud.
+
+> **Contiene un secreto.** `verificationToken` es el token en claro, y es el
+> único campo de todo este catálogo que lo es. Existe porque el consumidor de
+> correo necesita construir el enlace, y por eso va en un evento distinto del
+> que describe el hecho de negocio. El publicador nunca registra el payload en
+> el log (solo el sobre), el token caduca en 24 h y es de un solo uso, pero la
+> fila de `outbox_message` lo contiene hasta que el archivador la purga: ver la
+> sección de consecuencias de ADR-0016.
+
+```json
+{
+  "eventId": "1e5f9b3d-4c02-4e78-9a3f-2b7c0d1e4f56",
+  "eventType": "tenant.registration-verification-requested.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-01T10:00:00Z",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "aggregateId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+  "payload": {
+    "registrationId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+    "email": "owner@acme.test",
+    "ownerFirstName": "Ana",
+    "verificationToken": "8Zt3xQ9pR1sV7kL0mN4bC6dE2fG5hJ8yA1uW3iO5qS0",
+    "expiresAt": "2026-08-02T10:00:00Z",
+    "resend": false
+| `payload`    | Tipo   | Descripción                                                        |
+| ------------ | ------ | ------------------------------------------------------------------ |
+| `calendarId` | UUID   | Igual que `aggregateId`.                                           |
+| `name`       | string | Nombre del calendario, único dentro del tenant.                    |
+| `timezone`   | string | Zona horaria IANA del calendario (RF-CAL-007).                     |
+| `validFrom`  | string | Inicio de vigencia como fecha local `YYYY-MM-DD`, **no** instante. |
+| `validTo`    | string | Fin de vigencia inclusivo. **Ausente** si la vigencia es indefinida. |
+
+- **Fechas locales, no instantes:** la vigencia de un calendario es un periodo
+  del calendario civil (RNF-011). Serializarla como `Instant` obligaría a elegir
+  una hora arbitraria y haría que el mismo calendario «cambiara de día» según la
+  zona del consumidor.
+- **El payload es la cabecera, no el detalle:** reglas semanales, festivos y
+  jornadas especiales no viajan en el evento. Un consumidor que necesite el
+  detalle debe releerlo por la API. Mantener el contrato externo pequeño evita
+  versionarlo cada vez que cambie la estructura interna del calendario.
+- **Idempotencia:** deduplicar por `eventId`. `.updated` es un hecho de
+  reemplazo completo, así que reprocesarlo es inocuo si el consumidor guarda la
+  última versión leída.
+
+### `calendar.calendar-archived.v1`
+
+- **Módulo productor:** `calendar` (`CalendarIntegrationEventMapper`).
+- **Disparador de negocio:** un `TENANT_ADMIN` archiva un calendario
+  (`DELETE /api/v1/admin/calendars/{id}`, borrado lógico). A partir de ese
+  momento el calendario deja de participar en la resolución del calendario
+  efectivo, y los empleados que lo tuvieran asignado pasan a resolver al ámbito
+  menos específico que sí tenga calendario disponible.
+- **`aggregateId`:** id del calendario.
+
+```json
+{
+  "eventId": "5e6f7081-9243-4b5c-8d6e-7f8091a2b3c4",
+  "eventType": "calendar.calendar-archived.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-04T10:00:00Z",
+  "tenantId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+  "aggregateId": "7e8f9012-3456-4789-a012-3456789abcde",
+  "payload": {
+    "calendarId": "7e8f9012-3456-4789-a012-3456789abcde",
+    "name": "Calendario general"
+  }
+}
+```
+
+| `payload`           | Tipo    | Descripción                                                  |
+| ------------------- | ------- | ------------------------------------------------------------ |
+| `registrationId`    | UUID    | Igual que `aggregateId`.                                     |
+| `email`             | string  | Destinatario del correo de verificación.                     |
+| `ownerFirstName`    | string  | Nombre del propietario, para personalizar el mensaje.        |
+| `verificationToken` | string  | Token en claro, un solo uso. **Nunca debe registrarse.**      |
+| `expiresAt`         | Instant | Caducidad del token.                                         |
+| `resend`            | boolean | `true` si es un reenvío y no el envío inicial.               |
+
+- **Idempotencia:** deduplicar por `eventId`. Reenviar dos veces el mismo correo
+  es molesto pero inocuo; el token no cambia por reprocesar el evento.
+
+### `tenant.registration-email-verified.v1`
+
+- **Módulo productor:** `tenant` (`tenant.application.integration.TenantIntegrationEventMapper`).
+- **Disparador de negocio:** el solicitante demuestra que controla el correo
+  (`POST /api/v1/public/tenant-registrations/verify-email`) y la solicitud pasa a
+  `PENDING_REVIEW`.
+- **`aggregateId`:** id de la solicitud.
+
+```json
+{
+  "eventId": "2f60ac4e-5d13-4f89-ab40-3c8d1e2f5061",
+  "eventType": "tenant.registration-email-verified.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-01T10:05:00Z",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "aggregateId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+  "payload": {
+    "registrationId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+    "email": "owner@acme.test"
+| `payload`    | Tipo   | Descripción              |
+| ------------ | ------ | ------------------------ |
+| `calendarId` | UUID   | Igual que `aggregateId`. |
+| `name`       | string | Nombre en el momento de archivarlo. |
+
+- **Idempotencia:** archivar es idempotente por naturaleza (el agregado rechaza
+  un segundo archivado con `CALENDAR_ARCHIVED`), pero el consumidor debe
+  deduplicar igualmente por `eventId` ante una redelivery.
+
+### `calendar.calendar-assigned.v1`, `calendar.calendar-assignment-removed.v1`
+
+- **Módulo productor:** `calendar` (`CalendarIntegrationEventMapper`).
+- **Disparador de negocio:** un `TENANT_ADMIN` asigna un calendario a un ámbito
+  o retira la asignación (`POST` / `DELETE /api/v1/admin/calendar-assignments`,
+  RF-CAL-006).
+- **`aggregateId`:** id de la **asignación**; el calendario afectado va en
+  `payload.calendarId`.
+
+```json
+{
+  "eventId": "6f708192-a3b4-4c5d-8e6f-708192a3b4c5",
+  "eventType": "calendar.calendar-assigned.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-04T11:00:00Z",
+  "tenantId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+  "aggregateId": "8f901234-5678-4901-b234-56789abcdef0",
+  "payload": {
+    "assignmentId": "8f901234-5678-4901-b234-56789abcdef0",
+    "calendarId": "7e8f9012-3456-4789-a012-3456789abcde",
+    "scope": "EMPLOYEE",
+    "targetId": "5d6e7f80-9192-4a3b-8c4d-5e6f70819293"
+  }
+}
+```
+
+| `payload`        | Tipo   | Descripción                       |
+| ---------------- | ------ | --------------------------------- |
+| `registrationId` | UUID   | Igual que `aggregateId`.          |
+| `email`          | string | Correo verificado.                |
+
+- **Idempotencia:** deduplicar por `eventId`. Un consumidor que avise a
+  plataforma de que hay trabajo en la bandeja no debe notificar dos veces.
+
+### `tenant.registration-approved.v1`
+
+- **Módulo productor:** `tenant` (`tenant.application.integration.TenantIntegrationEventMapper`).
+- **Disparador de negocio:** un `PLATFORM_ADMIN` aprueba la solicitud
+  (`POST /api/v1/platform/registrations/{id}/approve`). En la misma transacción
+  se crean el tenant —**en estado `PENDING`, no `ACTIVE`**— y su primer
+  `TENANT_ADMIN`, que dispara además `identity.employee-created.v1`.
+- **`aggregateId`:** id de la solicitud, no del tenant creado.
+
+```json
+{
+  "eventId": "3a71bd5f-6e24-4a90-bc51-4d9e2f306172",
+  "eventType": "tenant.registration-approved.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-01T11:00:00Z",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "aggregateId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+  "payload": {
+    "registrationId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+    "tenantId": "3fbb6f1e-1c7c-4a52-9e64-5f4a6b0d2c11",
+    "ownerUserId": "9b8a7c6d-5e4f-4302-9182-736455647382"
+  }
+}
+```
+
+| `payload`        | Tipo | Descripción                                                        |
+| ---------------- | ---- | ------------------------------------------------------------------ |
+| `registrationId` | UUID | Igual que `aggregateId`.                                           |
+| `tenantId`       | UUID | Tenant creado, en estado `PENDING`. No coincide con el del sobre.  |
+| `ownerUserId`    | UUID | Primer `TENANT_ADMIN` de ese tenant.                               |
+
+- **Idempotencia:** deduplicar por `eventId`. El caso de uso ya es idempotente
+  (una segunda aprobación no crea un segundo tenant), pero un consumidor que
+  provisione recursos externos debe serlo también.
+
+### `tenant.registration-rejected.v1`
+
+- **Módulo productor:** `tenant` (`tenant.application.integration.TenantIntegrationEventMapper`).
+- **Disparador de negocio:** un `PLATFORM_ADMIN` rechaza la solicitud con motivo
+  obligatorio (`POST /api/v1/platform/registrations/{id}/reject`).
+- **`aggregateId`:** id de la solicitud.
+
+```json
+{
+  "eventId": "4b82ce60-7f35-4ba1-cd62-5e0f3a417283",
+  "eventType": "tenant.registration-rejected.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-01T11:10:00Z",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "aggregateId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+  "payload": {
+    "registrationId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
+    "reason": "Dominio desechable"
+  }
+}
+```
+
+| `payload`        | Tipo   | Descripción                          |
+| ---------------- | ------ | ------------------------------------ |
+| `registrationId` | UUID   | Igual que `aggregateId`.             |
+| `reason`         | string | Motivo del rechazo, siempre presente. |
+
+- **Idempotencia:** deduplicar por `eventId`.
+| `payload`      | Tipo   | Descripción                                                                 |
+| -------------- | ------ | --------------------------------------------------------------------------- |
+| `assignmentId` | UUID   | Igual que `aggregateId`.                                                    |
+| `calendarId`   | UUID   | Calendario asignado.                                                        |
+| `scope`        | string | `TENANT`, `TEAM` o `EMPLOYEE`, de menor a mayor precedencia.                 |
+| `targetId`     | UUID   | Equipo o empleado destinatario. **Ausente** en ámbito `TENANT`.              |
+
+- **`targetId` de ámbito `TEAM` es opaco:** el sistema no gestiona equipos
+  (ADR-0017); no hay clave ajena ni garantía de que el equipo exista en ningún
+  otro módulo.
+- **Relevante para turnos y ausencias:** ambos eventos cambian qué calendario
+  rige para los empleados afectados. Un consumidor que cachee la resolución debe
+  invalidarla al recibirlos.
+- **Idempotencia:** deduplicar por `eventId`. El estado autoritativo es siempre
+  el de `GET /api/v1/admin/calendar-assignments/effective`; el evento es una
+  notificación, no la fuente de verdad.
+
+### `absence.absence-approved.v1` · `absence.absence-rejected.v1`
+
+- **Módulo productor:** `absence`, clase `absence.application.integration.AbsenceIntegrationEventMapper`.
+- **Disparador de negocio:** un `TENANT_ADMIN` o `TEAM_MANAGER` resuelve una solicitud de ausencia
+  (`POST /api/v1/admin/absences/{absenceId}/approve` o `/reject`).
+- **`aggregateId`:** identificador de la solicitud de ausencia.
+
+```json
+{
+  "eventId": "6f1d0c5e-6a1b-4f1e-9a2c-3b7d8e5f0a11",
+  "eventType": "absence.absence-approved.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-06T09:12:44Z",
+  "tenantId": "b0c1d2e3-f4a5-4b6c-8d9e-0f1a2b3c4d5e",
+  "aggregateId": "9c8b7a65-4d3e-4f21-b0a9-8c7d6e5f4a3b",
+  "payload": {
+    "absenceRequestId": "9c8b7a65-4d3e-4f21-b0a9-8c7d6e5f4a3b",
+    "employeeId": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+    "resolvedBy": "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e"
+  }
+}
+```
+
+| `payload` | Tipo | Descripción |
+|---|---|---|
+| `absenceRequestId` | `string` (UUID) | Solicitud resuelta. |
+| `employeeId` | `string` (UUID) | Empleado que solicitó la ausencia; es el destinatario del aviso. |
+| `resolvedBy` | `string` (UUID) | Usuario que aprobó o rechazó. |
+
+- **Idempotencia:** el consumidor de notificaciones reserva `(eventId, "notification-event-listener")`
+  antes de crear nada, así que una reentrega no genera un segundo aviso. Solo se publican la aprobación
+  y el rechazo: la solicitud y la cancelación las hace el propio empleado, que ya sabe que han ocurrido.
 
 ## Eventos de dominio sin traducción a integración
 

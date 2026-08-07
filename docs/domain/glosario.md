@@ -9,6 +9,18 @@
 - **BreakEntry (pausa)**: intervalo de pausa dentro de una jornada.
 - **CorrectionRequest (corrección)**: solicitud de modificación de una
   jornada ya existente, sujeta a aprobación.
+- **WorkCalendar (calendario laboral)**: agregado que define, para un periodo de
+  vigencia y una zona horaria, qué días son laborables y cuántas horas se
+  esperan en cada uno.
+- **CalendarDayRule (regla semanal)**: regla de un calendario para un día de la
+  semana concreto.
+- **Holiday (festivo)**: fecha local no laborable dentro de un calendario.
+- **SpecialDay (jornada especial)**: fecha local cuya jornada esperada sustituye
+  a la de la regla semanal; con 0 minutos la convierte en no laborable.
+- **CalendarAssignment (asignación de calendario)**: vínculo entre un calendario
+  y un ámbito (organización, equipo o empleado).
+- **Calendario efectivo**: el calendario que rige para un empleado en una fecha,
+  resultado de aplicar la precedencia empleado > equipo > tenant.
 - **Auditoría**: registro inmutable de operaciones sensibles (p. ej.
   resolución de correcciones).
 - **Evento de dominio**: hecho pasado e inmutable generado por un agregado.

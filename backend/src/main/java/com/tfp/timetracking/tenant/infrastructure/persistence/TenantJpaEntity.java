@@ -36,17 +36,43 @@ public class TenantJpaEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "activated_at")
+    private Instant activatedAt;
+
+    @Column(name = "suspended_at")
+    private Instant suspendedAt;
+
+    @Column(name = "archived_at")
+    private Instant archivedAt;
+
+    @Column(name = "suspension_reason", length = 500)
+    private String suspensionReason;
+
     protected TenantJpaEntity() {
         // Requerido por JPA.
     }
 
-    public TenantJpaEntity(UUID id, String name, String status, String timezone, Instant createdAt, Instant updatedAt) {
+    public TenantJpaEntity(
+            UUID id,
+            String name,
+            String status,
+            String timezone,
+            Instant createdAt,
+            Instant updatedAt,
+            Instant activatedAt,
+            Instant suspendedAt,
+            Instant archivedAt,
+            String suspensionReason) {
         this.id = id;
         this.name = name;
         this.status = status;
         this.timezone = timezone;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.activatedAt = activatedAt;
+        this.suspendedAt = suspendedAt;
+        this.archivedAt = archivedAt;
+        this.suspensionReason = suspensionReason;
     }
 
     public UUID getId() {
@@ -71,5 +97,21 @@ public class TenantJpaEntity {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public Instant getActivatedAt() {
+        return activatedAt;
+    }
+
+    public Instant getSuspendedAt() {
+        return suspendedAt;
+    }
+
+    public Instant getArchivedAt() {
+        return archivedAt;
+    }
+
+    public String getSuspensionReason() {
+        return suspensionReason;
     }
 }

@@ -35,15 +35,25 @@ tenants = [
     ('demo-b', 'Tenant Demo B', 'admin-b@acme.test', 'employee-b@acme.test'),
 ]
 
+# Los tenants de demo se crean desde plataforma: es la única vía que deja un
+# tenant operativo sin pasar por la aprobación de una solicitud, y exige
+# PLATFORM_ADMIN_EMAIL/PLATFORM_ADMIN_PASSWORD en el entorno.
+platform_email = os.environ.get('PLATFORM_ADMIN_EMAIL')
+platform_password = os.environ.get('PLATFORM_ADMIN_PASSWORD')
+if not platform_email or not platform_password:
+    raise SystemExit(
+        'Define PLATFORM_ADMIN_EMAIL y PLATFORM_ADMIN_PASSWORD: los tenants se crean desde plataforma.')
+platform_token = login(platform_email, platform_password)
+
 for seed, tenant_name, admin_email, employee_email in tenants:
-    post_json('/api/v1/auth/register', {
+    post_json('/api/v1/platform/tenants', {
         'tenantName': tenant_name,
         'timezone': 'Europe/Madrid',
         'adminEmail': admin_email,
         'adminPassword': 'supersecretpwd',
         'firstName': 'Admin',
         'lastName': seed,
-    })
+    }, token=platform_token)
     admin_token = login(admin_email, 'supersecretpwd')
     post_json('/api/v1/employees', {
         'email': employee_email,

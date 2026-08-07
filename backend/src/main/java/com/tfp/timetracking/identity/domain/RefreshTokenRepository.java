@@ -13,4 +13,6 @@ public interface RefreshTokenRepository {
     Optional<RefreshToken> findByTokenHashForUpdate(String tokenHash);
 
     List<RefreshToken> findByUserId(UUID userId);
+
+    List<RefreshToken> findBySessionId(UUID sessionId);
 }

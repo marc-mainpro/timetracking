@@ -18,18 +18,21 @@ public class EndWorkdayUseCase {
     private final Clock clock;
     private final IdGenerator idGenerator;
     private final DomainEventPublisher domainEventPublisher;
+    private final EvaluateClosedWorkdayService evaluateClosedWorkdayService;
 
     public EndWorkdayUseCase(
             WorkdayRepository workdayRepository,
             TenantContext tenantContext,
             Clock clock,
             IdGenerator idGenerator,
-            DomainEventPublisher domainEventPublisher) {
+            DomainEventPublisher domainEventPublisher,
+            EvaluateClosedWorkdayService evaluateClosedWorkdayService) {
         this.workdayRepository = workdayRepository;
         this.tenantContext = tenantContext;
         this.clock = clock;
         this.idGenerator = idGenerator;
         this.domainEventPublisher = domainEventPublisher;
+        this.evaluateClosedWorkdayService = evaluateClosedWorkdayService;
     }
 
     @Transactional
@@ -37,7 +40,9 @@ public class EndWorkdayUseCase {
         Workday workday = activeWorkday();
         workday.close(clock.now(), idGenerator);
         Workday saved = workdayRepository.save(workday);
-        domainEventPublisher.publish(workday.pullDomainEvents());
+        java.util.List<Object> events = new java.util.ArrayList<>(workday.pullDomainEvents());
+        events.addAll(evaluateClosedWorkdayService.evaluate(saved));
+        domainEventPublisher.publish(events);
         return saved;
     }
 

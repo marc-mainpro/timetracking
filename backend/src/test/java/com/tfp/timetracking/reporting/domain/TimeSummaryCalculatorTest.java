@@ -28,9 +28,14 @@ class TimeSummaryCalculatorTest {
         EmployeeDaySummary day = result.get(0);
         assertThat(day.worked()).isEqualTo(Duration.ofHours(8).plusMinutes(30));
         assertThat(day.paused()).isEqualTo(Duration.ofMinutes(30));
+        assertThat(day.expected()).isEqualTo(Duration.ZERO);
+        assertThat(day.effectiveWorked()).isEqualTo(Duration.ZERO);
+        assertThat(day.overtime()).isEqualTo(Duration.ZERO);
+        assertThat(day.deviation()).isEqualTo(Duration.ZERO);
         assertThat(day.workdayCount()).isEqualTo(1);
         assertThat(day.adjustedWorkdayCount()).isZero();
         assertThat(day.openWorkdays()).isZero();
+        assertThat(day.evaluatedWorkdayCount()).isZero();
     }
 
     @Test
@@ -89,8 +94,8 @@ class TimeSummaryCalculatorTest {
 
     @Test
     void openWorkdaysAreExcludedFromTotalsButCountedSeparately() {
-        WorkdayReportEntry openEntry =
-                new WorkdayReportEntry(UUID.randomUUID(), EMPLOYEE, true, false, Instant.parse("2026-03-10T08:00:00Z"), null, List.of());
+        WorkdayReportEntry openEntry = new WorkdayReportEntry(
+                UUID.randomUUID(), EMPLOYEE, true, false, Instant.parse("2026-03-10T08:00:00Z"), null, List.of(), null, null, null, null, false);
         WorkdayReportEntry closedEntry = closed(Instant.parse("2026-03-10T09:00:00Z"), Instant.parse("2026-03-10T10:00:00Z"), List.of());
 
         List<EmployeeDaySummary> result = TimeSummaryCalculator.summarizeByDay(List.of(openEntry, closedEntry), MADRID);
@@ -111,7 +116,12 @@ class TimeSummaryCalculatorTest {
                 true,
                 Instant.parse("2026-03-10T08:00:00Z"),
                 Instant.parse("2026-03-10T10:00:00Z"),
-                List.of());
+                List.of(),
+                null,
+                null,
+                null,
+                null,
+                false);
 
         List<EmployeeDaySummary> result = TimeSummaryCalculator.summarizeByDay(List.of(entry), MADRID);
 
@@ -123,8 +133,8 @@ class TimeSummaryCalculatorTest {
     void summarizeTotalsByEmployeeAggregatesAcrossTheWholeRangeIrrespectiveOfDayBoundaries() {
         WorkdayReportEntry crossingMidnight =
                 closed(Instant.parse("2026-03-10T22:30:00Z"), Instant.parse("2026-03-11T00:30:00Z"), List.of());
-        WorkdayReportEntry openEntry =
-                new WorkdayReportEntry(UUID.randomUUID(), EMPLOYEE, true, false, Instant.parse("2026-03-12T08:00:00Z"), null, List.of());
+        WorkdayReportEntry openEntry = new WorkdayReportEntry(
+                UUID.randomUUID(), EMPLOYEE, true, false, Instant.parse("2026-03-12T08:00:00Z"), null, List.of(), null, null, null, null, false);
 
         List<TenantEmployeeSummary> result =
                 TimeSummaryCalculator.summarizeTotalsByEmployee(List.of(crossingMidnight, openEntry));
@@ -133,11 +143,37 @@ class TimeSummaryCalculatorTest {
         TenantEmployeeSummary summary = result.get(0);
         assertThat(summary.employeeId()).isEqualTo(EMPLOYEE);
         assertThat(summary.worked()).isEqualTo(Duration.ofHours(2));
+        assertThat(summary.expected()).isEqualTo(Duration.ZERO);
         assertThat(summary.workdayCount()).isEqualTo(1);
         assertThat(summary.openWorkdays()).isEqualTo(1);
     }
 
+    @Test
+    void aggregatesEvaluationFieldsWhenPresent() {
+        WorkdayReportEntry entry = new WorkdayReportEntry(
+                UUID.randomUUID(),
+                EMPLOYEE,
+                false,
+                false,
+                Instant.parse("2026-03-10T08:00:00Z"),
+                Instant.parse("2026-03-10T10:00:00Z"),
+                List.of(),
+                Duration.ofHours(2),
+                Duration.ofHours(2),
+                Duration.ofMinutes(15),
+                Duration.ZERO,
+                true);
+
+        List<EmployeeDaySummary> result = TimeSummaryCalculator.summarizeByDay(List.of(entry), MADRID);
+
+        assertThat(result.getFirst().expected()).isEqualTo(Duration.ofHours(2));
+        assertThat(result.getFirst().effectiveWorked()).isEqualTo(Duration.ofHours(2));
+        assertThat(result.getFirst().overtime()).isEqualTo(Duration.ofMinutes(15));
+        assertThat(result.getFirst().deviation()).isEqualTo(Duration.ZERO);
+        assertThat(result.getFirst().evaluatedWorkdayCount()).isEqualTo(1);
+    }
+
     private WorkdayReportEntry closed(Instant startedAt, Instant endedAt, List<BreakInterval> breaks) {
-        return new WorkdayReportEntry(UUID.randomUUID(), EMPLOYEE, false, false, startedAt, endedAt, breaks);
+        return new WorkdayReportEntry(UUID.randomUUID(), EMPLOYEE, false, false, startedAt, endedAt, breaks, null, null, null, null, false);
     }
 }

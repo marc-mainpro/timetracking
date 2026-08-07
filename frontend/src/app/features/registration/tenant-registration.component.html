@@ -1,0 +1,81 @@
+<section class="registration-shell">
+  <div class="card registration-card">
+    <p class="eyebrow">Control horario</p>
+
+    @if (submitted()) {
+      <h1>Revisa tu correo.</h1>
+      <p class="lede">{{ message() }}</p>
+      <p class="hint">
+        El enlace caduca y solo puede usarse una vez. Si no llega, revisa la carpeta de correo no deseado
+        o vuelve a enviar la solicitud.
+      </p>
+      <div class="actions">
+        <button type="button" class="ghost" (click)="startOver()">Enviar otra solicitud</button>
+        <a routerLink="/auth/login">Ya tengo cuenta</a>
+      </div>
+    } @else {
+      <h1>Da de alta tu organización.</h1>
+      <p class="lede">
+        Rellena los datos y te enviaremos un correo para confirmar tu dirección. Un administrador
+        revisará la solicitud antes de activar la organización.
+      </p>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="registration-form">
+        <label>
+          <span>Organización</span>
+          <input type="text" formControlName="companyName" placeholder="Acme S.L." />
+        </label>
+
+        <label>
+          <span>Zona horaria</span>
+          <input type="text" formControlName="timezone" placeholder="Europe/Madrid" />
+        </label>
+
+        <div class="two-cols">
+          <label>
+            <span>Nombre</span>
+            <input type="text" formControlName="firstName" placeholder="Ana" />
+          </label>
+          <label>
+            <span>Apellidos</span>
+            <input type="text" formControlName="lastName" placeholder="Ruiz" />
+          </label>
+        </div>
+
+        <label>
+          <span>Correo</span>
+          <input type="email" formControlName="email" placeholder="ana@acme.test" />
+        </label>
+
+        <label>
+          <span>Contraseña</span>
+          <input
+            type="password"
+            formControlName="password"
+            autocomplete="new-password"
+            placeholder="Al menos 10 caracteres" />
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" formControlName="acceptTerms" />
+          <span>Acepto los términos y el tratamiento de mis datos.</span>
+        </label>
+
+        @if (form.controls.acceptTerms.touched && form.controls.acceptTerms.invalid) {
+          <p class="error">Debes aceptar los términos para continuar.</p>
+        }
+        @if (error(); as err) {
+          <p class="error">{{ err }}</p>
+        }
+
+        <button type="submit" [disabled]="submitting()">
+          {{ submitting() ? 'Enviando…' : 'Solicitar alta' }}
+        </button>
+      </form>
+
+      <p class="hint">
+        ¿Ya tienes cuenta? <a routerLink="/auth/login">Entra aquí</a>.
+      </p>
+    }
+  </div>
+</section>

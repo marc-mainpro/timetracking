@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Supresiones de OWASP dependency-check (T30-05, RS-015).
+
+  Este fichero es el UNICO mecanismo admitido para dejar pasar un hallazgo del
+  analisis de dependencias del backend. Esta prohibido bajar el umbral
+  `failBuildOnCVSS` para desbloquear un build.
+
+  Cada <suppress> necesita:
+    - `until="YYYY-MM-DD"`: fecha de caducidad. dependency-check ignora la
+      supresion a partir de esa fecha y el build vuelve a fallar. Es
+      intencionado: obliga a revisar la excepcion.
+    - <notes> con: por que no es explotable en este sistema, quien lo aprobo y
+      cual es el plan (actualizar version, retirar dependencia...).
+    - Un `cve` o `vulnerabilityName` concreto. Suprimir por `packageUrl` sin
+      acotar el CVE silencia tambien las vulnerabilidades futuras del paquete.
+
+  Procedimiento de aprobacion: docs/security/dependency-scanning-policy.md
+
+  Estado a 2026-08-04: sin supresiones. El primer analisis completo requiere el
+  secreto NVD_API_KEY dado de alta en GitHub (ver HANDOFF.md); hasta entonces el
+  job emite un aviso y no bloquea.
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+  <!--
+    Plantilla (copiar, rellenar y descomentar):
+
+    <suppress until="2026-11-04Z">
+      <notes><![CDATA[
+        Paquete: <groupId:artifactId:version>
+        Motivo: <por que no es explotable aqui>
+        Aprobado por: <responsable de seguridad>
+        Plan: <accion y fecha objetivo>
+      ]]></notes>
+      <packageUrl regex="true">^pkg:maven/grupo/artefacto@.*$</packageUrl>
+      <cve>CVE-0000-00000</cve>
+    </suppress>
+  -->
+</suppressions>

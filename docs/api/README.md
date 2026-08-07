@@ -8,10 +8,19 @@ repositorio como `docs/api/openapi.yaml`.
 
 | Método | Ruta | Auth | Tarea |
 |---|---|---|---|
-| POST | `/api/v1/auth/register` | público | T203 |
+
 | POST | `/api/v1/auth/login` | público | T204 |
 | POST | `/api/v1/auth/refresh` | público | T204 |
 | POST | `/api/v1/auth/logout` | Bearer JWT | T204 |
+| GET | `/api/v1/auth/sessions` | Bearer JWT | T60 |
+| DELETE | `/api/v1/auth/sessions/{sessionId}` | Bearer JWT | T60 |
+| DELETE | `/api/v1/auth/sessions` | Bearer JWT | T60 |
+| POST | `/api/v1/auth/password/forgot` | público | T60 |
+| POST | `/api/v1/auth/password/reset` | público | T60 |
+| GET | `/api/v1/app/absence-types` | `EMPLOYEE` | T80 |
+| POST | `/api/v1/app/absences` | `EMPLOYEE` | T80 |
+| GET | `/api/v1/app/absences` | `EMPLOYEE` | T80 |
+| POST | `/api/v1/app/absences/{absenceId}/cancel` | `EMPLOYEE` | T80 |
 | GET | `/api/v1/workdays/current` | `EMPLOYEE` | T403 |
 | POST | `/api/v1/workdays/start` | `EMPLOYEE` | T403 |
 | POST | `/api/v1/workdays/current/breaks/start` | `EMPLOYEE` | T403 |
@@ -21,6 +30,9 @@ repositorio como `docs/api/openapi.yaml`.
 | GET | `/api/v1/workdays/{workdayId}` | `EMPLOYEE` | T403 |
 | GET | `/api/v1/admin/workdays` | `TENANT_ADMIN` | T403 |
 | GET | `/api/v1/admin/workdays/{workdayId}` | `TENANT_ADMIN` | T403 |
+| GET | `/api/v1/admin/hourly-rules` | `TENANT_ADMIN` | T72 |
+| PUT | `/api/v1/admin/hourly-rules` | `TENANT_ADMIN` | T72 |
+| GET | `/api/v1/app/shifts` | `EMPLOYEE` | T90 |
 | GET | `/api/v1/employees` | `TENANT_ADMIN` | T501 |
 | POST | `/api/v1/employees` | `TENANT_ADMIN` | T501 |
 | GET | `/api/v1/employees/{employeeId}` | `TENANT_ADMIN` | T501 |
@@ -33,12 +45,18 @@ repositorio como `docs/api/openapi.yaml`.
 | GET | `/api/v1/corrections/{correctionId}` | `EMPLOYEE` / `TENANT_ADMIN` | T602 |
 | POST | `/api/v1/corrections/{correctionId}/approve` | `TENANT_ADMIN` | T602 |
 | POST | `/api/v1/corrections/{correctionId}/reject` | `TENANT_ADMIN` | T602 |
+| GET | `/api/v1/admin/absences` | `TENANT_ADMIN` | T80 |
+| POST | `/api/v1/admin/absences/{absenceId}/approve` | `TENANT_ADMIN` | T80 |
+| POST | `/api/v1/admin/absences/{absenceId}/reject` | `TENANT_ADMIN` | T80 |
+| GET | `/api/v1/admin/shifts/templates` | `TENANT_ADMIN` | T90 |
+| POST | `/api/v1/admin/shifts/templates` | `TENANT_ADMIN` | T90 |
+| POST | `/api/v1/admin/shifts/assignments` | `TENANT_ADMIN` | T90 |
 | GET | `/api/v1/admin/audit-events` | `TENANT_ADMIN` | T603 |
 | GET | `/api/v1/reports/employees/{employeeId}/summary` | `EMPLOYEE` / `TENANT_ADMIN` | T801 |
 | GET | `/api/v1/reports/tenant/summary` | `TENANT_ADMIN` | T801 |
 | GET | `/api/v1/reports/tenant/export.csv` | `TENANT_ADMIN` | T801 |
 
-`POST /api/v1/auth/register`: crea un tenant y su primer usuario
+`POST /api/v1/public/tenant-registrations`: registra una **solicitud** de alta; el tenant y su primer usuario los crea la aprobación desde plataforma
 `TENANT_ADMIN` de forma transaccional. Body: `tenantName`, `timezone`,
 `adminEmail`, `adminPassword` (≥10 caracteres), `firstName`, `lastName`.
 Responde `201` con `{tenantId, adminUserId}` (sin datos sensibles) y
@@ -61,13 +79,52 @@ e invalida la cadena activa del usuario.
 `POST /api/v1/auth/logout`: requiere Bearer JWT, revoca el refresh token de la
 cookie actual si existe y devuelve `204` limpiando la cookie.
 
-`POST /api/v1/auth/register`: también está limitado por IP (`10 req/min` en
+`GET /api/v1/auth/sessions`: lista las sesiones activas del usuario
+autenticado. Cada elemento incluye `id`, `createdAt`, `lastUsedAt`,
+`expiresAt` y el flag `current` para identificar la sesion desde la que se
+está operando.
+
+`DELETE /api/v1/auth/sessions/{sessionId}`: revoca una sesion concreta del
+usuario autenticado. Si revoca la sesion actual devuelve `204` y limpia la
+cookie `refresh_token`.
+
+`DELETE /api/v1/auth/sessions`: revoca todas las sesiones del usuario
+autenticado, incluida la actual, y devuelve `204` limpiando la cookie.
+
+`GET /api/v1/app/absence-types`: lista los tipos de ausencia activos del tenant
+autenticado para que el empleado pueda solicitar una ausencia.
+
+`POST /api/v1/app/absences`: crea una solicitud de ausencia del empleado
+autenticado. Body: `{absenceTypeId, startDate, endDate, reason}`. Si el tipo
+está inactivo responde `409 ABSENCE_TYPE_INACTIVE`.
+
+`GET /api/v1/app/absences`: lista las solicitudes del empleado autenticado, con
+filtro opcional por rango `from`/`to` en formato `YYYY-MM-DD`.
+
+`POST /api/v1/app/absences/{absenceId}/cancel`: cancela una solicitud propia en
+estado `PENDING`. Si pertenece a otro empleado o a otro tenant responde `404`.
+
+`POST /api/v1/auth/password/forgot`: inicia la recuperacion de contrasena.
+Recibe `{email}` y siempre responde `202` con un mensaje neutro, exista o no
+la cuenta, para evitar enumeracion. Si la cuenta existe y esta operativa, el
+backend persiste un token de un solo uso hasheado y publica el evento
+`identity.password-reset-requested.v1` para que el correo salga por Outbox.
+
+`POST /api/v1/auth/password/reset`: consume `{token, newPassword}`. El token se
+busca por hash, caduca y solo puede usarse una vez. Si es valido, cambia la
+contrasena, marca el token como usado, revoca todos los `refresh_token` del
+usuario y limpia la cookie `refresh_token` con `204 No Content`.
+
+`POST /api/v1/public/tenant-registrations/**`: también está limitado por IP (`10 req/min` en
 configuración normal) y responde `429` con `RATE_LIMIT_EXCEEDED` cuando se
 supera la ventana. Si el email ya existe, el backend responde `409` sin
 reflejar el correo original en el mensaje de error.
 
 `GET /api/v1/workdays/current`: devuelve la jornada activa del empleado
-autenticado o `404` si no existe.
+autenticado o `404` si no existe. Si la jornada ya fue cerrada o ajustada y ha
+sido evaluada por el motor horario, la respuesta incluye `evaluation`
+(`expectedDuration`, `workedDuration`, `pausedDuration`, `overtimeDuration`,
+`anomalies`).
 
 `POST /api/v1/workdays/start`: abre una nueva jornada para el empleado
 autenticado usando la hora del servidor. Responde `201` con la jornada creada.
@@ -78,17 +135,39 @@ de la jornada actual. Las transiciones inválidas responden `409` con el
 `errorCode` de dominio correspondiente.
 
 `POST /api/v1/workdays/current/end`: cierra la jornada actual. Si existe una
-pausa abierta responde `409` con `WORKDAY_OPEN_BREAK`.
+pausa abierta responde `409` con `WORKDAY_OPEN_BREAK`. Tras el cierre, el
+backend persiste una evaluación horaria de la jornada y la devuelve en el campo
+`evaluation` de la respuesta.
 
 `GET /api/v1/workdays`: historial propio paginado (`page`, `size`, `from`,
 `to`).
 
 `GET /api/v1/workdays/{workdayId}`: devuelve la jornada solo si pertenece al
-empleado autenticado; si no, `404`.
+empleado autenticado; si no, `404`. Si la jornada fue evaluada, incluye ese
+resultado.
 
 `GET /api/v1/admin/workdays` y `GET /api/v1/admin/workdays/{workdayId}`:
 listado y detalle para `TENANT_ADMIN`, siempre acotados al tenant del
-principal autenticado. Recursos de otro tenant responden `404`.
+principal autenticado. Recursos de otro tenant responden `404`. Las jornadas
+cerradas o ajustadas incluyen su `evaluation` si ya existe.
+
+`GET /api/v1/admin/hourly-rules`: devuelve la configuración horaria actual del
+tenant autenticado. Si aún no hay configuración persistida, responde `200` con
+`maxDailyWorkMinutes = null`, `requiredBreakMinutes = null`,
+`roundingStepMinutes = null` y `toleranceMinutes = null`.
+
+`PUT /api/v1/admin/hourly-rules`: sustituye la configuración horaria del tenant
+autenticado. Body: `{maxDailyWorkMinutes, requiredBreakMinutes,
+roundingStepMinutes, toleranceMinutes}`. Todos los campos son opcionales; si
+llegan a `null`, esa restricción queda desactivada. `roundingStepMinutes`
+redondea la duración neta al tramo más cercano y `toleranceMinutes` crea una
+ventana muerta para extras, desviaciones y anomalías marginales. Solo
+`TENANT_ADMIN`.
+
+`GET /api/v1/app/shifts?date=YYYY-MM-DD`: devuelve los turnos efectivos del
+empleado autenticado para una fecha civil concreta. Cada elemento incluye la
+plantilla aplicada, si cruza medianoche, la pausa prevista y la vigencia de la
+asignación.
 
 `GET /api/v1/employees`: listado paginado de empleados del tenant del admin,
 con filtro opcional `status`.
@@ -102,7 +181,7 @@ tenant responde `404`.
 
 `PATCH /api/v1/employees/{employeeId}/activate` y
 `PATCH /api/v1/employees/{employeeId}/deactivate`: activan o desactivan al
-empleado. Desactivar revoca sus refresh tokens.
+empleado. Desactivar revoca sus sesiones y refresh tokens.
 
 `PUT /api/v1/employees/{employeeId}/roles`: reemplaza los roles del empleado.
 No se permite dejar al tenant sin ningún `TENANT_ADMIN` activo (`409`
@@ -127,6 +206,27 @@ transacción.
 `POST /api/v1/corrections/{correctionId}/reject`: rechaza la corrección. El
 comentario de rechazo es obligatorio.
 
+`GET /api/v1/admin/absences`: lista las solicitudes de ausencia del tenant,
+con filtro opcional por rango `from`/`to`.
+
+`POST /api/v1/admin/absences/{absenceId}/approve`: aprueba una solicitud de
+ausencia. El comentario de resolución es opcional.
+
+`POST /api/v1/admin/absences/{absenceId}/reject`: rechaza una solicitud de
+ausencia. El comentario de resolución es opcional en la API actual.
+
+`GET /api/v1/admin/shifts/templates`: lista las plantillas de turno del tenant
+autenticado.
+
+`POST /api/v1/admin/shifts/templates`: crea una plantilla de turno. Body:
+`{name, startTime, endTime, plannedBreakMinutes}`. Permite turnos nocturnos si
+`endTime` es anterior a `startTime`.
+
+`POST /api/v1/admin/shifts/assignments`: asigna una plantilla a un empleado del
+tenant autenticado. Body: `{employeeId, shiftTemplateId, validFrom, validTo}`.
+Si el empleado o la plantilla no pertenecen al tenant actual, responde `404`.
+Si la plantilla está archivada, responde `409 SHIFT_TEMPLATE_ARCHIVED`.
+
 `GET /api/v1/admin/audit-events`: listado paginado de eventos de auditoría del
 tenant autenticado, con filtros opcionales `action`, `from` y `to`. Solo está
 disponible para `TENANT_ADMIN` y nunca expone registros de otros tenants.
@@ -136,22 +236,27 @@ tiempo trabajado (`from`/`to` obligatorios, ISO-8601, rango máximo 366 días).
 Los límites de día usan la zona horaria IANA del tenant (`Tenant.timezone`),
 no UTC: una jornada que cruza medianoche local, o un día de cambio de hora
 (23h/25h), se reparte entre los días que toca. Cada día devuelve `worked`
-(trabajado, jornada menos pausas), `paused`, `workdayCount`,
-`adjustedWorkdayCount` y `openWorkdays`. Las jornadas todavía abiertas se
-excluyen de `worked`/`paused` (no hay forma fiable de saber cuánto trabajará
-aún el empleado) pero se cuentan en `openWorkdays`. Un `EMPLOYEE` solo puede
-pedir el suyo; un `TENANT_ADMIN` puede pedir el de cualquier empleado de su
-tenant. Un `employeeId` de otro empleado (sin ser admin) o de otro tenant
-responde `404`.
+(trabajado bruto, jornada menos pausas), `paused`, `expected`,
+`effectiveWorked`, `overtime`, `deviation`, `workdayCount`,
+`adjustedWorkdayCount`, `openWorkdays` y `evaluatedWorkdayCount`. Los campos
+de evaluación salen de `workday_evaluation`; si una jornada histórica aún no
+tiene evaluación persistida, no altera `worked` y simplemente no suma en esos
+campos derivados. Las jornadas todavía abiertas se excluyen de
+`worked`/`paused` (no hay forma fiable de saber cuánto trabajará aún el
+empleado) pero se cuentan en `openWorkdays`. Un `EMPLOYEE` solo puede pedir el
+suyo; un `TENANT_ADMIN` puede pedir el de cualquier empleado de su tenant. Un
+`employeeId` de otro empleado (sin ser admin) o de otro tenant responde `404`.
 
 `GET /api/v1/reports/tenant/summary`: agregado por empleado en todo el rango
-(mismos parámetros `from`/`to`/366 días), sin desglose diario. Solo
-`TENANT_ADMIN`.
+(mismos parámetros `from`/`to`/366 días), sin desglose diario. Devuelve los
+campos actuales (`worked`, `paused`, `workdayCount`, `adjustedWorkdayCount`,
+`openWorkdays`) y añade `expected`, `effectiveWorked`, `overtime`,
+`deviation` y `evaluatedWorkdayCount`. Solo `TENANT_ADMIN`.
 
 `GET /api/v1/reports/tenant/export.csv`: mismo dato que `tenant/summary` en
-`text/csv` (UTF-8 sin BOM, cabecera `employeeId,workedSeconds,pausedSeconds,
-workdayCount,adjustedWorkdayCount,openWorkdays`, campos escapados según RFC
-4180). Solo `TENANT_ADMIN`.
+`text/csv` (UTF-8 sin BOM, cabecera
+`employeeId,workedSeconds,pausedSeconds,expectedSeconds,effectiveWorkedSeconds,overtimeSeconds,deviationSeconds,workdayCount,adjustedWorkdayCount,openWorkdays,evaluatedWorkdayCount`,
+campos escapados según RFC 4180). Solo `TENANT_ADMIN`.
 
 ## Formato de error
 
@@ -179,7 +284,9 @@ propaga a la respuesta y al campo `correlationId` de Problem Details. Si no,
 el backend genera uno por request.
 
 Errores de autenticación/sesión (`INVALID_CREDENTIALS`,
-`INVALID_REFRESH_TOKEN`, `REFRESH_TOKEN_REUSED`, `USER_INACTIVE`,
+`INVALID_REFRESH_TOKEN`, `REFRESH_TOKEN_REUSED`, `SESSION_INACTIVE`,
+`INVALID_PASSWORD_RESET_TOKEN`, `INVALID_REFRESH_TOKEN`,
+`REFRESH_TOKEN_REUSED`, `SESSION_INACTIVE`, `USER_INACTIVE`,
 `TENANT_INACTIVE`) responden HTTP 401.
 
 Exceso de rate limit en endpoints públicos de autenticación responde HTTP 429

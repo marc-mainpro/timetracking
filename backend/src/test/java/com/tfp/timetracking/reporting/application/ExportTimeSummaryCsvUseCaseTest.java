@@ -22,11 +22,23 @@ class ExportTimeSummaryCsvUseCaseTest {
         Instant to = Instant.parse("2026-01-31T00:00:00Z");
         UUID employeeId = UUID.fromString("11111111-1111-1111-1111-111111111111");
         when(generateTenantTimeSummaryUseCase.generate(from, to))
-                .thenReturn(List.of(new TenantEmployeeSummary(employeeId, Duration.ofHours(1), Duration.ZERO, 1, 0, 0)));
+                .thenReturn(List.of(new TenantEmployeeSummary(
+                        employeeId,
+                        Duration.ofHours(1),
+                        Duration.ZERO,
+                        Duration.ZERO,
+                        Duration.ZERO,
+                        Duration.ZERO,
+                        Duration.ZERO,
+                        1,
+                        0,
+                        0,
+                        0)));
 
         String csv = useCase.export(from, to);
 
-        assertThat(csv).startsWith("employeeId,workedSeconds,pausedSeconds,workdayCount,adjustedWorkdayCount,openWorkdays\r\n");
-        assertThat(csv).contains(employeeId + ",3600,0,1,0,0");
+        assertThat(csv).startsWith(
+                "employeeId,workedSeconds,pausedSeconds,expectedSeconds,effectiveWorkedSeconds,overtimeSeconds,deviationSeconds,workdayCount,adjustedWorkdayCount,openWorkdays,evaluatedWorkdayCount\r\n");
+        assertThat(csv).contains(employeeId + ",3600,0,0,0,0,0,1,0,0,0");
     }
 }

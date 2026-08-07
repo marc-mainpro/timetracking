@@ -18,7 +18,11 @@ final class TenantMapper {
                 tenant.status().name(),
                 tenant.timezone(),
                 tenant.createdAt(),
-                tenant.updatedAt());
+                tenant.updatedAt(),
+                tenant.activatedAt(),
+                tenant.suspendedAt(),
+                tenant.archivedAt(),
+                tenant.suspensionReason());
     }
 
     static Tenant toDomain(TenantJpaEntity entity) {
@@ -28,6 +32,10 @@ final class TenantMapper {
                 TenantStatus.valueOf(entity.getStatus()),
                 entity.getTimezone(),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt());
+                entity.getUpdatedAt(),
+                entity.getActivatedAt(),
+                entity.getSuspendedAt(),
+                entity.getArchivedAt(),
+                entity.getSuspensionReason());
     }
 }

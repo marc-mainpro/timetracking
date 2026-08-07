@@ -1,4 +1,8 @@
 spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 2
+      minimum-idle: 0
   jpa:
     hibernate:
       ddl-auto: validate
@@ -9,6 +13,7 @@ logging:
   level:
     org.springframework: INFO
     com.tfp.timetracking: DEBUG
+    com.zaxxer.hikari: ERROR
 
 # T703: el publicador/archivador en segundo plano se desactiva en el perfil
 # de test para que las suites de otras funcionalidades no compitan con un
@@ -40,3 +45,17 @@ security:
 app:
   request:
     max-payload-bytes: 65536
+
+# El registro público se mantiene habilitado en el perfil de test para que las
+# suites que arrancan tenants sigan funcionando;
+# en producción está deshabilitado por defecto (RF-TEN-010).
+registration:
+  public:
+    enabled: true
+
+# El envio de notificaciones se dispara a mano en los tests que lo prueban: un
+# job de fondo enviando correo haria la bateria no determinista (mismo motivo
+# que outbox.scheduler-enabled).
+notification:
+  delivery:
+    enabled: false

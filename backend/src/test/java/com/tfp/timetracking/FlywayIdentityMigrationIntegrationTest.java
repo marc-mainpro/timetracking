@@ -4,23 +4,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.tfp.timetracking.support.AbstractFlywayMigrationTest;
 import java.sql.Connection;
 import java.sql.Timestamp;
 import java.sql.ResultSet;
 import java.time.Instant;
 import java.util.UUID;
-import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * T201: verifica que V2__identity.sql se aplica limpio desde una base de
@@ -28,27 +20,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * final deja el email de usuario como unico global (ADR-0008), requisito
  * necesario para el login por {@code email + password} sin ambiguedad.
  */
-@Testcontainers
-@ActiveProfiles("test")
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class FlywayIdentityMigrationIntegrationTest {
-
-    @Container
-    static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:16-alpine")
-                    .withDatabaseName("timetracking")
-                    .withUsername("timetracking")
-                    .withPassword("timetracking");
-
-    @DynamicPropertySource
-    static void datasourceProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
-    }
-
-    @Autowired
-    private DataSource dataSource;
+class FlywayIdentityMigrationIntegrationTest extends AbstractFlywayMigrationTest {
 
     @Test
     void appliesIdentityMigrationFromEmptyDatabase() throws Exception {
@@ -57,7 +29,37 @@ class FlywayIdentityMigrationIntegrationTest {
             assertThat(tableExists(connection, "app_user")).isTrue();
             assertThat(tableExists(connection, "user_role")).isTrue();
             assertThat(tableExists(connection, "refresh_token")).isTrue();
+            assertThat(tableExists(connection, "user_session")).isTrue();
         }
+    }
+
+    @Test
+    void refreshTokensReferenceSessions() {
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        UUID tenantId = insertTenant(jdbc, "Tenant sessions");
+        UUID userId = insertUserReturningId(jdbc, tenantId, "sessions@example.com");
+        UUID sessionId = UUID.randomUUID();
+        Instant now = Instant.now();
+
+        assertThatCode(() -> jdbc.update(
+                        "INSERT INTO user_session (id, user_id, tenant_id, created_at, last_used_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)",
+                        sessionId,
+                        userId,
+                        tenantId,
+                        Timestamp.from(now),
+                        Timestamp.from(now),
+                        Timestamp.from(now.plusSeconds(60))))
+                .doesNotThrowAnyException();
+
+        assertThatCode(() -> jdbc.update(
+                        "INSERT INTO refresh_token (id, user_id, session_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                        UUID.randomUUID(),
+                        userId,
+                        sessionId,
+                        "hash-1",
+                        Timestamp.from(now.plusSeconds(60)),
+                        Timestamp.from(now)))
+                .doesNotThrowAnyException();
     }
 
     @Test
@@ -94,6 +96,10 @@ class FlywayIdentityMigrationIntegrationTest {
     }
 
     private static void insertUser(JdbcTemplate jdbc, UUID tenantId, String email) {
+        insertUserReturningId(jdbc, tenantId, email);
+    }
+
+    private static UUID insertUserReturningId(JdbcTemplate jdbc, UUID tenantId, String email) {
         UUID id = UUID.randomUUID();
         Instant now = Instant.now();
         jdbc.update(
@@ -101,6 +107,7 @@ class FlywayIdentityMigrationIntegrationTest {
                         + "last_name, status, created_at, updated_at) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 id, tenantId, email, "hash", "First", "Last", "ACTIVE", Timestamp.from(now), Timestamp.from(now));
+        return id;
     }
 
     private static boolean tableExists(Connection connection, String tableName) throws Exception {

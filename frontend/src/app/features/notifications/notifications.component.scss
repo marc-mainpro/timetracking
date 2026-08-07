@@ -1,0 +1,53 @@
+.admin-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.notification {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+/* Sin leer: barra de acento a la izquierda, para distinguirlas de un vistazo
+   sin depender solo del color del texto. */
+.notification--unread {
+  border-left: 3px solid var(--accent);
+  padding-left: 0.75rem;
+}
+
+.notification-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  p {
+    margin: 0;
+  }
+
+  small {
+    color: var(--text-muted);
+  }
+}
+
+.pill {
+  align-self: flex-start;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-size: 0.75rem;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}

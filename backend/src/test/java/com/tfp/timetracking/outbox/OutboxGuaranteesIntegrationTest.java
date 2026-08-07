@@ -13,11 +13,11 @@ import com.tfp.timetracking.outbox.domain.OutboxMessageRepository;
 import com.tfp.timetracking.outbox.domain.OutboxMessageStatus;
 import com.tfp.timetracking.outbox.infrastructure.demo.DemoIdempotentEventConsumer;
 import com.tfp.timetracking.outbox.infrastructure.demo.DemoIdempotentEventConsumer.ConsumptionResult;
-import com.tfp.timetracking.outbox.infrastructure.demo.ProcessedEventJpaRepository;
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.IdGenerator;
 import com.tfp.timetracking.shared.domain.IntegrationEvent;
 import com.tfp.timetracking.shared.infrastructure.security.TestTenantFactory;
+import com.tfp.timetracking.tenant.application.RegisterTenantUseCase;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,9 +96,6 @@ class OutboxGuaranteesIntegrationTest {
     @Autowired
     private DemoIdempotentEventConsumer demoIdempotentEventConsumer;
 
-    @Autowired
-    private ProcessedEventJpaRepository processedEventRepository;
-
     @Test
     void businessActionFlowsThroughOutboxAndPublisherToAnIdempotentConsumerWithoutDuplicateEffectsOnRedelivery()
             throws Exception {
@@ -126,7 +123,7 @@ class OutboxGuaranteesIntegrationTest {
                 "time-tracking.workday-closed.v1"));
         OutboxMessage pending = outboxMessageRepository.findById(closedEventId).orElseThrow();
         assertThat(pending.status()).isEqualTo(OutboxMessageStatus.PENDING);
-        assertThat(processedEventRepository.existsById(closedEventId))
+        assertThat(isProcessedByDemoConsumer(closedEventId))
                 .as("no se procesa nada antes de que el publicador entregue el mensaje")
                 .isFalse();
 
@@ -141,7 +138,7 @@ class OutboxGuaranteesIntegrationTest {
         assertThat(published.publishedAt()).isNotNull();
 
         // 4) El consumidor demo, enganchado al publicador (T704), ya proceso el evento una vez.
-        assertThat(processedEventRepository.existsById(closedEventId)).isTrue();
+        assertThat(isProcessedByDemoConsumer(closedEventId)).isTrue();
         int effectsAfterAutomaticDelivery = demoIdempotentEventConsumer.effectsAppliedCount();
         assertThat(effectsAfterAutomaticDelivery).isGreaterThan(effectsBeforePublish);
 
@@ -179,11 +176,23 @@ class OutboxGuaranteesIntegrationTest {
         TestTenantFactory testTenantFactory(
                 MockMvc mockMvc,
                 ObjectMapper objectMapper,
+                RegisterTenantUseCase registerTenantUseCase,
                 UserRepository userRepository,
                 PasswordHasher passwordHasher,
                 Clock clock,
                 IdGenerator idGenerator) {
-            return new TestTenantFactory(mockMvc, objectMapper, userRepository, passwordHasher, clock, idGenerator);
+            return new TestTenantFactory(
+                    mockMvc, objectMapper, registerTenantUseCase, userRepository, passwordHasher, clock, idGenerator);
         }
+    }
+
+    /** La deduplicacion es por (evento, consumidor) desde V23. */
+    private boolean isProcessedByDemoConsumer(java.util.UUID eventId) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM processed_event WHERE event_id = ? AND consumer = ?",
+                Integer.class,
+                eventId,
+                com.tfp.timetracking.outbox.infrastructure.demo.DemoIdempotentEventConsumer.CONSUMER);
+        return count != null && count > 0;
     }
 }

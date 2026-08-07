@@ -15,6 +15,7 @@ import com.tfp.timetracking.shared.application.TenantContext;
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.DomainEventPublisher;
 import com.tfp.timetracking.shared.domain.IdGenerator;
+import com.tfp.timetracking.timetracking.application.EvaluateClosedWorkdayService;
 import com.tfp.timetracking.timetracking.domain.Workday;
 import com.tfp.timetracking.timetracking.domain.WorkdayRepository;
 import com.tfp.timetracking.timetracking.domain.WorkdayStatus;
@@ -31,11 +32,19 @@ class ApproveCorrectionRequestUseCaseTest {
         WorkdayRepository workdayRepository = org.mockito.Mockito.mock(WorkdayRepository.class);
         TenantContext tenantContext = org.mockito.Mockito.mock(TenantContext.class);
         DomainEventPublisher publisher = org.mockito.Mockito.mock(DomainEventPublisher.class);
+        EvaluateClosedWorkdayService evaluateClosedWorkdayService = org.mockito.Mockito.mock(EvaluateClosedWorkdayService.class);
         AuditRecorder auditRecorder = org.mockito.Mockito.mock(AuditRecorder.class);
         Clock clock = () -> Instant.parse("2026-01-16T10:00:00Z");
         IdGenerator idGenerator = UUID::randomUUID;
         ApproveCorrectionRequestUseCase useCase = new ApproveCorrectionRequestUseCase(
-                correctionRepository, workdayRepository, tenantContext, clock, idGenerator, publisher, auditRecorder);
+                correctionRepository,
+                workdayRepository,
+                tenantContext,
+                clock,
+                idGenerator,
+                publisher,
+                evaluateClosedWorkdayService,
+                auditRecorder);
         UUID tenantId = UUID.randomUUID();
         UUID resolverId = UUID.randomUUID();
         Workday workday = Workday.reconstitute(
@@ -51,12 +60,27 @@ class ApproveCorrectionRequestUseCaseTest {
         when(workdayRepository.findById(tenantId, workday.id())).thenReturn(java.util.Optional.of(workday));
         when(correctionRepository.save(any(CorrectionRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(workdayRepository.save(any(Workday.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(evaluateClosedWorkdayService.evaluate(any(Workday.class))).thenReturn(List.of());
 
         useCase.approve(new ResolveCorrectionCommand(correction.id(), "aprobada"));
 
         verify(workdayRepository).save(any(Workday.class));
         verify(correctionRepository).save(any(CorrectionRequest.class));
-        verify(auditRecorder).record(any(), any(), any(), any());
+        // Dos entradas: la resolución de la corrección y el ajuste de la
+        // jornada. Quien investiga qué le pasó a una jornada busca por la
+        // jornada y no tiene por qué saber que vino de una corrección (T130-04).
+        verify(auditRecorder)
+                .record(
+                        org.mockito.ArgumentMatchers.eq("CORRECTION_APPROVED"),
+                        org.mockito.ArgumentMatchers.eq("CorrectionRequest"),
+                        any(),
+                        any());
+        verify(auditRecorder)
+                .record(
+                        org.mockito.ArgumentMatchers.eq("WORKDAY_ADJUSTED"),
+                        org.mockito.ArgumentMatchers.eq("Workday"),
+                        any(),
+                        any());
     }
 
     @Test
@@ -70,6 +94,7 @@ class ApproveCorrectionRequestUseCaseTest {
                 () -> Instant.now(),
                 UUID::randomUUID,
                 org.mockito.Mockito.mock(DomainEventPublisher.class),
+                org.mockito.Mockito.mock(EvaluateClosedWorkdayService.class),
                 org.mockito.Mockito.mock(AuditRecorder.class));
         UUID tenantId = UUID.randomUUID();
         UUID correctionId = UUID.randomUUID();

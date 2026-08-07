@@ -12,6 +12,26 @@ describe('ErrorMessagesService', () => {
 
   it('maps known error codes to friendly messages', () => {
     expect(service.fromProblem({ errorCode: 'INVALID_CREDENTIALS' })).toBe('Las credenciales no son válidas.');
+    expect(service.fromProblem({ errorCode: 'SHIFT_TEMPLATE_ALREADY_EXISTS' })).toBe('Ya existe una plantilla de turno con ese nombre.');
+    expect(service.fromProblem({ errorCode: 'SHIFT_TEMPLATE_ARCHIVED' })).toBe('La plantilla de turno está archivada y no puede asignarse.');
+  });
+
+  it('explains an account locked by failed attempts (RS-008)', () => {
+    expect(service.fromProblem({ errorCode: 'ACCOUNT_LOCKED' })).toBe(
+      'Tu cuenta está bloqueada temporalmente por varios intentos fallidos. Vuelve a intentarlo dentro de unos minutos.'
+    );
+  });
+
+  it('explains that the rate limit was exceeded (RS-007)', () => {
+    expect(service.fromProblem({ errorCode: 'RATE_LIMIT_EXCEEDED' })).toBe(
+      'Has realizado demasiados intentos. Espera un momento e inténtalo otra vez.'
+    );
+  });
+
+  it('does not leak the backend detail when the code is known', () => {
+    expect(service.fromProblem({ errorCode: 'ACCOUNT_LOCKED', detail: 'La cuenta esta bloqueada temporalmente' })).toBe(
+      'Tu cuenta está bloqueada temporalmente por varios intentos fallidos. Vuelve a intentarlo dentro de unos minutos.'
+    );
   });
 
   it('formats validation errors field by field', () => {

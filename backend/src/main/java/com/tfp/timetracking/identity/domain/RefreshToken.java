@@ -14,6 +14,7 @@ import java.util.UUID;
 public final class RefreshToken {
 
     private final UUID id;
+    private final UUID sessionId;
     private final UUID userId;
     private final String tokenHash;
     private final Instant expiresAt;
@@ -23,6 +24,7 @@ public final class RefreshToken {
 
     private RefreshToken(
             UUID id,
+            UUID sessionId,
             UUID userId,
             String tokenHash,
             Instant expiresAt,
@@ -30,6 +32,7 @@ public final class RefreshToken {
             UUID replacedBy,
             Instant createdAt) {
         this.id = id;
+        this.sessionId = sessionId;
         this.userId = userId;
         this.tokenHash = tokenHash;
         this.expiresAt = expiresAt;
@@ -39,6 +42,7 @@ public final class RefreshToken {
     }
 
     public static RefreshToken issue(
+            UUID sessionId,
             UUID userId,
             String tokenHash,
             Instant expiresAt,
@@ -46,6 +50,7 @@ public final class RefreshToken {
             IdGenerator idGenerator) {
         Objects.requireNonNull(clock, "clock no puede ser null");
         Objects.requireNonNull(idGenerator, "idGenerator no puede ser null");
+        Objects.requireNonNull(sessionId, "sessionId no puede ser null");
         Objects.requireNonNull(userId, "userId no puede ser null");
         String validatedHash = requireNonBlank(tokenHash, "tokenHash no puede ser blank");
         Objects.requireNonNull(expiresAt, "expiresAt no puede ser null");
@@ -55,11 +60,12 @@ public final class RefreshToken {
             throw new IllegalArgumentException("expiresAt debe ser posterior a createdAt");
         }
 
-        return new RefreshToken(idGenerator.newId(), userId, validatedHash, expiresAt, null, null, now);
+        return new RefreshToken(idGenerator.newId(), sessionId, userId, validatedHash, expiresAt, null, null, now);
     }
 
     public static RefreshToken reconstitute(
             UUID id,
+            UUID sessionId,
             UUID userId,
             String tokenHash,
             Instant expiresAt,
@@ -70,8 +76,15 @@ public final class RefreshToken {
         Objects.requireNonNull(userId, "userId no puede ser null");
         Objects.requireNonNull(expiresAt, "expiresAt no puede ser null");
         Objects.requireNonNull(createdAt, "createdAt no puede ser null");
-        return new RefreshToken(id, userId, requireNonBlank(tokenHash, "tokenHash no puede ser blank"), expiresAt, revokedAt,
-                replacedBy, createdAt);
+        return new RefreshToken(
+                id,
+                sessionId,
+                userId,
+                requireNonBlank(tokenHash, "tokenHash no puede ser blank"),
+                expiresAt,
+                revokedAt,
+                replacedBy,
+                createdAt);
     }
 
     public boolean isExpiredAt(Instant instant) {
@@ -109,6 +122,10 @@ public final class RefreshToken {
 
     public UUID userId() {
         return userId;
+    }
+
+    public UUID sessionId() {
+        return sessionId;
     }
 
     public String tokenHash() {

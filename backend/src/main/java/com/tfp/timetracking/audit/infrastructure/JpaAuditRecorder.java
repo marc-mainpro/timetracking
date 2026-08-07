@@ -30,10 +30,21 @@ public class JpaAuditRecorder implements AuditRecorder {
 
     @Override
     public void record(String action, String entityType, UUID entityId, Map<String, Object> metadata) {
+        record(tenantContext.currentTenantId(), tenantContext.currentUserId(), action, entityType, entityId, metadata);
+    }
+
+    @Override
+    public void record(
+            UUID tenantId,
+            UUID actorUserId,
+            String action,
+            String entityType,
+            UUID entityId,
+            Map<String, Object> metadata) {
         AuditEvent auditEvent = new AuditEvent(
                 idGenerator.newId(),
-                tenantContext.currentTenantId(),
-                tenantContext.currentUserId(),
+                tenantId,
+                actorUserId,
                 action,
                 entityType,
                 entityId,
@@ -45,6 +56,13 @@ public class JpaAuditRecorder implements AuditRecorder {
 
     private String currentCorrelationId() {
         String correlationId = MDC.get(CorrelationIdFilter.MDC_KEY);
-        return correlationId != null ? correlationId : UUID.randomUUID().toString();
+        if (correlationId == null || correlationId.isBlank()) {
+            return UUID.randomUUID().toString();
+        }
+        try {
+            return UUID.fromString(correlationId).toString();
+        } catch (IllegalArgumentException invalidUuid) {
+            return UUID.randomUUID().toString();
+        }
     }
 }

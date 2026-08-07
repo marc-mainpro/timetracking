@@ -11,4 +11,5 @@ public record WorkdayResponse(
         Instant startedAt,
         Instant endedAt,
         List<BreakEntryResponse> breaks,
-        Duration workedDuration) {}
+        Duration workedDuration,
+        WorkdayEvaluationResponse evaluation) {}

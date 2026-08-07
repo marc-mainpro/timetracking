@@ -46,7 +46,7 @@ public class UserStatusFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             authenticatedPrincipalStateChecker.ensureActivePrincipal(
-                    tenantContext.currentTenantId(), tenantContext.currentUserId());
+                    tenantContext.currentTenantId(), tenantContext.currentUserId(), tenantContext.currentSessionId());
             filterChain.doFilter(request, response);
         } catch (DomainException ex) {
             writeUnauthorized(response, ex.errorCode(), ex.getMessage());

@@ -11,7 +11,9 @@ import com.tfp.timetracking.identity.domain.UserRepository;
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.IdGenerator;
 import com.tfp.timetracking.shared.infrastructure.security.TestTenantFactory;
+import com.tfp.timetracking.tenant.application.RegisterTenantUseCase;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -71,6 +73,15 @@ class ReportControllerIntegrationTest {
                 Instant.parse("2026-02-10T17:00:00Z"),
                 Instant.parse("2026-02-10T12:00:00Z"),
                 Instant.parse("2026-02-10T12:30:00Z"));
+        attachEvaluation(
+                tenant.tenantId(),
+                employeeId,
+                Instant.parse("2026-02-10T08:00:00Z"),
+                Duration.ofHours(8),
+                Duration.ofHours(8).plusMinutes(30),
+                Duration.ofHours(8).plusMinutes(15),
+                Duration.ofMinutes(15),
+                Duration.ZERO);
 
         mockMvc.perform(get("/api/v1/reports/employees/{employeeId}/summary", employeeId)
                         .param("from", "2026-02-01T00:00:00Z")
@@ -80,6 +91,11 @@ class ReportControllerIntegrationTest {
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].worked").value("PT8H30M"))
                 .andExpect(jsonPath("$[0].paused").value("PT30M"))
+                .andExpect(jsonPath("$[0].expected").value("PT8H"))
+                .andExpect(jsonPath("$[0].effectiveWorked").value("PT8H15M"))
+                .andExpect(jsonPath("$[0].overtime").value("PT15M"))
+                .andExpect(jsonPath("$[0].deviation").value("PT0S"))
+                .andExpect(jsonPath("$[0].evaluatedWorkdayCount").value(1))
                 .andExpect(jsonPath("$[0].workdayCount").value(1))
                 .andExpect(jsonPath("$[0].openWorkdays").value(0));
     }
@@ -155,6 +171,15 @@ class ReportControllerIntegrationTest {
                 Instant.parse("2026-02-10T10:00:00Z"),
                 null,
                 null);
+        attachEvaluation(
+                tenant.tenantId(),
+                employeeId,
+                Instant.parse("2026-02-10T08:00:00Z"),
+                Duration.ofHours(2),
+                Duration.ofHours(2),
+                Duration.ofHours(2),
+                Duration.ZERO,
+                Duration.ZERO);
 
         mockMvc.perform(get("/api/v1/reports/tenant/summary")
                         .param("from", "2026-02-01T00:00:00Z")
@@ -163,7 +188,12 @@ class ReportControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].employeeId").value(employeeId.toString()))
-                .andExpect(jsonPath("$[0].worked").value("PT2H"));
+                .andExpect(jsonPath("$[0].worked").value("PT2H"))
+                .andExpect(jsonPath("$[0].expected").value("PT2H"))
+                .andExpect(jsonPath("$[0].effectiveWorked").value("PT2H"))
+                .andExpect(jsonPath("$[0].overtime").value("PT0S"))
+                .andExpect(jsonPath("$[0].deviation").value("PT0S"))
+                .andExpect(jsonPath("$[0].evaluatedWorkdayCount").value(1));
     }
 
     @Test
@@ -178,6 +208,15 @@ class ReportControllerIntegrationTest {
                 Instant.parse("2026-02-10T10:00:00Z"),
                 null,
                 null);
+        attachEvaluation(
+                tenant.tenantId(),
+                employeeId,
+                Instant.parse("2026-02-10T08:00:00Z"),
+                Duration.ofHours(2),
+                Duration.ofHours(2),
+                Duration.ofHours(2),
+                Duration.ZERO,
+                Duration.ZERO);
 
         String csv = mockMvc.perform(get("/api/v1/reports/tenant/export.csv")
                         .param("from", "2026-02-01T00:00:00Z")
@@ -189,8 +228,8 @@ class ReportControllerIntegrationTest {
                 .getResponse()
                 .getContentAsString();
 
-        assertCsvContains(csv, "employeeId,workedSeconds,pausedSeconds,workdayCount,adjustedWorkdayCount,openWorkdays");
-        assertCsvContains(csv, employeeId + ",7200,0,1,0,0");
+        assertCsvContains(csv, "employeeId,workedSeconds,pausedSeconds,expectedSeconds,effectiveWorkedSeconds,overtimeSeconds,deviationSeconds,workdayCount,adjustedWorkdayCount,openWorkdays,evaluatedWorkdayCount");
+        assertCsvContains(csv, employeeId + ",7200,0,7200,7200,0,0,1,0,0,1");
     }
 
     @Test
@@ -254,6 +293,36 @@ class ReportControllerIntegrationTest {
         }
     }
 
+    private void attachEvaluation(
+            UUID tenantId,
+            UUID employeeId,
+            Instant startedAt,
+            Duration expected,
+            Duration worked,
+            Duration effectiveWorked,
+            Duration overtime,
+            Duration deviation) {
+        UUID workdayId = jdbcTemplate.queryForObject(
+                "SELECT id FROM workday WHERE tenant_id = ? AND employee_id = ? AND started_at = ?",
+                UUID.class,
+                tenantId,
+                employeeId,
+                Timestamp.from(startedAt));
+        jdbcTemplate.update(
+                "INSERT INTO workday_evaluation (workday_id, tenant_id, employee_id, expected_minutes, worked_minutes, effective_worked_minutes, paused_minutes, overtime_minutes, deviation_minutes, anomalies, evaluated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                workdayId,
+                tenantId,
+                employeeId,
+                expected.toMinutes(),
+                worked.toMinutes(),
+                effectiveWorked.toMinutes(),
+                0L,
+                overtime.toMinutes(),
+                deviation.toMinutes(),
+                "",
+                Timestamp.from(Instant.now()));
+    }
+
     private void assertCsvContains(String csv, String expected) {
         org.assertj.core.api.Assertions.assertThat(csv).contains(expected);
     }
@@ -265,11 +334,13 @@ class ReportControllerIntegrationTest {
         TestTenantFactory testTenantFactory(
                 MockMvc mockMvc,
                 ObjectMapper objectMapper,
+                RegisterTenantUseCase registerTenantUseCase,
                 UserRepository userRepository,
                 PasswordHasher passwordHasher,
                 Clock clock,
                 IdGenerator idGenerator) {
-            return new TestTenantFactory(mockMvc, objectMapper, userRepository, passwordHasher, clock, idGenerator);
+            return new TestTenantFactory(
+                    mockMvc, objectMapper, registerTenantUseCase, userRepository, passwordHasher, clock, idGenerator);
         }
     }
 }

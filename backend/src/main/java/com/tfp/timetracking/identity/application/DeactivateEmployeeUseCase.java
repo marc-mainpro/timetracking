@@ -5,6 +5,8 @@ import com.tfp.timetracking.identity.domain.LastAdminException;
 import com.tfp.timetracking.identity.domain.RefreshToken;
 import com.tfp.timetracking.identity.domain.RefreshTokenRepository;
 import com.tfp.timetracking.identity.domain.Role;
+import com.tfp.timetracking.identity.domain.Session;
+import com.tfp.timetracking.identity.domain.SessionRepository;
 import com.tfp.timetracking.identity.domain.User;
 import com.tfp.timetracking.identity.domain.UserRepository;
 import com.tfp.timetracking.shared.application.ResourceNotFoundException;
@@ -12,6 +14,7 @@ import com.tfp.timetracking.shared.application.TenantContext;
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.DomainEventPublisher;
 import com.tfp.timetracking.shared.domain.IdGenerator;
+import java.time.Instant;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +24,7 @@ public class DeactivateEmployeeUseCase {
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final SessionRepository sessionRepository;
     private final TenantContext tenantContext;
     private final Clock clock;
     private final IdGenerator idGenerator;
@@ -30,6 +34,7 @@ public class DeactivateEmployeeUseCase {
     public DeactivateEmployeeUseCase(
             UserRepository userRepository,
             RefreshTokenRepository refreshTokenRepository,
+            SessionRepository sessionRepository,
             TenantContext tenantContext,
             Clock clock,
             IdGenerator idGenerator,
@@ -37,6 +42,7 @@ public class DeactivateEmployeeUseCase {
             AuditRecorder auditRecorder) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.sessionRepository = sessionRepository;
         this.tenantContext = tenantContext;
         this.clock = clock;
         this.idGenerator = idGenerator;
@@ -63,9 +69,16 @@ public class DeactivateEmployeeUseCase {
     }
 
     private void revokeRefreshTokens(UUID userId) {
+        Instant now = clock.now();
+        for (Session session : sessionRepository.findByUserId(userId)) {
+            if (!session.isRevoked()) {
+                session.revoke(now);
+                sessionRepository.save(session);
+            }
+        }
         for (RefreshToken refreshToken : refreshTokenRepository.findByUserId(userId)) {
             if (!refreshToken.isRevoked()) {
-                refreshToken.revoke(clock.now());
+                refreshToken.revoke(now);
                 refreshTokenRepository.save(refreshToken);
             }
         }

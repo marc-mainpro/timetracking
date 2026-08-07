@@ -18,4 +18,6 @@ interface RefreshTokenJpaRepository extends JpaRepository<RefreshTokenJpaEntity,
     Optional<RefreshTokenJpaEntity> findByTokenHashForUpdate(@Param("tokenHash") String tokenHash);
 
     List<RefreshTokenJpaEntity> findByUserId(UUID userId);
+
+    List<RefreshTokenJpaEntity> findBySessionId(UUID sessionId);
 }

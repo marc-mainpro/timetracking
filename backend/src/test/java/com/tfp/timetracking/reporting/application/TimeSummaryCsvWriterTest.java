@@ -13,20 +13,32 @@ class TimeSummaryCsvWriterTest {
     @Test
     void writesHeaderAndRowsWithCommaSeparator() {
         UUID employeeId = UUID.fromString("11111111-1111-1111-1111-111111111111");
-        TenantEmployeeSummary summary = new TenantEmployeeSummary(employeeId, Duration.ofHours(8), Duration.ofMinutes(30), 1, 0, 0);
+        TenantEmployeeSummary summary = new TenantEmployeeSummary(
+                employeeId,
+                Duration.ofHours(8),
+                Duration.ofMinutes(30),
+                Duration.ofHours(8),
+                Duration.ofHours(8),
+                Duration.ofMinutes(15),
+                Duration.ZERO,
+                1,
+                0,
+                0,
+                1);
 
         String csv = TimeSummaryCsvWriter.write(List.of(summary));
 
         assertThat(csv)
-                .isEqualTo("employeeId,workedSeconds,pausedSeconds,workdayCount,adjustedWorkdayCount,openWorkdays\r\n"
-                        + employeeId + ",28800,1800,1,0,0\r\n");
+                .isEqualTo("employeeId,workedSeconds,pausedSeconds,expectedSeconds,effectiveWorkedSeconds,overtimeSeconds,deviationSeconds,workdayCount,adjustedWorkdayCount,openWorkdays,evaluatedWorkdayCount\r\n"
+                        + employeeId + ",28800,1800,28800,28800,900,0,1,0,0,1\r\n");
     }
 
     @Test
     void writesOnlyHeaderWhenEmpty() {
         String csv = TimeSummaryCsvWriter.write(List.of());
 
-        assertThat(csv).isEqualTo("employeeId,workedSeconds,pausedSeconds,workdayCount,adjustedWorkdayCount,openWorkdays\r\n");
+        assertThat(csv)
+                .isEqualTo("employeeId,workedSeconds,pausedSeconds,expectedSeconds,effectiveWorkedSeconds,overtimeSeconds,deviationSeconds,workdayCount,adjustedWorkdayCount,openWorkdays,evaluatedWorkdayCount\r\n");
     }
 
     @Test

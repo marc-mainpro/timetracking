@@ -1,0 +1,14 @@
+# Notificaciones (T110-05, RF-NOT-005).
+#
+# El envio por correo se hace en una tarea aparte del consumo del evento: crear
+# la notificacion es una escritura local que no debe depender de que el SMTP
+# responda.
+notification:
+  delivery:
+    enabled: ${NOTIFICATION_DELIVERY_ENABLED:true}
+    poll-interval: PT30S
+    batch-size: 50
+    # Tras agotarlos la notificacion queda FAILED, pero sigue visible en la
+    # aplicacion: que el correo no saliera no significa que el usuario no deba
+    # enterarse del hecho.
+    max-attempts: 5

@@ -1,11 +1,16 @@
 package com.tfp.timetracking.tenant.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.IdGenerator;
+import com.tfp.timetracking.tenant.domain.event.TenantActivated;
+import com.tfp.timetracking.tenant.domain.event.TenantArchived;
+import com.tfp.timetracking.tenant.domain.event.TenantReactivated;
 import com.tfp.timetracking.tenant.domain.event.TenantRegistered;
+import com.tfp.timetracking.tenant.domain.event.TenantSuspended;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -96,25 +101,110 @@ class TenantTest {
     }
 
     @Test
-    void deactivateMarksTenantInactiveAndUpdatesTimestamp() {
-        Instant registeredAt = FIXED_NOW;
-        Instant deactivatedAt = FIXED_NOW.plusSeconds(60);
-        Deque<Instant> instants = new ArrayDeque<>(List.of(registeredAt, deactivatedAt));
-        Clock sequencedClock = instants::poll;
+    void requestRegistrationCreatesPendingTenantWithoutEvents() {
+        Tenant tenant =
+                Tenant.requestRegistration("Acme Corp", "Europe/Madrid", fixedClock, fixedIdGenerator(UUID.randomUUID()));
 
-        Tenant tenant = Tenant.register("Acme Corp", "Europe/Madrid", sequencedClock, fixedIdGenerator(UUID.randomUUID()));
-        tenant.deactivate(sequencedClock);
-
-        assertThat(tenant.status()).isEqualTo(TenantStatus.INACTIVE);
+        assertThat(tenant.status()).isEqualTo(TenantStatus.PENDING);
         assertThat(tenant.isActive()).isFalse();
-        assertThat(tenant.updatedAt()).isEqualTo(deactivatedAt);
-        assertThat(tenant.createdAt()).isEqualTo(registeredAt);
+        assertThat(tenant.activatedAt()).isNull();
+        assertThat(tenant.pullDomainEvents()).isEmpty();
+    }
+
+    @Test
+    void activateMovesPendingToActiveAndEmitsEvent() {
+        Instant activatedAt = FIXED_NOW.plusSeconds(60);
+        Clock sequencedClock = new ArrayDeque<>(List.of(FIXED_NOW, activatedAt))::poll;
+        Tenant tenant =
+                Tenant.requestRegistration("Acme Corp", "Europe/Madrid", sequencedClock, fixedIdGenerator(UUID.randomUUID()));
+
+        tenant.activate(sequencedClock, UUID::randomUUID);
+
+        assertThat(tenant.status()).isEqualTo(TenantStatus.ACTIVE);
+        assertThat(tenant.isActive()).isTrue();
+        assertThat(tenant.activatedAt()).isEqualTo(activatedAt);
+        assertThat(tenant.pullDomainEvents()).hasSize(1).first().isInstanceOf(TenantActivated.class);
+    }
+
+    @Test
+    void suspendRequiresReasonAndMovesActiveToSuspended() {
+        Instant suspendedAt = FIXED_NOW.plusSeconds(60);
+        Clock sequencedClock = new ArrayDeque<>(List.of(FIXED_NOW, suspendedAt))::poll;
+        Tenant tenant = Tenant.register("Acme Corp", "Europe/Madrid", sequencedClock, fixedIdGenerator(UUID.randomUUID()));
+        tenant.pullDomainEvents();
+
+        tenant.suspend("Impago reiterado", sequencedClock, UUID::randomUUID);
+
+        assertThat(tenant.status()).isEqualTo(TenantStatus.SUSPENDED);
+        assertThat(tenant.suspensionReason()).isEqualTo("Impago reiterado");
+        assertThat(tenant.suspendedAt()).isEqualTo(suspendedAt);
+        assertThat(tenant.pullDomainEvents()).hasSize(1).first().isInstanceOf(TenantSuspended.class);
+    }
+
+    @Test
+    void suspendRejectsBlankReason() {
+        Tenant tenant = Tenant.register("Acme Corp", "Europe/Madrid", fixedClock, fixedIdGenerator(UUID.randomUUID()));
+        assertThatIllegalArgumentException().isThrownBy(() -> tenant.suspend("  ", fixedClock, UUID::randomUUID));
+    }
+
+    @Test
+    void reactivateMovesSuspendedToActiveAndClearsReason() {
+        Tenant tenant = Tenant.register("Acme Corp", "Europe/Madrid", fixedClock, fixedIdGenerator(UUID.randomUUID()));
+        tenant.suspend("Impago", fixedClock, UUID::randomUUID);
+        tenant.pullDomainEvents();
+
+        tenant.reactivate(fixedClock, UUID::randomUUID);
+
+        assertThat(tenant.status()).isEqualTo(TenantStatus.ACTIVE);
+        assertThat(tenant.suspensionReason()).isNull();
+        assertThat(tenant.pullDomainEvents()).hasSize(1).first().isInstanceOf(TenantReactivated.class);
+    }
+
+    @Test
+    void archiveMovesActiveToArchivedAndIsTerminal() {
+        Tenant tenant = Tenant.register("Acme Corp", "Europe/Madrid", fixedClock, fixedIdGenerator(UUID.randomUUID()));
+        tenant.pullDomainEvents();
+
+        tenant.archive(null, fixedClock, UUID::randomUUID);
+
+        assertThat(tenant.status()).isEqualTo(TenantStatus.ARCHIVED);
+        assertThat(tenant.archivedAt()).isEqualTo(FIXED_NOW);
+        assertThat(tenant.pullDomainEvents()).hasSize(1).first().isInstanceOf(TenantArchived.class);
+    }
+
+    @Test
+    void rejectsInvalidTransitions() {
+        Tenant pending =
+                Tenant.requestRegistration("Acme", "Europe/Madrid", fixedClock, fixedIdGenerator(UUID.randomUUID()));
+        assertThatExceptionOfType(IllegalTenantTransitionException.class)
+                .isThrownBy(() -> pending.suspend("x", fixedClock, UUID::randomUUID));
+
+        Tenant active = Tenant.register("Acme", "Europe/Madrid", fixedClock, fixedIdGenerator(UUID.randomUUID()));
+        assertThatExceptionOfType(IllegalTenantTransitionException.class)
+                .isThrownBy(() -> active.activate(fixedClock, UUID::randomUUID));
+        assertThatExceptionOfType(IllegalTenantTransitionException.class)
+                .isThrownBy(() -> active.reactivate(fixedClock, UUID::randomUUID));
+
+        active.archive("cierre", fixedClock, UUID::randomUUID);
+        assertThatExceptionOfType(IllegalTenantTransitionException.class)
+                .isThrownBy(() -> active.suspend("x", fixedClock, UUID::randomUUID));
+        assertThatExceptionOfType(IllegalTenantTransitionException.class)
+                .isThrownBy(() -> active.archive("x", fixedClock, UUID::randomUUID));
     }
 
     @Test
     void reconstituteDoesNotGenerateDomainEvents() {
         Tenant tenant = Tenant.reconstitute(
-                UUID.randomUUID(), "Acme Corp", TenantStatus.ACTIVE, "Europe/Madrid", FIXED_NOW, FIXED_NOW);
+                UUID.randomUUID(),
+                "Acme Corp",
+                TenantStatus.ACTIVE,
+                "Europe/Madrid",
+                FIXED_NOW,
+                FIXED_NOW,
+                FIXED_NOW,
+                null,
+                null,
+                null);
 
         assertThat(tenant.pullDomainEvents()).isEmpty();
     }

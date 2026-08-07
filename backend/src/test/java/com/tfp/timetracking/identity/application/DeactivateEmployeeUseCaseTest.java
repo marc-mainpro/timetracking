@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import com.tfp.timetracking.identity.domain.LastAdminException;
 import com.tfp.timetracking.identity.domain.RefreshTokenRepository;
 import com.tfp.timetracking.identity.domain.Role;
+import com.tfp.timetracking.identity.domain.SessionRepository;
 import com.tfp.timetracking.identity.domain.User;
 import com.tfp.timetracking.identity.domain.UserRepository;
 import com.tfp.timetracking.identity.domain.UserStatus;
@@ -24,10 +25,12 @@ class DeactivateEmployeeUseCaseTest {
     void rejectsDeactivatingLastActiveAdmin() {
         UserRepository userRepository = org.mockito.Mockito.mock(UserRepository.class);
         RefreshTokenRepository refreshTokenRepository = org.mockito.Mockito.mock(RefreshTokenRepository.class);
+        SessionRepository sessionRepository = org.mockito.Mockito.mock(SessionRepository.class);
         TenantContext tenantContext = org.mockito.Mockito.mock(TenantContext.class);
         DeactivateEmployeeUseCase useCase = new DeactivateEmployeeUseCase(
                 userRepository,
                 refreshTokenRepository,
+                sessionRepository,
                 tenantContext,
                 () -> Instant.now(),
                 UUID::randomUUID,
