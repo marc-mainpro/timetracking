@@ -2,18 +2,32 @@
 
 Paquete base: `com.tfp.timetracking`. Módulos (paquetes de primer nivel):
 
-- `identity`: usuarios, autenticación, roles.
-- `tenant`: organizaciones (tenants).
-- `timetracking`: jornadas (Workday) y pausas (BreakEntry).
+- `identity`: usuarios, autenticación, roles, sesiones, bloqueo de cuenta y
+  recuperación de contraseña.
+- `tenant`: organizaciones, su ciclo de vida y las solicitudes de alta.
+- `timetracking`: jornadas (Workday), pausas (BreakEntry), reglas horarias y
+  evaluación de la jornada.
+- `calendar`: calendarios laborales, festivos, jornadas especiales y
+  asignación por ámbito (tenant, equipo o empleado).
+- `absence`: tipos de ausencia y solicitudes con su resolución.
+- `shift`: plantillas de turno y asignaciones, incluidos los nocturnos.
 - `corrections`: solicitudes de corrección sobre jornadas.
 - `reporting`: informes de horas trabajadas.
+- `notification`: avisos al usuario y su envío por correo con reintentos.
 - `audit`: registro de auditoría de operaciones sensibles.
 - `outbox`: mensajes de integración transaccionales.
 - `shared`: utilidades comunes (errores, tipos de dominio compartidos).
 
-En `shared.application` residen además puertos transversales usados por varios
-módulos, como `TenantContext` (tenant, usuario y roles resueltos desde el
-principal autenticado) y `AuthenticatedPrincipalStateChecker`.
+En `shared.application` residen además los puertos transversales usados por
+varios módulos: `TenantContext` (tenant, usuario y roles resueltos desde el
+principal autenticado), `AuthenticatedPrincipalStateChecker`,
+`IntegrationEventMapper` y `TenantUsageQuery`.
+
+Que un puerto viva en `shared` no es una decisión estética: cuando los dos
+módulos que conecta ya se conocen en un sentido —`tenant` depende de `identity`
+para crear el primer administrador—, declarar el puerto en el módulo consumidor
+obligaría al otro a mirar hacia atrás y cerraría un ciclo. Es el criterio de
+ADR-0011 y lo verifica `ModuleCyclesTest`.
 
 Cada módulo se organiza en capas, de dentro hacia fuera:
 

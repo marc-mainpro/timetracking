@@ -1,47 +1,66 @@
-# TFP — MVP control horario
+# TFP — SaaS multitenant de control horario
 
 [![CI](https://github.com/marc-mainpro/timetracking/actions/workflows/ci.yml/badge.svg)](https://github.com/marc-mainpro/timetracking/actions/workflows/ci.yml)
 
-MVP SaaS multitenant de control horario con Spring Boot, Angular y PostgreSQL.
-Incluye alta de tenants por administración de plataforma (`PLATFORM_ADMIN`),
-autenticación JWT con refresh token, gestión de empleados, fichajes,
-correcciones, informes, auditoría y Transactional Outbox.
+SaaS multitenant de control horario con Spring Boot, Angular y PostgreSQL,
+construido como monolito modular.
 
-> V2: el alta de tenants es una operación de plataforma
-> (`POST /api/v1/platform/tenants`, rol `PLATFORM_ADMIN`). El registro público
-> autoservicio está deshabilitado por defecto (`registration.public.enabled`).
+## Qué hace
 
-## Estado actual del desarrollo
+- **Administración de plataforma**: alta, activación, suspensión, reactivación y
+  archivado de tenants por un `PLATFORM_ADMIN`, con auditoría de cada acción.
+- **Alta pública en tres pasos**: solicitud, verificación por correo y aprobación
+  desde plataforma. Deshabilitada por defecto
+  (`registration.public.enabled`); un tenant nunca nace operativo de un solo
+  paso.
+- **Autenticación**: JWT de vida corta, refresh token rotatorio en cookie
+  `HttpOnly`, sesiones revocables, bloqueo temporal por intentos fallidos,
+  recuperación de contraseña y rate limiting por ruta.
+- **Control horario**: jornadas y pausas, correcciones con aprobación, reglas
+  horarias configurables (redondeo, tolerancias, jornada máxima, descanso
+  obligatorio) y evaluación automática de cada jornada cerrada.
+- **Planificación**: calendarios laborales con festivos y jornadas especiales,
+  asignables por tenant, equipo o empleado; y turnos, incluidos los que cruzan
+  medianoche, que prevalecen sobre el calendario como tiempo previsto.
+- **Ausencias**: solicitud, aprobación y rechazo, con efecto sobre el tiempo
+  esperado de la jornada.
+- **Informes** por empleado, equipo y periodo, con exportación CSV.
+- **Notificaciones** internas y por correo, entregadas mediante Transactional
+  Outbox con reintentos e idempotencia.
+- **Operación**: logs estructurados con correlation ID, métricas, sondas de
+  salud, backup automatizado y procedimiento de restauración probado.
 
-Actualmente este proyecto constuye un MVP básico donde se pueden manejar
-multiples tenant, registrar la jornada laboral de los usuarios, hacer ajustes
-sobre dichos fichajes y extraer informes de fichajes en formato CSV.
+## Fuera de alcance (decisión, no omisión)
 
-### Próximos pasos
-
-- gestión de vacaciones y ausencias.
-- control de incidencias horarias.
-- Horarios y calendarios personales y de equipo.
-- Gestión de turnos.
-- Notificaciones.
-- infromes avanzados.
-- Observabilidad.
-- despliegue continuo mediante Docker y github container registry
-
-### Pasos para una versión productiva
-
-- billing.
-- MFA.
-- Mensajeria (RabbitMQ o Kafka).
-- Workers para tareas pesadas.
+MFA, SSO, API pública para terceros, broker de mensajería, facturación, alta
+disponibilidad, escalado horizontal, Kubernetes, event sourcing y CQRS completo.
+Están descartados en `requisitos-v2-control-horario.md` §11 para no condicionar
+la arquitectura con abstracciones anticipadas.
 
 ## Arquitectura
 
 - Monolito modular con separación dominio/aplicación/infraestructura.
 - Backend: Spring Boot 3.5.9, Java 21, PostgreSQL, Flyway, Spring Security (JWT).
 - Frontend: Angular 19 (mobile-first) servido por nginx con CSP estricta.
-- Multitenancy por `tenantId` derivado del principal autenticado.
-- Eventos de integración persistidos en outbox transaccional.
+- Multitenancy por `tenantId` derivado del principal autenticado, nunca de la
+  petición.
+- Eventos de integración persistidos en outbox transaccional, con consumidores
+  idempotentes.
+- Reglas de arquitectura verificadas en cada build por ArchUnit: dominio sin
+  Spring, controladores sin repositorios, módulos sin ciclos y autorización
+  obligatoria en los endpoints privilegiados.
+
+## Pruebas
+
+```bash
+cd backend && mvn -B verify        # unitarias, integración con Testcontainers, ArchUnit y cobertura
+cd frontend && npm run test:coverage
+cd frontend && npm run e2e         # E2E de navegador contra la pila de Docker Compose
+```
+
+Los E2E requieren la pila levantada (`docker compose up -d --build`),
+`PUBLIC_REGISTRATION_ENABLED=true` y las credenciales de `PLATFORM_ADMIN`. Ver
+`docs/testing/estrategia.md`.
 
 READMEs de cada subproyecto (stack, estructura y comandos de desarrollo):
 
