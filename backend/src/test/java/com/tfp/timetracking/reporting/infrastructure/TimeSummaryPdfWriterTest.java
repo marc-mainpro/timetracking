@@ -2,12 +2,15 @@ package com.tfp.timetracking.reporting.infrastructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.tfp.timetracking.reporting.domain.EmployeeName;
 import com.tfp.timetracking.reporting.domain.TenantEmployeeSummary;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -24,7 +27,9 @@ class TimeSummaryPdfWriterTest {
     @Test
     void producesAReadablePdfWithTheReportContent() throws IOException {
         UUID employeeId = UUID.randomUUID();
-        byte[] pdf = writer.render(List.of(summary(employeeId, Duration.ofHours(8).plusMinutes(30))), FROM, TO);
+        Map<UUID, EmployeeName> names = Map.of(employeeId, new EmployeeName("Ana", "Ruiz"));
+        byte[] pdf = writer.render(
+                List.of(summary(employeeId, Duration.ofHours(8).plusMinutes(30))), names, FROM, TO);
 
         // No basta con que devuelva bytes: se abre el documento y se lee, que es
         // lo que hará quien lo reciba.
@@ -33,25 +38,39 @@ class TimeSummaryPdfWriterTest {
         assertThat(text).contains("Informe de horas por empleado");
         assertThat(text).contains("01/07/2026").contains("31/07/2026");
         assertThat(text).contains("8h 30m");
+        assertThat(text).contains("Ruiz Ana");
     }
 
     @Test
     void statesExplicitlyWhenThereIsNothingToReport() {
         // Un PDF con solo la cabecera de tabla parecería un fallo de generación.
-        String text = textOf(writer.render(List.of(), FROM, TO));
+        String text = textOf(writer.render(List.of(), Map.of(), FROM, TO));
 
         assertThat(text).contains("No hay jornadas registradas en este periodo");
+    }
+
+    @Test
+    void fallsBackToTheEmployeeIdWhenTheNameIsUnknown() {
+        UUID employeeId = UUID.randomUUID();
+        byte[] pdf = writer.render(List.of(summary(employeeId, Duration.ofHours(8))), Map.of(), FROM, TO);
+
+        // La celda se trunca al ancho de columna (ver Cursor#truncate): basta con
+        // comprobar el prefijo del id, no la cadena completa.
+        assertThat(textOf(pdf)).contains(employeeId.toString().substring(0, 8));
     }
 
     @Test
     void paginatesAndRepeatsTheHeaderOnEveryPage() throws IOException {
         // Una hoja suelta de un informe largo debe seguir siendo legible.
         List<TenantEmployeeSummary> many = new ArrayList<>();
+        Map<UUID, EmployeeName> names = new HashMap<>();
         for (int i = 0; i < 120; i++) {
-            many.add(summary(UUID.randomUUID(), Duration.ofHours(8)));
+            UUID employeeId = UUID.randomUUID();
+            many.add(summary(employeeId, Duration.ofHours(8)));
+            names.put(employeeId, new EmployeeName("Empleado", "Numero" + i));
         }
 
-        byte[] pdf = writer.render(many, FROM, TO);
+        byte[] pdf = writer.render(many, names, FROM, TO);
 
         try (PDDocument document = Loader.loadPDF(pdf)) {
             assertThat(document.getNumberOfPages()).isGreaterThan(1);

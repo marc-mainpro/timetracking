@@ -25,11 +25,17 @@
           <span>Organización</span>
           <input type="text" formControlName="companyName" placeholder="Acme S.L." />
         </label>
+        @if (form.controls.companyName.invalid && form.controls.companyName.touched) {
+          <div class="validation">Indica el nombre de la organización.</div>
+        }
 
         <label>
           <span>Zona horaria</span>
           <input type="text" formControlName="timezone" placeholder="Europe/Madrid" />
         </label>
+        @if (form.controls.timezone.invalid && form.controls.timezone.touched) {
+          <div class="validation">Indica la zona horaria.</div>
+        }
 
         <div class="two-cols">
           <label>
@@ -41,11 +47,26 @@
             <input type="text" formControlName="lastName" placeholder="Ruiz" />
           </label>
         </div>
+        @if (form.controls.firstName.invalid && form.controls.firstName.touched) {
+          <div class="validation">Indica tu nombre.</div>
+        }
+        @if (form.controls.lastName.invalid && form.controls.lastName.touched) {
+          <div class="validation">Indica tus apellidos.</div>
+        }
 
         <label>
           <span>Correo</span>
           <input type="email" formControlName="email" placeholder="ana@acme.test" />
         </label>
+        @if (form.controls.email.invalid && form.controls.email.touched) {
+          <div class="validation">
+            @if (form.controls.email.errors?.['required']) {
+              Introduce un correo.
+            } @else {
+              Introduce un correo válido.
+            }
+          </div>
+        }
 
         <label>
           <span>Contraseña</span>
@@ -55,6 +76,15 @@
             autocomplete="new-password"
             placeholder="Al menos 10 caracteres" />
         </label>
+        @if (form.controls.password.invalid && form.controls.password.touched) {
+          <div class="validation">
+            @if (form.controls.password.errors?.['required']) {
+              Introduce una contraseña.
+            } @else {
+              La contraseña debe tener al menos 10 caracteres.
+            }
+          </div>
+        }
 
         <label class="checkbox">
           <input type="checkbox" formControlName="acceptTerms" />

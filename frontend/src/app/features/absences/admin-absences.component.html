@@ -29,8 +29,8 @@
         @for (absence of absences(); track absence.id) {
           <button type="button" class="queue-row" (click)="selectAbsence(absence)">
             <div>
-              <strong>{{ typeName(absence.absenceTypeId) }}</strong>
-              <span>{{ absence.startDate }} al {{ absence.endDate }}</span>
+              <strong>{{ employeeName(absence.employeeId) }}</strong>
+              <span>{{ typeName(absence.absenceTypeId) }} · {{ absence.startDate }} al {{ absence.endDate }}</span>
             </div>
             <span class="pill" [class.pill--approved]="absence.status === 'APPROVED'" [class.pill--rejected]="absence.status === 'REJECTED'">
               {{ absence.status }}
@@ -44,7 +44,7 @@
       @if (selectedAbsence(); as absence) {
         <div class="detail-head">
           <div>
-            <p class="eyebrow">Solicitud</p>
+            <p class="eyebrow">Solicitud de {{ employeeName(absence.employeeId) }}</p>
             <h2>{{ typeName(absence.absenceTypeId) }}</h2>
             <p>{{ absence.startDate }} al {{ absence.endDate }}</p>
           </div>
@@ -90,8 +90,8 @@
       <h2>Aprobadas en el rango</h2>
       @for (absence of approvedAbsences(); track absence.id) {
         <article class="approved-row">
-          <strong>{{ typeName(absence.absenceTypeId) }}</strong>
-          <span>{{ absence.startDate }} al {{ absence.endDate }}</span>
+          <strong>{{ employeeName(absence.employeeId) }}</strong>
+          <span>{{ typeName(absence.absenceTypeId) }} · {{ absence.startDate }} al {{ absence.endDate }}</span>
         </article>
       } @empty {
         <p>No hay ausencias aprobadas para mostrar.</p>

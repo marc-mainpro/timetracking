@@ -1,7 +1,10 @@
 package com.tfp.timetracking.reporting.application;
 
+import com.tfp.timetracking.reporting.domain.EmployeeName;
 import com.tfp.timetracking.reporting.domain.TenantEmployeeSummary;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Formateador CSV puro (sin Spring) para el informe agregado de tenant
@@ -24,7 +27,8 @@ public final class TimeSummaryCsvWriter {
 
     private static final String LINE_SEPARATOR = "\r\n";
     private static final String[] HEADERS = {
-        "employeeId",
+        "lastName",
+        "firstName",
         "workedSeconds",
         "pausedSeconds",
         "expectedSeconds",
@@ -39,19 +43,26 @@ public final class TimeSummaryCsvWriter {
 
     private TimeSummaryCsvWriter() {}
 
-    public static String write(List<TenantEmployeeSummary> summaries) {
+    /**
+     * @param names nombre de cada empleado del tenant, resuelto por
+     *     {@link com.tfp.timetracking.reporting.domain.EmployeeDirectoryPort}.
+     *     Un empleado sin entrada (id no encontrado) exporta las columnas de
+     *     nombre vacias en vez de romper la exportacion.
+     */
+    public static String write(List<TenantEmployeeSummary> summaries, Map<UUID, EmployeeName> names) {
         StringBuilder csv = new StringBuilder();
         csv.append(String.join(",", HEADERS)).append(LINE_SEPARATOR);
         for (TenantEmployeeSummary summary : summaries) {
-            csv.append(toRow(summary)).append(LINE_SEPARATOR);
+            csv.append(toRow(summary, names.get(summary.employeeId()))).append(LINE_SEPARATOR);
         }
         return csv.toString();
     }
 
-    private static String toRow(TenantEmployeeSummary summary) {
+    private static String toRow(TenantEmployeeSummary summary, EmployeeName name) {
         return String.join(
                 ",",
-                escape(summary.employeeId().toString()),
+                escape(name != null ? name.lastName() : ""),
+                escape(name != null ? name.firstName() : ""),
                 escape(Long.toString(summary.worked().getSeconds())),
                 escape(Long.toString(summary.paused().getSeconds())),
                 escape(Long.toString(summary.expected().getSeconds())),

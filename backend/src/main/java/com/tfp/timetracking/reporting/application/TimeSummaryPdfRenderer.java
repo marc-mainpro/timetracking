@@ -1,8 +1,11 @@
 package com.tfp.timetracking.reporting.application;
 
+import com.tfp.timetracking.reporting.domain.EmployeeName;
 import com.tfp.timetracking.reporting.domain.TenantEmployeeSummary;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Puerto de renderizado del informe en PDF (T100-06).
@@ -13,5 +16,5 @@ import java.util.List;
  */
 public interface TimeSummaryPdfRenderer {
 
-    byte[] render(List<TenantEmployeeSummary> summaries, Instant from, Instant to);
+    byte[] render(List<TenantEmployeeSummary> summaries, Map<UUID, EmployeeName> names, Instant from, Instant to);
 }

@@ -1,6 +1,7 @@
 package com.tfp.timetracking.reporting.infrastructure;
 
 import com.tfp.timetracking.reporting.application.TimeSummaryPdfRenderer;
+import com.tfp.timetracking.reporting.domain.EmployeeName;
 import com.tfp.timetracking.reporting.domain.TenantEmployeeSummary;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -10,6 +11,8 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -51,7 +54,7 @@ public class TimeSummaryPdfWriter implements TimeSummaryPdfRenderer {
     private static final float[] COLUMN_WIDTHS = {170f, 70f, 60f, 70f, 60f, 75f, 60f};
 
     @Override
-    public byte[] render(List<TenantEmployeeSummary> summaries, Instant from, Instant to) {
+    public byte[] render(List<TenantEmployeeSummary> summaries, Map<UUID, EmployeeName> names, Instant from, Instant to) {
         try (PDDocument document = new PDDocument();
                 ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             Cursor cursor = new Cursor(document);
@@ -65,8 +68,9 @@ public class TimeSummaryPdfWriter implements TimeSummaryPdfRenderer {
                 cursor.text("No hay jornadas registradas en este periodo.");
             }
             for (TenantEmployeeSummary summary : summaries) {
+                EmployeeName name = names.get(summary.employeeId());
                 cursor.row(new String[] {
-                    summary.employeeId().toString(),
+                    name != null ? name.displayName() : summary.employeeId().toString(),
                     humanDuration(summary.worked()),
                     humanDuration(summary.paused()),
                     humanDuration(summary.expected()),

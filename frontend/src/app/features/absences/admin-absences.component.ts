@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { AdminEmployeesService, Employee } from '../admin-employees/admin-employees.service';
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import { Absence, AbsenceStatus, AbsenceType, AbsencesService } from './absences.service';
 
@@ -13,6 +14,7 @@ import { Absence, AbsenceStatus, AbsenceType, AbsencesService } from './absences
 })
 export class AdminAbsencesComponent {
   private readonly absencesService = inject(AbsencesService);
+  private readonly employeesService = inject(AdminEmployeesService);
   private readonly errorMessagesService = inject(ErrorMessagesService);
   private readonly fb = inject(FormBuilder);
 
@@ -24,6 +26,7 @@ export class AdminAbsencesComponent {
   readonly decisionError = signal<string | null>(null);
   readonly types = signal<Record<string, string>>({});
   readonly selectedStatus = signal<AbsenceStatus | ''>('PENDING');
+  readonly employees = signal<Employee[]>([]);
 
   readonly rejectForm = this.fb.nonNullable.group({
     resolutionComment: ['', [Validators.required, Validators.maxLength(500)]]
@@ -36,6 +39,12 @@ export class AdminAbsencesComponent {
   constructor() {
     this.loadTypes();
     this.load();
+    this.loadEmployees();
+  }
+
+  employeeName(employeeId: string): string {
+    const employee = this.employees().find((candidate) => candidate.id === employeeId);
+    return employee ? `${employee.lastName} ${employee.firstName}` : employeeId;
   }
 
   applyStatus(status: AbsenceStatus | ''): void {
@@ -90,6 +99,13 @@ export class AdminAbsencesComponent {
         this.loading.set(false);
         this.decisionError.set(this.errorMessagesService.fromProblem(error.error));
       }
+    });
+  }
+
+  private loadEmployees(): void {
+    this.employeesService.list(0, 100).subscribe({
+      next: (result) => this.employees.set(result.content),
+      error: () => this.employees.set([])
     });
   }
 

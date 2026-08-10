@@ -12,11 +12,17 @@
         <span>Desde</span>
         <input type="date" formControlName="from" />
       </label>
+      @if (form.controls.from.invalid && form.controls.from.touched) {
+        <div class="validation">Indica la fecha "desde".</div>
+      }
 
       <label>
         <span>Hasta</span>
         <input type="date" formControlName="to" />
       </label>
+      @if (form.controls.to.invalid && form.controls.to.touched) {
+        <div class="validation">Indica la fecha "hasta".</div>
+      }
 
       <div class="form-actions">
         <button type="submit" [disabled]="loading()">{{ loading() ? 'Cargando...' : 'Generar informe' }}</button>
@@ -64,7 +70,7 @@
             <tbody>
               @for (row of results(); track row) {
                 <tr>
-                  <td>{{ row.employeeId }}</td>
+                  <td>{{ employeeName(row.employeeId) }}</td>
                   <td>{{ row.worked | isoDuration: 'hm' }}</td>
                   <td>{{ row.paused | isoDuration: 'hm' }}</td>
                   <td>{{ row.workdayCount }}</td>

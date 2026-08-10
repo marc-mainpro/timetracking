@@ -228,8 +228,10 @@ class ReportControllerIntegrationTest {
                 .getResponse()
                 .getContentAsString();
 
-        assertCsvContains(csv, "employeeId,workedSeconds,pausedSeconds,expectedSeconds,effectiveWorkedSeconds,overtimeSeconds,deviationSeconds,workdayCount,adjustedWorkdayCount,openWorkdays,evaluatedWorkdayCount");
-        assertCsvContains(csv, employeeId + ",7200,0,7200,7200,0,0,1,0,0,1");
+        // TestTenantFactory crea el empleado con firstName="Employee" y
+        // lastName=seed (aqui "tenant-csv"); Actor no expone el nombre.
+        assertCsvContains(csv, "lastName,firstName,workedSeconds,pausedSeconds,expectedSeconds,effectiveWorkedSeconds,overtimeSeconds,deviationSeconds,workdayCount,adjustedWorkdayCount,openWorkdays,evaluatedWorkdayCount");
+        assertCsvContains(csv, "tenant-csv,Employee,7200,0,7200,7200,0,0,1,0,0,1");
     }
 
     @Test

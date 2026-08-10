@@ -26,6 +26,9 @@
             }
           </select>
         </label>
+        @if (form.controls.absenceTypeId.invalid && form.controls.absenceTypeId.touched) {
+          <div class="validation">Selecciona un tipo de ausencia.</div>
+        }
         <div class="date-grid">
           <label>
             <span>Inicio</span>
@@ -36,6 +39,12 @@
             <input type="date" formControlName="endDate" />
           </label>
         </div>
+        @if (form.controls.startDate.invalid && form.controls.startDate.touched) {
+          <div class="validation">Indica la fecha de inicio.</div>
+        }
+        @if (form.controls.endDate.invalid && form.controls.endDate.touched) {
+          <div class="validation">Indica la fecha de fin.</div>
+        }
         <label>
           <span>Motivo</span>
           <textarea rows="3" formControlName="reason" placeholder="Opcional: añade contexto si hace falta"></textarea>

@@ -28,6 +28,9 @@ describe('AdminAbsencesComponent', () => {
   it('loads types and admin absences on init', () => {
     httpMock.expectOne('/api/v1/app/absence-types').flush([{ id: 'type-1', code: 'VAC', name: 'Vacaciones', requiresApproval: true, allowsAttachment: false, active: true }]);
     httpMock.expectOne((request) => request.url === '/api/v1/admin/absences').flush([]);
+    httpMock
+      .expectOne((request) => request.url === '/api/v1/employees')
+      .flush({ content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 });
 
     expect(component.approvedAbsences().length).toBe(0);
   });

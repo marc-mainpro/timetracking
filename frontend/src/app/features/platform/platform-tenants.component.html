@@ -88,18 +88,42 @@
           Organización
           <input type="text" formControlName="tenantName" />
         </label>
+        @if (form.controls.tenantName.invalid && form.controls.tenantName.touched) {
+          <div class="validation">Indica el nombre de la organización.</div>
+        }
         <label>
           Zona horaria
           <input type="text" formControlName="timezone" />
         </label>
+        @if (form.controls.timezone.invalid && form.controls.timezone.touched) {
+          <div class="validation">Indica la zona horaria.</div>
+        }
         <label>
           Email del admin
           <input type="email" formControlName="adminEmail" />
         </label>
+        @if (form.controls.adminEmail.invalid && form.controls.adminEmail.touched) {
+          <div class="validation">
+            @if (form.controls.adminEmail.errors?.['required']) {
+              Introduce un correo.
+            } @else {
+              Introduce un correo válido.
+            }
+          </div>
+        }
         <label>
           Contraseña del admin
           <input type="password" formControlName="adminPassword" autocomplete="new-password" />
         </label>
+        @if (form.controls.adminPassword.invalid && form.controls.adminPassword.touched) {
+          <div class="validation">
+            @if (form.controls.adminPassword.errors?.['required']) {
+              Introduce una contraseña.
+            } @else {
+              La contraseña debe tener al menos 10 caracteres.
+            }
+          </div>
+        }
         <div class="two-cols">
           <label>
             Nombre
@@ -110,6 +134,12 @@
             <input type="text" formControlName="lastName" />
           </label>
         </div>
+        @if (form.controls.firstName.invalid && form.controls.firstName.touched) {
+          <div class="validation">Indica el nombre.</div>
+        }
+        @if (form.controls.lastName.invalid && form.controls.lastName.touched) {
+          <div class="validation">Indica el apellido.</div>
+        }
         @if (formError(); as err) {
           <p class="error">{{ err }}</p>
         }

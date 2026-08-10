@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { AdminEmployeesService, Employee } from '../admin-employees/admin-employees.service';
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import { Workday } from '../workdays/workdays.service';
 import { Correction, CorrectionsService, CorrectionStatus, PagedCorrections } from './corrections.service';
@@ -14,6 +15,7 @@ import { Correction, CorrectionsService, CorrectionStatus, PagedCorrections } fr
 })
 export class AdminCorrectionsComponent {
   private readonly correctionsService = inject(CorrectionsService);
+  private readonly employeesService = inject(AdminEmployeesService);
   private readonly errorMessagesService = inject(ErrorMessagesService);
   private readonly fb = inject(FormBuilder);
 
@@ -25,6 +27,7 @@ export class AdminCorrectionsComponent {
   readonly currentWorkday = signal<Workday | null>(null);
   readonly actionMessage = signal<string | null>(null);
   readonly decisionError = signal<string | null>(null);
+  readonly employees = signal<Employee[]>([]);
 
   readonly approveForm = this.fb.nonNullable.group({
     resolutionComment: ['']
@@ -36,6 +39,19 @@ export class AdminCorrectionsComponent {
 
   constructor() {
     this.load();
+    this.loadEmployees();
+  }
+
+  employeeName(employeeId: string): string {
+    const employee = this.employees().find((candidate) => candidate.id === employeeId);
+    return employee ? `${employee.lastName} ${employee.firstName}` : employeeId;
+  }
+
+  private loadEmployees(): void {
+    this.employeesService.list(0, 100).subscribe({
+      next: (result) => this.employees.set(result.content),
+      error: () => this.employees.set([])
+    });
   }
 
   applyStatus(status: CorrectionStatus | ''): void {
