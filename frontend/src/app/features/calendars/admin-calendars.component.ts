@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { AdminEmployeesService, Employee } from '../admin-employees/admin-employees.service';
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import {
   AssignmentScope,
@@ -58,6 +59,7 @@ const DEFAULT_WORKING_MINUTES = 480;
 })
 export class AdminCalendarsComponent {
   private readonly calendarsService = inject(CalendarsService);
+  private readonly employeesService = inject(AdminEmployeesService);
   private readonly errorMessagesService = inject(ErrorMessagesService);
   private readonly fb = inject(FormBuilder);
 
@@ -78,6 +80,7 @@ export class AdminCalendarsComponent {
   readonly formError = signal<string | null>(null);
   readonly assignError = signal<string | null>(null);
   readonly effectiveError = signal<string | null>(null);
+  readonly employees = signal<Employee[]>([]);
 
   /** Reglas semanales en edición. Se manejan como signal y no como FormArray: son 7 filas fijas. */
   readonly dayRules = signal<DayRule[]>(this.defaultDayRules());
@@ -117,6 +120,19 @@ export class AdminCalendarsComponent {
   constructor() {
     this.load();
     this.loadAssignments();
+    this.loadEmployees();
+  }
+
+  private loadEmployees(): void {
+    this.employeesService.list(0, 100).subscribe({
+      next: (result) => this.employees.set(result.content),
+      error: () => this.employees.set([])
+    });
+  }
+
+  employeeName(employeeId: string): string {
+    const employee = this.employees().find((candidate) => candidate.id === employeeId);
+    return employee ? `${employee.lastName} ${employee.firstName}` : employeeId;
   }
 
   private defaultDayRules(): DayRule[] {

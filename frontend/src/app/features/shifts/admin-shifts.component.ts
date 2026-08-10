@@ -118,4 +118,9 @@ export class AdminShiftsComponent {
       error: (error) => this.errorMessage.set(this.errorMessagesService.fromProblem(error.error))
     });
   }
+
+  employeeName(employeeId: string): string {
+    const employee = this.employees().find((candidate) => candidate.id === employeeId);
+    return employee ? `${employee.lastName} ${employee.firstName}` : employeeId;
+  }
 }

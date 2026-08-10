@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 
+import { AdminEmployeesService, Employee } from '../admin-employees/admin-employees.service';
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import { IsoDurationPipe } from '../../core/pipes/iso-duration.pipe';
 import { ReportsService, TenantEmployeeSummary } from './reports.service';
@@ -13,6 +14,7 @@ import { ReportsService, TenantEmployeeSummary } from './reports.service';
 })
 export class ReportsComponent {
   private readonly reportsService = inject(ReportsService);
+  private readonly employeesService = inject(AdminEmployeesService);
   private readonly errorMessagesService = inject(ErrorMessagesService);
   private readonly fb = inject(FormBuilder);
 
@@ -20,6 +22,7 @@ export class ReportsComponent {
   readonly exporting = signal(false);
   readonly results = signal<TenantEmployeeSummary[] | null>(null);
   readonly formError = signal<string | null>(null);
+  readonly employees = signal<Employee[]>([]);
 
   readonly form = this.fb.nonNullable.group(
     {
@@ -31,6 +34,19 @@ export class ReportsComponent {
 
   constructor() {
     this.load();
+    this.loadEmployees();
+  }
+
+  employeeName(employeeId: string): string {
+    const employee = this.employees().find((candidate) => candidate.id === employeeId);
+    return employee ? `${employee.lastName} ${employee.firstName}` : employeeId;
+  }
+
+  private loadEmployees(): void {
+    this.employeesService.list(0, 100).subscribe({
+      next: (result) => this.employees.set(result.content),
+      error: () => this.employees.set([])
+    });
   }
 
   load(): void {

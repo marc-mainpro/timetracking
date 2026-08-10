@@ -119,7 +119,7 @@
         <div class="assignment-list">
           @for (assignment of assignments(); track assignment.id) {
             <article class="item-row">
-              <strong>{{ assignment.employeeId }}</strong>
+              <strong>{{ employeeName(assignment.employeeId) }}</strong>
               <span>{{ assignment.validFrom }}{{ assignment.validTo ? ' - ' + assignment.validTo : '' }}</span>
             </article>
           }

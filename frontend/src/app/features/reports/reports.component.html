@@ -70,7 +70,7 @@
             <tbody>
               @for (row of results(); track row) {
                 <tr>
-                  <td>{{ row.employeeId }}</td>
+                  <td>{{ employeeName(row.employeeId) }}</td>
                   <td>{{ row.worked | isoDuration: 'hm' }}</td>
                   <td>{{ row.paused | isoDuration: 'hm' }}</td>
                   <td>{{ row.workdayCount }}</td>
