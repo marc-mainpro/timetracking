@@ -2,9 +2,11 @@ package com.tfp.timetracking.reporting.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.tfp.timetracking.reporting.domain.EmployeeName;
 import com.tfp.timetracking.reporting.domain.TenantEmployeeSummary;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -26,19 +28,41 @@ class TimeSummaryCsvWriterTest {
                 0,
                 1);
 
-        String csv = TimeSummaryCsvWriter.write(List.of(summary));
+        String csv = TimeSummaryCsvWriter.write(
+                List.of(summary), Map.of(employeeId, new EmployeeName("Ana", "Ruiz")));
 
         assertThat(csv)
-                .isEqualTo("employeeId,workedSeconds,pausedSeconds,expectedSeconds,effectiveWorkedSeconds,overtimeSeconds,deviationSeconds,workdayCount,adjustedWorkdayCount,openWorkdays,evaluatedWorkdayCount\r\n"
-                        + employeeId + ",28800,1800,28800,28800,900,0,1,0,0,1\r\n");
+                .isEqualTo("lastName,firstName,workedSeconds,pausedSeconds,expectedSeconds,effectiveWorkedSeconds,overtimeSeconds,deviationSeconds,workdayCount,adjustedWorkdayCount,openWorkdays,evaluatedWorkdayCount\r\n"
+                        + "Ruiz,Ana,28800,1800,28800,28800,900,0,1,0,0,1\r\n");
+    }
+
+    @Test
+    void writesEmptyNameColumnsWhenEmployeeIsUnknown() {
+        UUID employeeId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        TenantEmployeeSummary summary = new TenantEmployeeSummary(
+                employeeId,
+                Duration.ofHours(8),
+                Duration.ofMinutes(30),
+                Duration.ofHours(8),
+                Duration.ofHours(8),
+                Duration.ofMinutes(15),
+                Duration.ZERO,
+                1,
+                0,
+                0,
+                1);
+
+        String csv = TimeSummaryCsvWriter.write(List.of(summary), Map.of());
+
+        assertThat(csv).contains(",,28800,1800,28800,28800,900,0,1,0,0,1\r\n");
     }
 
     @Test
     void writesOnlyHeaderWhenEmpty() {
-        String csv = TimeSummaryCsvWriter.write(List.of());
+        String csv = TimeSummaryCsvWriter.write(List.of(), Map.of());
 
         assertThat(csv)
-                .isEqualTo("employeeId,workedSeconds,pausedSeconds,expectedSeconds,effectiveWorkedSeconds,overtimeSeconds,deviationSeconds,workdayCount,adjustedWorkdayCount,openWorkdays,evaluatedWorkdayCount\r\n");
+                .isEqualTo("lastName,firstName,workedSeconds,pausedSeconds,expectedSeconds,effectiveWorkedSeconds,overtimeSeconds,deviationSeconds,workdayCount,adjustedWorkdayCount,openWorkdays,evaluatedWorkdayCount\r\n");
     }
 
     @Test
