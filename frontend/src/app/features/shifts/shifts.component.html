@@ -12,6 +12,9 @@
       <span>Fecha</span>
       <input type="date" formControlName="date" />
     </label>
+    @if (form.controls.date.invalid && form.controls.date.touched) {
+      <div class="validation">Indica una fecha.</div>
+    }
     <button type="submit" [disabled]="loading()">Consultar</button>
   </form>
 

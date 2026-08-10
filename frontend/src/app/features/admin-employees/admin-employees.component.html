@@ -61,21 +61,45 @@
           <span>Correo</span>
           <input type="email" formControlName="email" placeholder="empleado@acme.test" />
         </label>
+        @if (form.controls.email.invalid && form.controls.email.touched) {
+          <div class="validation">
+            @if (form.controls.email.errors?.['required']) {
+              Introduce un correo.
+            } @else {
+              Introduce un correo válido.
+            }
+          </div>
+        }
 
         <label>
           <span>Contraseña inicial</span>
           <input type="password" formControlName="password" placeholder="Mínimo 10 caracteres" />
         </label>
+        @if (form.controls.password.invalid && form.controls.password.touched) {
+          <div class="validation">
+            @if (form.controls.password.errors?.['required']) {
+              Introduce una contraseña.
+            } @else {
+              La contraseña debe tener al menos 10 caracteres.
+            }
+          </div>
+        }
 
         <label>
           <span>Nombre</span>
           <input type="text" formControlName="firstName" />
         </label>
+        @if (form.controls.firstName.invalid && form.controls.firstName.touched) {
+          <div class="validation">Indica el nombre.</div>
+        }
 
         <label>
           <span>Apellidos</span>
           <input type="text" formControlName="lastName" />
         </label>
+        @if (form.controls.lastName.invalid && form.controls.lastName.touched) {
+          <div class="validation">Indica los apellidos.</div>
+        }
 
         <div class="roles-grid">
           <label class="role-toggle">

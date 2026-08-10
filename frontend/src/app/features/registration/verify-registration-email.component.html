@@ -31,6 +31,15 @@
           <span>Tu correo</span>
           <input type="email" formControlName="email" placeholder="ana@acme.test" />
         </label>
+        @if (resendForm.controls.email.invalid && resendForm.controls.email.touched) {
+          <div class="validation">
+            @if (resendForm.controls.email.errors?.['required']) {
+              Introduce un correo.
+            } @else {
+              Introduce un correo válido.
+            }
+          </div>
+        }
         <button type="submit" [disabled]="resending()">
           {{ resending() ? 'Enviando…' : 'Enviarme otro enlace' }}
         </button>

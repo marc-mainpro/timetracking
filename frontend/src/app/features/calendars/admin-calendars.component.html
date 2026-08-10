@@ -77,10 +77,16 @@
           Nombre
           <input type="text" formControlName="name" />
         </label>
+        @if (form.controls.name.invalid && form.controls.name.touched) {
+          <div class="validation">Indica el nombre del calendario.</div>
+        }
         <label>
           Zona horaria (IANA)
           <input type="text" formControlName="timezone" />
         </label>
+        @if (form.controls.timezone.invalid && form.controls.timezone.touched) {
+          <div class="validation">Indica la zona horaria.</div>
+        }
         <div class="two-cols">
           <label>
             Vigencia desde
@@ -91,6 +97,9 @@
             <input type="date" formControlName="validTo" />
           </label>
         </div>
+        @if (form.controls.validFrom.invalid && form.controls.validFrom.touched) {
+          <div class="validation">Indica la fecha de inicio de vigencia.</div>
+        }
 
         <h3>Días laborables</h3>
         @for (rule of dayRules(); track rule.dayOfWeek) {
@@ -127,6 +136,9 @@
         <input type="text" formControlName="name" placeholder="Nombre del festivo" />
         <button type="submit">Añadir</button>
       </form>
+      @if (holidayForm.invalid && (holidayForm.controls.date.touched || holidayForm.controls.name.touched)) {
+        <div class="validation">Indica la fecha y el nombre del festivo.</div>
+      }
       @for (holiday of holidays(); track holiday.date) {
         <div class="entry-row">
           <span>{{ holiday.date }} · {{ holiday.name }}</span>
@@ -143,6 +155,9 @@
         <input type="number" formControlName="expectedMinutes" min="0" max="1440" />
         <button type="submit">Añadir</button>
       </form>
+      @if (specialDayForm.invalid && (specialDayForm.controls.date.touched || specialDayForm.controls.name.touched || specialDayForm.controls.expectedMinutes.touched)) {
+        <div class="validation">Indica fecha, descripción y minutos (0-1440) válidos.</div>
+      }
       @for (specialDay of specialDays(); track specialDay.date) {
         <div class="entry-row">
           <span>
@@ -181,6 +196,9 @@
         <input type="text" formControlName="targetId" placeholder="Id de equipo o empleado" />
         <button type="submit">Asignar</button>
       </form>
+      @if (assignForm.controls.calendarId.invalid && assignForm.controls.calendarId.touched) {
+        <div class="validation">Selecciona un calendario.</div>
+      }
       @if (assignError(); as err) {
         <p class="error">{{ err }}</p>
       }
@@ -209,6 +227,9 @@
           Id de empleado
           <input type="text" formControlName="employeeId" />
         </label>
+        @if (effectiveForm.controls.employeeId.invalid && effectiveForm.controls.employeeId.touched) {
+          <div class="validation">Indica el id del empleado.</div>
+        }
         <label>
           Id de equipo (opcional)
           <input type="text" formControlName="teamId" />
@@ -217,6 +238,9 @@
           Fecha
           <input type="date" formControlName="date" />
         </label>
+        @if (effectiveForm.controls.date.invalid && effectiveForm.controls.date.touched) {
+          <div class="validation">Indica la fecha a consultar.</div>
+        }
         <button type="submit">Resolver</button>
       </form>
 

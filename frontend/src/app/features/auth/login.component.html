@@ -14,11 +14,23 @@
         <span>Correo</span>
         <input type="email" formControlName="email" placeholder="ana@empresa.test" />
       </label>
+      @if (form.controls.email.invalid && form.controls.email.touched) {
+        <div class="validation">
+          @if (form.controls.email.errors?.['required']) {
+            Introduce tu correo.
+          } @else {
+            Introduce un correo válido.
+          }
+        </div>
+      }
 
       <label>
         <span>Contraseña</span>
         <input type="password" formControlName="password" placeholder="Tu contraseña" />
       </label>
+      @if (form.controls.password.invalid && form.controls.password.touched) {
+        <div class="validation">Introduce tu contraseña.</div>
+      }
 
       @if (errorMessage(); as message) {
         <p class="error">{{ message }}</p>
