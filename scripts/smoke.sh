@@ -24,7 +24,7 @@ curl -fsS http://localhost:4200/ >/dev/null
 # Escritura real de extremo a extremo: una solicitud de alta pública. Responde
 # 202 y no crea el tenant todavía —eso lo decide plataforma al aprobarla—, pero
 # atraviesa API, base de datos y outbox, que es lo que el smoke debe comprobar.
-# Requiere PUBLIC_REGISTRATION_ENABLED=true (por defecto está deshabilitado).
+# Requiere PUBLIC_REGISTRATION_ENABLED=true (por defecto está habilitado).
 suffix="$(date +%s)"
 payload="{\"companyName\":\"Smoke Demo ${suffix}\",\"timezone\":\"Europe/Madrid\",\"firstName\":\"Smoke\",\"lastName\":\"Demo\",\"email\":\"smoke+${suffix}@acme.test\",\"password\":\"supersecretpwd\",\"acceptTerms\":true}"
 

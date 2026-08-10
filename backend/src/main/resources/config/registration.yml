@@ -4,12 +4,14 @@
 # tenant solo nace —y nace en estado PENDING— cuando un PLATFORM_ADMIN aprueba
 # la solicitud (T53-03, diseño §7.3).
 #
-# registration.public.enabled sigue apagado por defecto: con el flag en false
-# los endpoints públicos de alta responden 403 y la única vía de creación es
-# POST /api/v1/platform/tenants (RF-TEN-003, ADR-0010).
+# registration.public.enabled está encendido por defecto: cada solicitud sigue
+# exigiendo verificación de correo y aprobación de un PLATFORM_ADMIN antes de
+# que exista ningún tenant. Con el flag en false los endpoints públicos de
+# alta responden 403 y la única vía de creación es
+# POST /api/v1/platform/tenants (RF-TEN-003, RF-TEN-010, ADR-0010).
 registration:
   public:
-    enabled: ${PUBLIC_REGISTRATION_ENABLED:false}
+    enabled: ${PUBLIC_REGISTRATION_ENABLED:true}
 
   # Verificación de correo (RF-REG-004, T53-05). Del token solo se almacena su
   # hash; el valor en claro viaja una única vez, dentro del correo.

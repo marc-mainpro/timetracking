@@ -76,11 +76,13 @@ platform:
     password: ${PLATFORM_ADMIN_PASSWORD:}
 
 registration:
-  # El alta de tenants es una operación de plataforma (PLATFORM_ADMIN vía
-  # POST /api/v1/platform/tenants). El registro público autoservicio está
-  # deshabilitado por defecto (RF-TEN-010).
+  # El alta de tenants también puede hacerse como operación de plataforma
+  # (PLATFORM_ADMIN vía POST /api/v1/platform/tenants). El registro público
+  # autoservicio está habilitado por defecto; cada solicitud sigue exigiendo
+  # verificación de correo y aprobación de un PLATFORM_ADMIN antes de que
+  # exista ningún tenant (RF-TEN-010 solo exige poder deshabilitarlo).
   public:
-    enabled: ${PUBLIC_REGISTRATION_ENABLED:false}
+    enabled: ${PUBLIC_REGISTRATION_ENABLED:true}
 
 app:
   request:

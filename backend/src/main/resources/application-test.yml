@@ -47,8 +47,9 @@ app:
     max-payload-bytes: 65536
 
 # El registro público se mantiene habilitado en el perfil de test para que las
-# suites que arrancan tenants sigan funcionando;
-# en producción está deshabilitado por defecto (RF-TEN-010).
+# suites que arrancan tenants sigan funcionando (ya es el valor por defecto,
+# ver config/registration.yml; se fija aquí explícitamente para no depender de
+# él). Puede deshabilitarse por configuración (RF-TEN-010).
 registration:
   public:
     enabled: true
