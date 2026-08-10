@@ -26,8 +26,8 @@
       @for (correction of result()?.content ?? []; track correction) {
         <button type="button" class="queue-row" (click)="selectCorrection(correction)">
           <div>
-            <strong>{{ correction.reason }}</strong>
-            <span>{{ correction.createdAt | date: 'short' }}</span>
+            <strong>{{ employeeName(correction.requestedBy) }}</strong>
+            <span>{{ correction.reason }} · {{ correction.createdAt | date: 'short' }}</span>
           </div>
           <span class="pill" [class.pill--approved]="correction.status === 'APPROVED'" [class.pill--rejected]="correction.status === 'REJECTED'">
             {{ correction.status }}
@@ -40,7 +40,7 @@
       <section class="card detail-card">
         <div class="detail-head">
           <div>
-            <p class="eyebrow">Solicitud</p>
+            <p class="eyebrow">Solicitud de {{ employeeName(correction.requestedBy) }}</p>
             <h2>{{ correction.reason }}</h2>
           </div>
           <span class="pill" [class.pill--approved]="correction.status === 'APPROVED'" [class.pill--rejected]="correction.status === 'REJECTED'">{{ correction.status }}</span>
