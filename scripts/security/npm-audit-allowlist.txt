@@ -12,7 +12,7 @@
 #     advisory siga en la lista. Es intencionado: obliga a revisarla.
 #   - Aprobacion: ver docs/security/dependency-scanning-policy.md.
 #
-# Estado a 2026-08-04: 24 advisories high/critical, ninguno resoluble sin tocar
+# Estado a 2026-08-10: 21 advisories high/critical, ninguno resoluble sin tocar
 # frontend/package.json o frontend/package-lock.json, que son ficheros
 # reservados para el agente principal (ver HANDOFF.md).
 
@@ -24,12 +24,9 @@ GHSA-rgjc-h3x7-9mwg|@angular/core|runtime|2026-11-04|Solo se corrige con Angular
 GHSA-jj27-h5hq-8x99|@angular/core|runtime|2026-11-04|Solo se corrige con Angular 21 (breaking). Requiere i18n con traducciones no confiables; la app no usa @angular/localize.
 
 # --- Cadena de build/test: no se empaqueta en la imagen del frontend ---
-GHSA-mh99-v99m-4gvg|brace-expansion|build|2026-11-04|Transitiva de eslint/typescript-eslint. Fix no breaking disponible via `npm audit fix`: pendiente de que el agente propietario del lockfile lo aplique (HANDOFF.md).
-GHSA-rgw5-rvv9-x895|brace-expansion|build|2026-11-04|Idem GHSA-mh99-v99m-4gvg.
-GHSA-7p8r-x3mc-p8w7|fast-uri|build|2026-11-04|Transitiva de la cadena de build. Fix no breaking via `npm audit fix`: pendiente del propietario del lockfile.
-GHSA-v2hh-gcrm-f6hx|fast-uri|build|2026-11-04|Idem GHSA-7p8r-x3mc-p8w7.
-GHSA-mwp4-54f8-5fhr|ip-address|build|2026-11-04|Transitiva de la cadena de build. Fix no breaking via `npm audit fix`: pendiente del propietario del lockfile.
 GHSA-gcq2-9pq2-cxqm|http-proxy-middleware|build|2026-11-04|Solo afecta al dev-server de Angular, que no se ejecuta en produccion ni en CI.
+GHSA-w3rx-r6r6-pgpr|image-size|build|2026-11-10|Transitiva de less@4.2.2 (fija `image-size: ~0.5.0`), a su vez de @angular-devkit/build-angular. Sin version corregida en el upstream (first_patched_version=null incluso en 2.0.2): ni un `npm audit fix --force` lo resuelve. Solo procesa assets de imagen locales del propio repo durante el build, no input de red.
+GHSA-5p2g-fcmc-qvqq|image-size|build|2026-11-10|Idem GHSA-w3rx-r6r6-pgpr: mismo paquete sin parche disponible, mismo vector (build-time, assets locales).
 GHSA-fx2h-pf6j-xcff|vite|build|2026-11-04|Solo afecta al dev-server sobre Windows. Fix exige @angular-devkit/build-angular 21 (breaking).
 GHSA-x9g3-xrwr-cwfg|piscina|build|2026-11-04|Transitiva de @angular/build. Fix exige @angular-devkit/build-angular 21 (breaking).
 GHSA-r28c-9q8g-f849|postcss|build|2026-11-04|Lectura de ficheros .map en tiempo de build con sourceMappingURL controlado; las fuentes del build son del propio repo. Fix exige devkit 21 (breaking).
@@ -43,4 +40,3 @@ GHSA-8x88-c5mf-7j5w|tar|build|2026-11-04|Idem GHSA-23hp-3jrh-7fpw.
 GHSA-9ppj-qmqm-q256|tar|build|2026-11-04|Idem GHSA-23hp-3jrh-7fpw.
 GHSA-qffp-2rhf-9h96|tar|build|2026-11-04|Idem GHSA-23hp-3jrh-7fpw.
 GHSA-r6q2-hw4h-h46w|tar|build|2026-11-04|Idem GHSA-23hp-3jrh-7fpw.
-GHSA-5p4m-2wfm-xmqj|js-yaml|build|2026-11-04|Transitiva de la cadena de build/test del frontend. La correccion todavia no esta retroportada a las ramas que consume Angular 19 y no llega al navegador ni a la imagen publicada.
