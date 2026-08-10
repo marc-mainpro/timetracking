@@ -35,6 +35,9 @@ describe('AdminCorrectionsComponent', () => {
       totalElements: 0,
       totalPages: 0
     });
+    httpMock
+      .expectOne((request) => request.url === '/api/v1/employees')
+      .flush({ content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 });
     expect(component).toBeTruthy();
   });
 
@@ -46,6 +49,9 @@ describe('AdminCorrectionsComponent', () => {
       totalElements: 0,
       totalPages: 0
     });
+    httpMock
+      .expectOne((request) => request.url === '/api/v1/employees')
+      .flush({ content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 });
 
     component.selectedCorrection.set({
       id: 'cor-1',
@@ -86,6 +92,9 @@ describe('AdminCorrectionsComponent', () => {
       totalElements: 1,
       totalPages: 1
     });
+    httpMock
+      .expectOne((request) => request.url === '/api/v1/employees')
+      .flush({ content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 });
 
     const correction = component.result()?.content[0];
     expect(correction).toBeTruthy();

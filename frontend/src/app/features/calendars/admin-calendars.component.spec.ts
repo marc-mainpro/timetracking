@@ -20,7 +20,7 @@ describe('AdminCalendarsComponent', () => {
     specialDayCount: 0
   };
 
-  /** Resuelve las dos peticiones que el componente lanza en su constructor. */
+  /** Resuelve las peticiones que el componente lanza en su constructor. */
   function flushInitialLoad(content: unknown[] = []): void {
     httpMock
       .expectOne((request) => request.url === '/api/v1/admin/calendars')
@@ -28,6 +28,9 @@ describe('AdminCalendarsComponent', () => {
     httpMock
       .expectOne((request) => request.url === '/api/v1/admin/calendar-assignments')
       .flush({ content: [], page: 0, size: 50, totalElements: 0, totalPages: 0 });
+    httpMock
+      .expectOne((request) => request.url === '/api/v1/employees')
+      .flush({ content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 });
   }
 
   beforeEach(async () => {

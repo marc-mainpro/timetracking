@@ -25,6 +25,12 @@ describe('ReportsComponent', () => {
     httpMock.verify();
   });
 
+  function flushEmployees(): void {
+    httpMock
+      .expectOne((req) => req.url === '/api/v1/employees')
+      .flush({ content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 });
+  }
+
   it('should create and load the tenant summary on init', () => {
     const request = httpMock.expectOne((req) => req.url === '/api/v1/reports/tenant/summary');
     expect(request.request.method).toBe('GET');
@@ -38,6 +44,7 @@ describe('ReportsComponent', () => {
         openWorkdays: 0
       }
     ]);
+    flushEmployees();
 
     expect(component).toBeTruthy();
     expect(component.results()?.length).toBe(1);
@@ -55,6 +62,7 @@ describe('ReportsComponent', () => {
         openWorkdays: 0
       }
     ]);
+    flushEmployees();
     fixture.detectChanges();
 
     const rows = fixture.nativeElement.querySelectorAll('tbody tr');
@@ -67,6 +75,7 @@ describe('ReportsComponent', () => {
   it('shows the empty state when the backend returns no data for the range', () => {
     const request = httpMock.expectOne((req) => req.url === '/api/v1/reports/tenant/summary');
     request.flush([]);
+    flushEmployees();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Sin datos en el rango seleccionado.');
@@ -74,6 +83,7 @@ describe('ReportsComponent', () => {
 
   it('rejects an inverted date range on the client before calling the backend', () => {
     httpMock.expectOne((req) => req.url === '/api/v1/reports/tenant/summary').flush([]);
+    flushEmployees();
 
     component.form.setValue({ from: '2026-02-28', to: '2026-02-01' });
     component.load();
@@ -85,6 +95,7 @@ describe('ReportsComponent', () => {
 
   it('shows the backend validation error for an invalid range', () => {
     httpMock.expectOne((req) => req.url === '/api/v1/reports/tenant/summary').flush([]);
+    flushEmployees();
 
     component.form.setValue({ from: '2026-02-01', to: '2026-02-28' });
     component.load();
@@ -97,6 +108,7 @@ describe('ReportsComponent', () => {
 
   it('requests the CSV export as a blob with the selected range and triggers a download', () => {
     httpMock.expectOne((req) => req.url === '/api/v1/reports/tenant/summary').flush([]);
+    flushEmployees();
 
     component.form.setValue({ from: '2026-02-01', to: '2026-02-28' });
     const clickSpy = spyOn(HTMLAnchorElement.prototype, 'click');
