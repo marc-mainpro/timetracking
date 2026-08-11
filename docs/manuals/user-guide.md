@@ -31,8 +31,9 @@
 1. Login: acceder a `/auth/login`. Si no recuerdas la contraseña, usa «¿Has
    olvidado tu contraseña?»: pide un enlace en `/auth/recuperar-contrasena` y el
    correo te lleva a `/restablecer-contrasena`, donde eliges una nueva. El enlace
-   caduca en una hora, solo puede usarse una vez y al usarlo se cierran las
-   sesiones abiertas en otros dispositivos.
+   solo puede usarse una vez, caduca en el plazo que indique el propio correo
+   (`AUTH_PASSWORD_RESET_TOKEN_TTL`, una hora por defecto) y al usarlo se cierran
+   las sesiones abiertas en otros dispositivos.
 2. Dashboard: en `/employee-dashboard` ver el estado actual de jornada.
 3. Fichaje: desde `/workdays`, iniciar jornada, iniciar/finalizar pausa y
    cerrar jornada.
