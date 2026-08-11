@@ -15,7 +15,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => {
       const alreadyRetried = req.headers.has('X-Auth-Retry');
       const isRefreshRequest = req.url.includes('/api/v1/auth/refresh');
-      if (error.status !== 401 || alreadyRetried || isRefreshRequest) {
+      // Un token de recuperación caducado también responde 401, pero ahí el 401
+      // habla del enlace, no de la sesión: reintentar con refresh acabaría
+      // redirigiendo al login y ocultando el motivo real al usuario.
+      const isPasswordResetRequest = req.url.includes('/api/v1/auth/password/');
+      if (error.status !== 401 || alreadyRetried || isRefreshRequest || isPasswordResetRequest) {
         return throwError(() => error);
       }
 
