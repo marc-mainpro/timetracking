@@ -48,6 +48,11 @@ services:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET es obligatorio (minimo 32 bytes); definelo en .env}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:4200}
       AUTH_REFRESH_COOKIE_SECURE: ${AUTH_REFRESH_COOKIE_SECURE:-false}
+      # Enlace del correo de recuperacion (RF-USR-006). Se deriva de
+      # FRONTEND_ORIGIN porque el enlace lo abre el navegador del usuario, no el
+      # backend: sin esto el correo apuntaria a localhost en cualquier entorno.
+      # Debe conservar un unico %s, que es donde se inserta el token.
+      AUTH_PASSWORD_RESET_URL_TEMPLATE: ${AUTH_PASSWORD_RESET_URL_TEMPLATE:-${FRONTEND_ORIGIN:-http://localhost:4200}/restablecer-contrasena?token=%s}
       # Aprovisionamiento controlado del PLATFORM_ADMIN inicial (T50-04).
       # Si se dejan vacios, no se crea ningun usuario de plataforma.
       PLATFORM_ADMIN_EMAIL: ${PLATFORM_ADMIN_EMAIL:-}
@@ -56,6 +61,10 @@ services:
       # cada solicitud sigue exigiendo verificación de correo y aprobación de
       # un PLATFORM_ADMIN antes de que exista ningún tenant.
       PUBLIC_REGISTRATION_ENABLED: ${PUBLIC_REGISTRATION_ENABLED:-true}
+      # Enlace del correo de verificacion (RF-REG-004). Mismo motivo que el de
+      # recuperacion: lo compone el job del outbox, sin peticion HTTP de la que
+      # deducir el dominio. Debe conservar un unico %s para el token.
+      REGISTRATION_VERIFICATION_URL: ${REGISTRATION_VERIFICATION_URL:-${FRONTEND_ORIGIN:-http://localhost:4200}/registro/verificar?token=%s}
       APP_REQUEST_MAX_PAYLOAD_BYTES: ${APP_REQUEST_MAX_PAYLOAD_BYTES:-65536}
       # Correo saliente (T110-01). Apunta a mailpit en desarrollo.
       MAIL_ENABLED: ${MAIL_ENABLED:-true}
