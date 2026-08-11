@@ -24,7 +24,7 @@ construido como monolito modular.
   medianoche, que prevalecen sobre el calendario como tiempo previsto.
 - **Ausencias**: solicitud, aprobación y rechazo, con efecto sobre el tiempo
   esperado de la jornada.
-- **Informes** por empleado, equipo y periodo, con exportación CSV.
+- **Informes** por empleado, equipo y periodo, con exportación CSV y PDF.
 - **Notificaciones** internas y por correo, entregadas mediante Transactional
   Outbox con reintentos e idempotencia.
 - **Operación**: logs estructurados con correlation ID, métricas, sondas de

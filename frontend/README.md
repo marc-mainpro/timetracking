@@ -25,6 +25,12 @@ estricta. Consume la API REST del backend bajo `/api/v1`.
   rejillas que se abren con `min-width`).
 - Navegación con **menú lateral escondible** (off-canvas + hamburguesa) en
   móvil y barra en línea en escritorio (`app.component.*`).
+- **Validación por campo**: cada control muestra su error bajo el campo con
+  `<div class="validation">` cuando está `invalid && touched`, con mensaje
+  concreto por tipo de error. `.error` queda para el fallo global del envío
+  (respuesta de la API) y `.validation` para el detalle de cada campo.
+- Los tokens de `styles.scss` dan `padding` y `border-radius` a `.card`, así
+  que las tarjetas no necesitan estilo local salvo que se salgan del patrón.
 
 ## Estructura
 
@@ -37,13 +43,26 @@ src/app/
     services/      auth.service, error-messages.service
   features/
     auth/                login y registro de organización
+    registration/        solicitud de alta y verificación por correo
     employee-dashboard/  jornada actual del empleado (reloj en vivo)
     workdays/            historial de jornadas
     corrections/         correcciones (empleado) y cola de revisión (admin)
-    reports/             informes de empleado y de tenant (con export CSV)
+    absences/            ausencias (empleado) y resolución (admin)
+    calendars/           calendarios laborales y asignaciones (admin)
+    shifts/              turnos propios y plantillas/asignaciones (admin)
+    notifications/       avisos del usuario
+    reports/             informes de empleado y de tenant (export CSV y PDF)
     admin-employees/     gestión de empleados (admin)
+    platform/            administración de plataforma (tenants y solicitudes)
   app.routes.ts        rutas con lazy loading y guards por rol
 ```
+
+### Empleados por nombre
+
+Las pantallas de administración (informes, ausencias, correcciones) muestran
+al empleado por **apellidos y nombre**, nunca por su UUID: cargan el listado
+de `/api/v1/employees` y resuelven el id contra él. Las exportaciones CSV y
+PDF ya llegan del backend con el nombre resuelto.
 
 ### Acceso por rol
 

@@ -23,6 +23,14 @@ varios módulos: `TenantContext` (tenant, usuario y roles resueltos desde el
 principal autenticado), `AuthenticatedPrincipalStateChecker`,
 `IntegrationEventMapper` y `TenantUsageQuery`.
 
+`reporting` define además `EmployeeDirectoryPort` en su propio `domain`, y
+`UserEmployeeDirectoryAdapter` lo implementa sobre `identity.domain.UserRepository`.
+Es el único punto donde `reporting` cruza hacia `identity`, y solo lo usan los
+formateadores de salida (CSV, PDF), que necesitan un empleado legible: la
+agregación de tiempo (`TenantEmployeeSummary`) sigue sin conocer nombres. El
+puerto vive en el módulo consumidor porque `identity` no depende de
+`reporting`, así que no se cierra ningún ciclo.
+
 Que un puerto viva en `shared` no es una decisión estética: cuando los dos
 módulos que conecta ya se conocen en un sentido —`tenant` depende de `identity`
 para crear el primer administrador—, declarar el puerto en el módulo consumidor
