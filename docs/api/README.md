@@ -116,6 +116,19 @@ busca por hash, caduca y solo puede usarse una vez. Si es valido, cambia la
 contrasena, marca el token como usado, revoca todos los `refresh_token` del
 usuario y limpia la cookie `refresh_token` con `204 No Content`.
 
+Interfaz de ambos: `/auth/recuperar-contrasena` (solicitud, enlazada desde el
+login) y `/restablecer-contrasena` (la que abre el enlace del correo). La segunda
+es una ruta de primer nivel porque la compone el backend en
+`auth.password-reset.reset-url-template`.
+
+Esa plantilla y su gemela del alta (`registration.verification-url-template`,
+ruta `/registro/verificar`) son la única forma que tiene el backend de saber a
+qué dominio enviar al usuario: el correo lo escribe el job del outbox, sin
+petición HTTP en curso, y deducir el dominio de la cabecera `Host` permitiría
+envenenar el enlace. En `docker-compose.yml` ambas se derivan de
+`FRONTEND_ORIGIN` (`AUTH_PASSWORD_RESET_URL_TEMPLATE` y
+`REGISTRATION_VERIFICATION_URL`).
+
 `POST /api/v1/public/tenant-registrations/**`: también está limitado por IP (`10 req/min` en
 configuración normal) y responde `429` con `RATE_LIMIT_EXCEEDED` cuando se
 supera la ventana. Si el email ya existe, el backend responde `409` sin

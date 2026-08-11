@@ -84,7 +84,8 @@ Variables de entorno relevantes (ver [`../.env.example`](../.env.example)):
 | --- | --- |
 | `DB_URL`, `DB_USER`, `DB_PASSWORD` | Conexión a PostgreSQL. |
 | `JWT_SECRET` | Secreto de firma HS256 (mínimo 32 bytes). |
-| `FRONTEND_ORIGIN` | Origen permitido para CORS. |
+| `FRONTEND_ORIGIN` | Origen permitido para CORS, y base de la que se derivan los enlaces de los correos. |
+| `AUTH_PASSWORD_RESET_URL_TEMPLATE`, `REGISTRATION_VERIFICATION_URL` | Enlaces de los correos de recuperación y de verificación de alta. Un único `%s` para el token. |
 | `AUTH_REFRESH_COOKIE_SECURE` | `true` en producción (cookie solo por HTTPS). |
 | `APP_REQUEST_MAX_PAYLOAD_BYTES` | Límite de tamaño de petición. |
 
