@@ -55,6 +55,7 @@ repositorio como `docs/api/openapi.yaml`.
 | GET | `/api/v1/reports/employees/{employeeId}/summary` | `EMPLOYEE` / `TENANT_ADMIN` | T801 |
 | GET | `/api/v1/reports/tenant/summary` | `TENANT_ADMIN` | T801 |
 | GET | `/api/v1/reports/tenant/export.csv` | `TENANT_ADMIN` | T801 |
+| GET | `/api/v1/reports/tenant/export.pdf` | `TENANT_ADMIN` | T100-06 |
 
 `POST /api/v1/public/tenant-registrations`: registra una **solicitud** de alta; el tenant y su primer usuario los crea la aprobación desde plataforma
 `TENANT_ADMIN` de forma transaccional. Body: `tenantName`, `timezone`,
@@ -255,8 +256,17 @@ campos actuales (`worked`, `paused`, `workdayCount`, `adjustedWorkdayCount`,
 
 `GET /api/v1/reports/tenant/export.csv`: mismo dato que `tenant/summary` en
 `text/csv` (UTF-8 sin BOM, cabecera
-`employeeId,workedSeconds,pausedSeconds,expectedSeconds,effectiveWorkedSeconds,overtimeSeconds,deviationSeconds,workdayCount,adjustedWorkdayCount,openWorkdays,evaluatedWorkdayCount`,
-campos escapados según RFC 4180). Solo `TENANT_ADMIN`.
+`lastName,firstName,workedSeconds,pausedSeconds,expectedSeconds,effectiveWorkedSeconds,overtimeSeconds,deviationSeconds,workdayCount,adjustedWorkdayCount,openWorkdays,evaluatedWorkdayCount`,
+campos escapados según RFC 4180). El fichero identifica al empleado por
+**apellidos y nombre**, no por `employeeId`: un UUID no es legible para quien
+abre la exportación. Los nombres se resuelven con `EmployeeDirectoryPort`; un
+empleado sin entrada en el directorio exporta esas dos columnas vacías en vez
+de romper la exportación. Solo `TENANT_ADMIN`.
+
+`GET /api/v1/reports/tenant/export.pdf`: mismo dato que `tenant/summary` en
+`application/pdf`, con la columna de empleado como `apellidos nombre`. Si un
+empleado no aparece en el directorio, el PDF cae al `employeeId` para no
+dejar la fila sin identificar. Solo `TENANT_ADMIN`.
 
 ## Formato de error
 
