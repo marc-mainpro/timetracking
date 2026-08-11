@@ -73,6 +73,61 @@ describe('authInterceptor', () => {
     expect(navigateSpy).toHaveBeenCalledWith(['/auth/login']);
   });
 
+  it('no envía el token a las rutas públicas aunque quede uno caducado en memoria', () => {
+    // Escenario real: la sesión expira, el token sigue en el signal (no hay
+    // recarga de página) y el usuario entra en «he olvidado mi contraseña».
+    // Con la cabecera puesta, Spring rechaza la petición con 401 antes de
+    // evaluar el permitAll y el usuario se queda sin poder pedir el enlace.
+    authService['accessToken'].set(expiredToken());
+
+    httpClient.post('/api/v1/auth/password/forgot', { email: 'ana@empresa.test' }).subscribe();
+
+    const request = httpMock.expectOne('/api/v1/auth/password/forgot');
+    expect(request.request.headers.has('Authorization')).toBeFalse();
+    request.flush({ message: 'ok' }, { status: 202, statusText: 'Accepted' });
+  });
+
+  it('tampoco lo envía al login ni al alta pública', () => {
+    authService['accessToken'].set(sampleToken(['EMPLOYEE']));
+
+    httpClient.post('/api/v1/auth/login', {}).subscribe();
+    httpClient.post('/api/v1/public/tenant-registrations', {}).subscribe();
+
+    const login = httpMock.expectOne('/api/v1/auth/login');
+    const registration = httpMock.expectOne('/api/v1/public/tenant-registrations');
+    expect(login.request.headers.has('Authorization')).toBeFalse();
+    expect(registration.request.headers.has('Authorization')).toBeFalse();
+    login.flush({});
+    registration.flush({});
+  });
+
+  it('sigue enviando el token a logout, que no es una ruta pública', () => {
+    authService['accessToken'].set(sampleToken(['EMPLOYEE']));
+
+    httpClient.post('/api/v1/auth/logout', {}).subscribe();
+
+    const request = httpMock.expectOne('/api/v1/auth/logout');
+    expect(request.request.headers.get('Authorization')).toContain('Bearer ');
+    request.flush({});
+  });
+
+  it('no intenta refrescar la sesión ante el 401 de un enlace de recuperación caducado', () => {
+    const navigateSpy = spyOn(router, 'navigate').and.resolveTo(true);
+    let failed = false;
+
+    httpClient
+      .post('/api/v1/auth/password/reset', { token: 'caducado', newPassword: 'contrasenanueva' })
+      .subscribe({ error: () => { failed = true; } });
+
+    httpMock
+      .expectOne('/api/v1/auth/password/reset')
+      .flush({ errorCode: 'INVALID_PASSWORD_RESET_TOKEN' }, { status: 401, statusText: 'Unauthorized' });
+
+    httpMock.expectNone('/api/v1/auth/refresh');
+    expect(navigateSpy).not.toHaveBeenCalled();
+    expect(failed).toBeTrue();
+  });
+
   it('does not retry a request already marked with X-Auth-Retry', () => {
     let failed = false;
     httpClient.get('/api/v1/workdays/current', { headers: { 'X-Auth-Retry': '1' } }).subscribe({ error: () => { failed = true; } });
@@ -85,10 +140,22 @@ describe('authInterceptor', () => {
   });
 });
 
-function sampleToken(roles: string[]): string {
-  const payload = btoa(JSON.stringify({ sub: 'user-id', tenantId: 'tenant-id', roles, exp: Math.floor(Date.now() / 1000) + 3600 }))
+function sampleToken(roles: string[], expiresInSeconds = 3600): string {
+  const payload = btoa(
+    JSON.stringify({
+      sub: 'user-id',
+      tenantId: 'tenant-id',
+      roles,
+      exp: Math.floor(Date.now() / 1000) + expiresInSeconds
+    })
+  )
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/, '');
   return `header.${payload}.signature`;
+}
+
+/** Token vencido pero todavía en memoria: el signal no se limpia solo. */
+function expiredToken(): string {
+  return sampleToken(['EMPLOYEE'], -3600);
 }
