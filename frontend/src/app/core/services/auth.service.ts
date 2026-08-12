@@ -12,6 +12,10 @@ interface LoginRequest {
   password: string;
 }
 
+export interface PasswordResetAccepted {
+  message: string;
+}
+
 interface JwtPayload {
   sub: string;
   tenantId: string;
@@ -56,6 +60,29 @@ export class AuthService {
       tap(() => this.clearSession()),
       map(() => void 0)
     );
+  }
+
+  /**
+   * Solicita el correo de recuperación (RF-USR-006). El backend responde 202 con
+   * un mensaje neutro exista o no la cuenta: la pantalla debe mostrarlo tal cual,
+   * sin deducir nada de él.
+   */
+  requestPasswordReset(email: string): Observable<PasswordResetAccepted> {
+    return this.http.post<PasswordResetAccepted>('/api/v1/auth/password/forgot', { email });
+  }
+
+  /**
+   * Consume el token del correo y fija la contraseña nueva. Va con
+   * `withCredentials` porque la respuesta borra la cookie de refresh: el backend
+   * revoca todas las sesiones al restablecer.
+   */
+  resetPassword(token: string, newPassword: string): Observable<void> {
+    return this.http
+      .post('/api/v1/auth/password/reset', { token, newPassword }, { withCredentials: true })
+      .pipe(
+        tap(() => this.clearSession()),
+        map(() => void 0)
+      );
   }
 
   isAuthenticated(): boolean {

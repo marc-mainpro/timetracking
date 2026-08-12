@@ -14,6 +14,15 @@
 - `JWT_SECRET`
 - `FRONTEND_ORIGIN`
 - `AUTH_REFRESH_COOKIE_SECURE`
+- `AUTH_PASSWORD_RESET_URL_TEMPLATE` y `REGISTRATION_VERIFICATION_URL`: enlaces
+  que se incluyen en los correos de recuperación de contraseña (RF-USR-006) y de
+  verificación del alta (RF-REG-004). En `docker-compose.yml` se derivan de
+  `FRONTEND_ORIGIN`, así que basta con apuntar esa variable al dominio público.
+  **Hay que indicarlos explícitamente**: el correo lo compone el job del outbox,
+  fuera de toda petición HTTP, así que no hay cabecera `Host` de la que deducir
+  el dominio; deducirlo de ella, además, permitiría envenenar el enlace con una
+  cabecera falsa. Deben conservar un único `%s`, que es donde va el token.
+  Si se dejan sin definir, ambos correos enviarían enlaces a `localhost:4200`.
 - `APP_REQUEST_MAX_PAYLOAD_BYTES`
 - `LOG_STRUCTURED_FORMAT` (formato de log: `ecs` por defecto; vacío = texto plano)
 - `OBSERVABILITY_OUTBOX_PENDING_THRESHOLD` (backlog a partir del cual el health

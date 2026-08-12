@@ -25,6 +25,13 @@ export class ErrorMessagesService {
       'ACCOUNT_LOCKED',
       'Tu cuenta está bloqueada temporalmente por varios intentos fallidos. Vuelve a intentarlo dentro de unos minutos.'
     ],
+    // El backend no distingue entre token inexistente, caducado y ya usado
+    // (RS-007): los tres llegan como INVALID_PASSWORD_RESET_TOKEN, así que el
+    // mensaje cubre los tres casos y ofrece la única salida posible.
+    [
+      'INVALID_PASSWORD_RESET_TOKEN',
+      'Ese enlace ya no es válido o ha caducado. Solicita uno nuevo para continuar.'
+    ],
     ['LAST_ADMIN', 'La organización debe mantener al menos un administrador activo.'],
     ['EMAIL_ALREADY_IN_USE', 'Ese correo ya está en uso.'],
     ['CORRECTION_ALREADY_PENDING', 'Ya existe una corrección pendiente para esa jornada.'],

@@ -48,6 +48,13 @@ export const routes: Routes = [
       import('./features/registration/registration.routes').then((m) => m.REGISTRATION_ROUTES)
   },
   {
+    // Ruta de primer nivel porque es la que compone el enlace del correo de
+    // recuperación (`auth.password-reset.reset-url-template` en el backend).
+    path: 'restablecer-contrasena',
+    loadComponent: () =>
+      import('./features/auth/reset-password.component').then((m) => m.ResetPasswordComponent)
+  },
+  {
     path: 'reports',
     canActivate: [authGuard, roleGuard(['EMPLOYEE'])],
     loadChildren: () =>

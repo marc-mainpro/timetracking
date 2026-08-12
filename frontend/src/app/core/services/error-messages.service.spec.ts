@@ -34,6 +34,12 @@ describe('ErrorMessagesService', () => {
     );
   });
 
+  it('translates an expired or already used password reset link', () => {
+    expect(service.fromProblem({ errorCode: 'INVALID_PASSWORD_RESET_TOKEN' })).toBe(
+      'Ese enlace ya no es válido o ha caducado. Solicita uno nuevo para continuar.'
+    );
+  });
+
   it('formats validation errors field by field', () => {
     expect(
       service.fromProblem({

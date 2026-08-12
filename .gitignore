@@ -15,9 +15,17 @@ coverage/
 .vscode/
 *.iml
 
-# Entorno
+# Entorno. El patrón es amplio a propósito: cualquier fichero que acabe en .env
+# puede llevar credenciales reales (DB_PASSWORD, JWT_SECRET, MAIL_PASSWORD…), y
+# los volcados de variables que exportan las plataformas de despliegue traen
+# nombres imprevisibles (timetracking-backend_latest.env). Enumerar nombres uno
+# a uno ya dejó fuera alguno.
+# Las plantillas .env.example sí van versionadas: se exceptúan explícitamente.
 .env
-*.local.env
+.env.*
+*.env
+!.env.example
+!*.env.example
 
 # SO
 .DS_Store
