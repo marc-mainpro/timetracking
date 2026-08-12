@@ -86,3 +86,10 @@ la misma transaccion que el ajuste de `Workday` y la escritura de auditoria.
   - doble aprobacion simultanea de la misma correccion
   - doble `start` simultaneo de jornada
   - carrera entre `startBreak` y `endWorkday`
+
+## Vista de proceso
+
+Este documento describe la estructura: qué módulos hay y qué contiene cada uno.
+El recorrido de cada operación de negocio a través de esos módulos —en qué orden
+ocurren las cosas y qué caminos alternativos hay— está en `docs/procesos/`, con
+diagramas de secuencia y máquinas de estado.

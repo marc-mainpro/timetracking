@@ -40,3 +40,8 @@ sourcing, nóminas, planificación de turnos, integraciones con terceros.
   tenant, sin secretos en el repositorio.
 - **Trazabilidad**: decisiones registradas como ADR, documentación viva junto
   al código.
+
+## Documentación relacionada
+
+- `docs/procesos/`: los procesos de negocio del sistema, de principio a fin, en
+  diagramas de secuencia y máquinas de estado.

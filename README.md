@@ -70,6 +70,7 @@ READMEs de cada subproyecto (stack, estructura y comandos de desarrollo):
 Documentación principal:
 
 - Arquitectura: `docs/architecture/`
+- Procesos de negocio (diagramas Mermaid): `docs/procesos/`
 - Dominio: `docs/domain/`
 - API: `docs/api/`
 - Seguridad: `docs/security/`
