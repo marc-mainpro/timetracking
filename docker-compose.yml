@@ -86,6 +86,11 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    environment:
+      # Destino del proxy_pass de nginx (frontend/nginx.conf.template). Aquí es
+      # el nombre del servicio, que resuelve el DNS interno de Docker; en Render
+      # lo inyecta la plataforma (ver render.yaml).
+      BACKEND_HOSTPORT: backend:8080
     ports:
       - "4200:8080"
     healthcheck:
