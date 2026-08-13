@@ -6,7 +6,7 @@ API REST del MVP SaaS multitenant de control horario. Monolito modular en
 eventos de integración.
 
 > Contexto general del producto y arranque de todo el stack: [`../README.md`](../README.md).
-> Diseño detallado: [`../SDD-MVP-control-horario.md`](../SDD-MVP-control-horario.md) y [`../docs/`](../docs).
+> Diseño detallado: [`../docs/specs/SDD-MVP-control-horario.md`](../docs/specs/SDD-MVP-control-horario.md) y [`../docs/`](../docs).
 
 ## Stack
 

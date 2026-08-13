@@ -1,6 +1,6 @@
 # CONTEXT-GLOBAL — Reglas transversales (obligatorio para toda tarea)
 
-Fuente de verdad: `SDD-MVP-control-horario.md`. Este fichero condensa lo que toda tarea debe cumplir. Ante conflicto, gana el SDD.
+Fuente de verdad: `docs/specs/SDD-MVP-control-horario.md`. Este fichero condensa lo que toda tarea debe cumplir. Ante conflicto, gana el SDD.
 
 ## 1. Qué se construye
 

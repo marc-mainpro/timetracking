@@ -12,7 +12,7 @@ refactorización y nadie se entera hasta que alguien la explota.
 
 ## Entradas
 
-- Requisito de seguridad afectado (`RS-*` de `requisitos-v2-control-horario.md`).
+- Requisito de seguridad afectado (`RS-*` de `docs/specs/requisitos-v2-control-horario.md`).
 - Endpoint, caso de uso o consulta a proteger.
 - `docs/security/threat-model.md` y `docs/security/owasp-review.md`.
 

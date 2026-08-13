@@ -51,7 +51,7 @@ Cobertura funcional nueva validada por tests unitarios e integración:
 - `docs/testing/informe-cobertura.md`
 - `tasks/_context/CONTEXT-GLOBAL.md`
 - `tasks/_context/CONTEXT-DOMINIO.md`
-- `SDD-MVP-control-horario.md`
+- `docs/specs/SDD-MVP-control-horario.md`
 
 ### ADR
 

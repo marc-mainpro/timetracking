@@ -1,6 +1,6 @@
 # Plan de tareas — MVP SaaS Control Horario
 
-Descomposición del `SDD-MVP-control-horario.md` en tareas ejecutables por subagentes económicos (p. ej. Haiku/Sonnet). Cada tarea es autocontenida: el subagente solo necesita leer los ficheros de contexto indicados y su ficha de tarea.
+Descomposición del `docs/specs/SDD-MVP-control-horario.md` en tareas ejecutables por subagentes económicos (p. ej. Haiku/Sonnet). Cada tarea es autocontenida: el subagente solo necesita leer los ficheros de contexto indicados y su ficha de tarea.
 
 ## Cómo lanzar una tarea a un subagente
 
