@@ -520,6 +520,20 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
     "companyName": "Acme Corp",
     "email": "owner@acme.test",
     "source": "PUBLIC_WEB"
+  }
+}
+```
+
+| `payload`        | Tipo   | Descripción                                            |
+| ---------------- | ------ | ------------------------------------------------------ |
+| `registrationId` | UUID   | Igual que `aggregateId`.                               |
+| `companyName`    | string | Nombre de la organización solicitada.                  |
+| `email`          | string | Correo del propietario, normalizado a minúsculas.      |
+| `source`         | string | Canal de entrada de la solicitud (`PUBLIC_WEB`).       |
+
+- **Idempotencia:** deduplicar por `eventId`. Un consumidor de métricas o
+  antifraude no debe contar dos veces la misma solicitud ante una redelivery.
+
 ### `calendar.calendar-created.v1`, `calendar.calendar-updated.v1`
 
 - **Módulo productor:** `calendar` (`calendar.application.integration.CalendarIntegrationEventMapper`).
@@ -545,15 +559,25 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
 }
 ```
 
-| `payload`        | Tipo   | Descripción                                            |
-| ---------------- | ------ | ------------------------------------------------------ |
-| `registrationId` | UUID   | Igual que `aggregateId`.                               |
-| `companyName`    | string | Nombre de la organización solicitada.                  |
-| `email`          | string | Correo del propietario, normalizado a minúsculas.      |
-| `source`         | string | Canal de entrada de la solicitud (`PUBLIC_WEB`).       |
+| `payload`    | Tipo   | Descripción                                                        |
+| ------------ | ------ | ------------------------------------------------------------------ |
+| `calendarId` | UUID   | Igual que `aggregateId`.                                           |
+| `name`       | string | Nombre del calendario, único dentro del tenant.                    |
+| `timezone`   | string | Zona horaria IANA del calendario (RF-CAL-007).                     |
+| `validFrom`  | string | Inicio de vigencia como fecha local `YYYY-MM-DD`, **no** instante. |
+| `validTo`    | string | Fin de vigencia inclusivo. **Ausente** si la vigencia es indefinida. |
 
-- **Idempotencia:** deduplicar por `eventId`. Un consumidor de métricas o
-  antifraude no debe contar dos veces la misma solicitud ante una redelivery.
+- **Fechas locales, no instantes:** la vigencia de un calendario es un periodo
+  del calendario civil (RNF-011). Serializarla como `Instant` obligaría a elegir
+  una hora arbitraria y haría que el mismo calendario «cambiara de día» según la
+  zona del consumidor.
+- **El payload es la cabecera, no el detalle:** reglas semanales, festivos y
+  jornadas especiales no viajan en el evento. Un consumidor que necesite el
+  detalle debe releerlo por la API. Mantener el contrato externo pequeño evita
+  versionarlo cada vez que cambie la estructura interna del calendario.
+- **Idempotencia:** deduplicar por `eventId`. `.updated` es un hecho de
+  reemplazo completo, así que reprocesarlo es inocuo si el consumidor guarda la
+  última versión leída.
 
 ### `tenant.registration-verification-requested.v1`
 
@@ -587,25 +611,21 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
     "verificationToken": "8Zt3xQ9pR1sV7kL0mN4bC6dE2fG5hJ8yA1uW3iO5qS0",
     "expiresAt": "2026-08-02T10:00:00Z",
     "resend": false
-| `payload`    | Tipo   | Descripción                                                        |
-| ------------ | ------ | ------------------------------------------------------------------ |
-| `calendarId` | UUID   | Igual que `aggregateId`.                                           |
-| `name`       | string | Nombre del calendario, único dentro del tenant.                    |
-| `timezone`   | string | Zona horaria IANA del calendario (RF-CAL-007).                     |
-| `validFrom`  | string | Inicio de vigencia como fecha local `YYYY-MM-DD`, **no** instante. |
-| `validTo`    | string | Fin de vigencia inclusivo. **Ausente** si la vigencia es indefinida. |
+  }
+}
+```
 
-- **Fechas locales, no instantes:** la vigencia de un calendario es un periodo
-  del calendario civil (RNF-011). Serializarla como `Instant` obligaría a elegir
-  una hora arbitraria y haría que el mismo calendario «cambiara de día» según la
-  zona del consumidor.
-- **El payload es la cabecera, no el detalle:** reglas semanales, festivos y
-  jornadas especiales no viajan en el evento. Un consumidor que necesite el
-  detalle debe releerlo por la API. Mantener el contrato externo pequeño evita
-  versionarlo cada vez que cambie la estructura interna del calendario.
-- **Idempotencia:** deduplicar por `eventId`. `.updated` es un hecho de
-  reemplazo completo, así que reprocesarlo es inocuo si el consumidor guarda la
-  última versión leída.
+| `payload`           | Tipo    | Descripción                                                  |
+| ------------------- | ------- | ------------------------------------------------------------ |
+| `registrationId`    | UUID    | Igual que `aggregateId`.                                     |
+| `email`             | string  | Destinatario del correo de verificación.                     |
+| `ownerFirstName`    | string  | Nombre del propietario, para personalizar el mensaje.        |
+| `verificationToken` | string  | Token en claro, un solo uso. **Nunca debe registrarse.**      |
+| `expiresAt`         | Instant | Caducidad del token.                                         |
+| `resend`            | boolean | `true` si es un reenvío y no el envío inicial.               |
+
+- **Idempotencia:** deduplicar por `eventId`. Reenviar dos veces el mismo correo
+  es molesto pero inocuo; el token no cambia por reprocesar el evento.
 
 ### `calendar.calendar-archived.v1`
 
@@ -632,17 +652,14 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
 }
 ```
 
-| `payload`           | Tipo    | Descripción                                                  |
-| ------------------- | ------- | ------------------------------------------------------------ |
-| `registrationId`    | UUID    | Igual que `aggregateId`.                                     |
-| `email`             | string  | Destinatario del correo de verificación.                     |
-| `ownerFirstName`    | string  | Nombre del propietario, para personalizar el mensaje.        |
-| `verificationToken` | string  | Token en claro, un solo uso. **Nunca debe registrarse.**      |
-| `expiresAt`         | Instant | Caducidad del token.                                         |
-| `resend`            | boolean | `true` si es un reenvío y no el envío inicial.               |
+| `payload`    | Tipo   | Descripción              |
+| ------------ | ------ | ------------------------ |
+| `calendarId` | UUID   | Igual que `aggregateId`. |
+| `name`       | string | Nombre en el momento de archivarlo. |
 
-- **Idempotencia:** deduplicar por `eventId`. Reenviar dos veces el mismo correo
-  es molesto pero inocuo; el token no cambia por reprocesar el evento.
+- **Idempotencia:** archivar es idempotente por naturaleza (el agregado rechaza
+  un segundo archivado con `CALENDAR_ARCHIVED`), pero el consumidor debe
+  deduplicar igualmente por `eventId` ante una redelivery.
 
 ### `tenant.registration-email-verified.v1`
 
@@ -662,15 +679,28 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
   "aggregateId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
   "payload": {
     "registrationId": "7c1e2f30-4a5b-46c7-8d9e-0f1a2b3c4d5e",
-    "email": "owner@acme.test"
-| `payload`    | Tipo   | Descripción              |
-| ------------ | ------ | ------------------------ |
-| `calendarId` | UUID   | Igual que `aggregateId`. |
-| `name`       | string | Nombre en el momento de archivarlo. |
+    "email": "owner@acme.test",
+    "companyName": "Acme Corp"
+  }
+}
+```
 
-- **Idempotencia:** archivar es idempotente por naturaleza (el agregado rechaza
-  un segundo archivado con `CALENDAR_ARCHIVED`), pero el consumidor debe
-  deduplicar igualmente por `eventId` ante una redelivery.
+| `payload`        | Tipo   | Descripción                       |
+| ---------------- | ------ | --------------------------------- |
+| `registrationId` | UUID   | Igual que `aggregateId`.          |
+| `email`          | string | Correo verificado.                |
+| `companyName`    | string | Nombre de la organización solicitante (T170-07). |
+
+- **`companyName` se añadió sin versionar (T170-07):** añadir un campo es un
+  cambio compatible hacia atrás (ver "Política de versionado"). Lo necesita el
+  aviso `REGISTRATION_PENDING_REVIEW` para nombrar la organización sin releer la
+  solicitud.
+- **Consumidor:** `notification.application.NotificationEventListener`, que avisa
+  a todos los `PLATFORM_ADMIN` activos. El aviso se dispara al **verificar el
+  correo**, no al recibir la solicitud, para no anunciar altas que nunca llegarán
+  a confirmarse.
+- **Idempotencia:** deduplicar por `eventId`. Un consumidor que avise a
+  plataforma de que hay trabajo en la bandeja no debe notificar dos veces.
 
 ### `calendar.calendar-assigned.v1`, `calendar.calendar-assignment-removed.v1`
 
@@ -698,13 +728,22 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
 }
 ```
 
-| `payload`        | Tipo   | Descripción                       |
-| ---------------- | ------ | --------------------------------- |
-| `registrationId` | UUID   | Igual que `aggregateId`.          |
-| `email`          | string | Correo verificado.                |
+| `payload`      | Tipo   | Descripción                                                                 |
+| -------------- | ------ | --------------------------------------------------------------------------- |
+| `assignmentId` | UUID   | Igual que `aggregateId`.                                                    |
+| `calendarId`   | UUID   | Calendario asignado.                                                        |
+| `scope`        | string | `TENANT`, `TEAM` o `EMPLOYEE`, de menor a mayor precedencia.                 |
+| `targetId`     | UUID   | Equipo o empleado destinatario. **Ausente** en ámbito `TENANT`.              |
 
-- **Idempotencia:** deduplicar por `eventId`. Un consumidor que avise a
-  plataforma de que hay trabajo en la bandeja no debe notificar dos veces.
+- **`targetId` de ámbito `TEAM` es opaco:** el sistema no gestiona equipos
+  (ADR-0017); no hay clave ajena ni garantía de que el equipo exista en ningún
+  otro módulo.
+- **Relevante para turnos y ausencias:** ambos eventos cambian qué calendario
+  rige para los empleados afectados. Un consumidor que cachee la resolución debe
+  invalidarla al recibirlos.
+- **Idempotencia:** deduplicar por `eventId`. El estado autoritativo es siempre
+  el de `GET /api/v1/admin/calendar-assignments/effective`; el evento es una
+  notificación, no la fuente de verdad.
 
 ### `tenant.registration-approved.v1`
 
@@ -769,22 +808,6 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
 | `reason`         | string | Motivo del rechazo, siempre presente. |
 
 - **Idempotencia:** deduplicar por `eventId`.
-| `payload`      | Tipo   | Descripción                                                                 |
-| -------------- | ------ | --------------------------------------------------------------------------- |
-| `assignmentId` | UUID   | Igual que `aggregateId`.                                                    |
-| `calendarId`   | UUID   | Calendario asignado.                                                        |
-| `scope`        | string | `TENANT`, `TEAM` o `EMPLOYEE`, de menor a mayor precedencia.                 |
-| `targetId`     | UUID   | Equipo o empleado destinatario. **Ausente** en ámbito `TENANT`.              |
-
-- **`targetId` de ámbito `TEAM` es opaco:** el sistema no gestiona equipos
-  (ADR-0017); no hay clave ajena ni garantía de que el equipo exista en ningún
-  otro módulo.
-- **Relevante para turnos y ausencias:** ambos eventos cambian qué calendario
-  rige para los empleados afectados. Un consumidor que cachee la resolución debe
-  invalidarla al recibirlos.
-- **Idempotencia:** deduplicar por `eventId`. El estado autoritativo es siempre
-  el de `GET /api/v1/admin/calendar-assignments/effective`; el evento es una
-  notificación, no la fuente de verdad.
 
 ### `absence.absence-approved.v1` · `absence.absence-rejected.v1`
 
@@ -816,10 +839,110 @@ reutilizar `processed_event`, que es exclusiva de la demostración.
 | `resolvedBy` | `string` (UUID) | Usuario que aprobó o rechazó. |
 
 - **Idempotencia:** el consumidor de notificaciones reserva `(eventId, "notification-event-listener")`
-  antes de crear nada, así que una reentrega no genera un segundo aviso. Solo se publican la aprobación
-  y el rechazo: la solicitud y la cancelación las hace el propio empleado, que ya sabe que han ocurrido.
+  antes de crear nada, así que una reentrega no genera un segundo aviso. La reserva es **una por evento**,
+  aunque el evento produzca varias notificaciones.
+
+### `absence.absence-requested.v1`
+
+- **Módulo productor:** `absence`, clase `absence.application.integration.AbsenceIntegrationEventMapper`.
+- **Disparador de negocio:** un empleado solicita una ausencia
+  (`POST /api/v1/absences`).
+- **`aggregateId`:** identificador de la solicitud de ausencia.
+
+> **Este evento no se publicaba** (T110-04): su único destinatario posible era el
+> propio solicitante, que ya sabía que había solicitado, así que era contrato sin
+> consumidor. T170-06 crea el consumidor —el aviso al administrador que debe
+> resolverla— y con él desaparece la premisa. La cancelación sigue sin publicarse
+> por el mismo motivo original.
+
+```json
+{
+  "eventId": "7a2e1d6f-7b2c-4a2f-8b3d-4c8e9f60b122",
+  "eventType": "absence.absence-requested.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-06T08:30:00Z",
+  "tenantId": "b0c1d2e3-f4a5-4b6c-8d9e-0f1a2b3c4d5e",
+  "aggregateId": "9c8b7a65-4d3e-4f21-b0a9-8c7d6e5f4a3b",
+  "payload": {
+    "absenceRequestId": "9c8b7a65-4d3e-4f21-b0a9-8c7d6e5f4a3b",
+    "employeeId": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+    "absenceTypeId": "3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e6f",
+    "startDate": "2026-09-01",
+    "endDate": "2026-09-05"
+  }
+}
+```
+
+| `payload` | Tipo | Descripción |
+|---|---|---|
+| `absenceRequestId` | `string` (UUID) | Solicitud creada; igual que `aggregateId`. |
+| `employeeId` | `string` (UUID) | Empleado solicitante. **No** es el destinatario del aviso: se le excluye del fan-out por rol. |
+| `absenceTypeId` | `string` (UUID) | Tipo de ausencia solicitado. |
+| `startDate` | `string` | Primer día, fecha local `YYYY-MM-DD`. |
+| `endDate` | `string` | Último día, inclusivo. |
+
+- **Fechas locales, no instantes:** una ausencia es un periodo del calendario
+  civil; serializarla como `Instant` la haría «cambiar de día» según la zona del
+  consumidor.
+- **Idempotencia:** deduplicar por `eventId`. El consumidor de notificaciones
+  crea un aviso por administrador activo bajo una única reserva.
+
+### `shift.shift-assigned.v1`
+
+- **Módulo productor:** `shift`, clase `shift.application.integration.ShiftIntegrationEventMapper`.
+  Es el **primer contrato** que publica este módulo (T170-05).
+- **Disparador de negocio:** un `TENANT_ADMIN` asigna un turno a un empleado
+  (`POST /api/v1/admin/shift-assignments`). El evento se escribe en el outbox
+  dentro de la misma transacción que la asignación.
+- **`aggregateId`:** identificador de la asignación, no de la plantilla de turno.
+
+```json
+{
+  "eventId": "8b3f2e70-8c3d-4b30-9c4e-5d9f0a71c233",
+  "eventType": "shift.shift-assigned.v1",
+  "eventVersion": 1,
+  "occurredAt": "2026-08-13T10:00:00Z",
+  "tenantId": "b0c1d2e3-f4a5-4b6c-8d9e-0f1a2b3c4d5e",
+  "aggregateId": "0d1e2f30-4a5b-4c6d-8e9f-0a1b2c3d4e5f",
+  "payload": {
+    "shiftAssignmentId": "0d1e2f30-4a5b-4c6d-8e9f-0a1b2c3d4e5f",
+    "employeeId": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+    "shiftTemplateId": "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "shiftTemplateName": "Turno de mañana",
+    "validFrom": "2026-09-01",
+    "validTo": "2026-09-30"
+  }
+}
+```
+
+| `payload` | Tipo | Descripción |
+|---|---|---|
+| `shiftAssignmentId` | `string` (UUID) | Asignación creada; igual que `aggregateId`. |
+| `employeeId` | `string` (UUID) | Empleado al que se asigna el turno; destinatario del aviso. |
+| `shiftTemplateId` | `string` (UUID) | Plantilla asignada. El horario concreto se lee por la API. |
+| `shiftTemplateName` | `string` | Nombre de la plantilla **en el momento de asignar**. **Ausente** si la plantilla no tenía nombre. |
+| `validFrom` | `string` | Primer día de vigencia, fecha local `YYYY-MM-DD`. |
+| `validTo` | `string` | Último día de vigencia. **Ausente** si la vigencia es indefinida. |
+
+- **El descriptor legible sí viaja; el horario no.** `shiftTemplateName` se
+  añadió en T170-12 porque el aviso al empleado tiene que decir qué turno le han
+  puesto, y el consumidor no puede preguntarlo sin abrir una dependencia hacia
+  `shift`. Es **una foto del momento**: si la plantilla se renombra después, el
+  aviso ya emitido no cambia, el mismo criterio que aplica
+  `Notification.recipientEmail`. Las horas y la pausa siguen sin viajar: quien
+  las necesite las lee por la API, y así el contrato no se versiona cada vez que
+  cambie la estructura interna de la plantilla.
+- **Cambio aditivo, sin versionar** (igual que `companyName` en
+  `tenant.registration-email-verified.v1`).
+- **Idempotencia:** deduplicar por `eventId`. Reasignar o archivar plantillas
+  sigue sin traducción a integración: todavía no hay consumidor.
 
 ## Eventos de dominio sin traducción a integración
+
+`AbsenceCancelled` (módulo `absence`) **no** se traduce: la cancelación la hace
+el propio empleado, que ya sabe que ha ocurrido. Su hermano `AbsenceRequested`
+estaba en esta lista por el mismo motivo y salió de ella en T170-06, cuando el
+aviso al administrador le dio consumidor.
 
 Decisión de alcance del MVP (T702, reafirmada en T704): `BreakStarted` /
 `BreakEnded` (módulo `timetracking`) **no** se traducen a evento de
