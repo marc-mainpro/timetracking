@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import {
@@ -9,12 +10,28 @@ import {
   PagedNotifications
 } from './notifications.service';
 
+/**
+ * Cada tipo del backend, traducido a una píldora corta. Son etiquetas de
+ * categoría, no resúmenes: el título de la notificación va justo al lado, así
+ * que repetirlo aquí sería ruido.
+ */
 const TYPE_LABELS: Record<NotificationType, string> = {
-  WORKDAY_ANOMALY_DETECTED: 'Incidencia en jornada',
-  CORRECTION_APPROVED: 'Corrección aprobada',
-  CORRECTION_REJECTED: 'Corrección rechazada',
-  ABSENCE_APPROVED: 'Ausencia aprobada',
-  ABSENCE_REJECTED: 'Ausencia rechazada'
+  WORKDAY_ANOMALY_DETECTED: 'Tu jornada',
+  CORRECTION_APPROVED: 'Corrección resuelta',
+  CORRECTION_REJECTED: 'Corrección resuelta',
+  ABSENCE_APPROVED: 'Ausencia resuelta',
+  ABSENCE_REJECTED: 'Ausencia resuelta',
+  ACCOUNT_CREATED: 'Tu cuenta',
+  ACCOUNT_DEACTIVATED: 'Tu cuenta',
+  SHIFT_ASSIGNED: 'Tu turno',
+  CORRECTION_REQUESTED: 'Pendiente de revisar',
+  ABSENCE_REQUESTED: 'Pendiente de resolver',
+  TEAM_WORKDAY_ANOMALY: 'Jornada de un empleado',
+  TENANT_SUSPENDED: 'Tu organización',
+  TENANT_REACTIVATED: 'Tu organización',
+  TENANT_ARCHIVED: 'Tu organización',
+  REGISTRATION_PENDING_REVIEW: 'Alta pendiente',
+  SYSTEM_QUEUE_STUCK: 'Estado del sistema'
 };
 
 @Component({
@@ -27,6 +44,7 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 export class NotificationsComponent {
   private readonly notificationsService = inject(NotificationsService);
   private readonly errorMessagesService = inject(ErrorMessagesService);
+  private readonly router = inject(Router);
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
@@ -60,6 +78,17 @@ export class NotificationsComponent {
       next: () => this.load(),
       error: (err) => this.error.set(this.errorMessagesService.fromProblem(err.error))
     });
+  }
+
+  /**
+   * Abre la pantalla a la que se refiere el aviso y lo da por leído: pulsar
+   * una notificación ya es señal de que se ha visto.
+   */
+  open(notification: AppNotification): void {
+    this.markRead(notification);
+    if (notification.actionPath) {
+      void this.router.navigateByUrl(notification.actionPath);
+    }
   }
 
   typeLabel(type: NotificationType): string {
