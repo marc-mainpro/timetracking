@@ -30,6 +30,7 @@ public class NotificationRestMapper {
                 notification.type().name(),
                 notification.title(),
                 notification.body(),
+                notification.actionPath(),
                 notification.createdAt(),
                 notification.readAt(),
                 notification.isRead());

@@ -108,6 +108,11 @@ class PlatformAdminBootstrapTest {
         }
 
         @Override
+        public List<User> findActiveByRole(UUID tenantId, com.tfp.timetracking.identity.domain.Role role) {
+            return List.of();
+        }
+
+        @Override
         public com.tfp.timetracking.shared.domain.PagedResult<User> findByTenant(
                 UUID tenantId, com.tfp.timetracking.identity.domain.UserStatus status, int page, int size) {
             return null;

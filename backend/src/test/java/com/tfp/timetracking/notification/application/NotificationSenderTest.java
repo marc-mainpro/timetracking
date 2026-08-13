@@ -95,6 +95,8 @@ class NotificationSenderTest {
                 NotificationType.ABSENCE_APPROVED,
                 "Ausencia aprobada",
                 "Tu solicitud ha sido aprobada.",
+                true,
+                "/absences",
                 NOW,
                 UUID::randomUUID);
     }

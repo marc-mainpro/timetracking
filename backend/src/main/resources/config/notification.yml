@@ -12,3 +12,7 @@ notification:
     # aplicacion: que el correo no saliera no significa que el usuario no deba
     # enterarse del hecho.
     max-attempts: 5
+  email:
+    # Base absoluta del frontend con la que se compone el enlace de cada
+    # notificación (T170-09). Sin ella el correo sale igual, pero sin enlace.
+    app-base-url: ${NOTIFICATION_APP_BASE_URL:http://localhost:4200}

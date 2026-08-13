@@ -1,10 +1,17 @@
 package com.tfp.timetracking.shift.domain.model;
 
+import com.tfp.timetracking.shared.domain.IdGenerator;
+import com.tfp.timetracking.shift.domain.event.ShiftAssigned;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 public final class ShiftAssignment {
+
+    private final List<Object> domainEvents = new ArrayList<>();
 
     private final UUID id;
     private final UUID tenantId;
@@ -41,6 +48,53 @@ public final class ShiftAssignment {
         Objects.requireNonNull(shiftTemplateId, "shiftTemplateId no puede ser null");
         validatePeriod(validFrom, validTo);
         return new ShiftAssignment(id, tenantId, employeeId, shiftTemplateId, validFrom, validTo);
+    }
+
+    /**
+     * Asigna un turno y deja constancia del hecho (T170-05).
+     *
+     * <p>Convive con {@link #create}, que sigue siendo la construccion desnuda
+     * que usan la reconstitucion desde persistencia y las pruebas de las reglas
+     * de solape: solo la asignacion real de un turno a una persona es un hecho
+     * que otros modulos deban conocer.
+     *
+     * <p>{@code shiftTemplateName} <b>no se guarda</b> como estado de la
+     * asignacion: solo se usa para redactar el evento. El nombre vigente de la
+     * plantilla lo sigue teniendo la plantilla; aqui interesa el que tenia
+     * cuando se asigno, porque es el que leyo la persona avisada.
+     */
+    public static ShiftAssignment assign(
+            UUID tenantId,
+            UUID employeeId,
+            UUID shiftTemplateId,
+            String shiftTemplateName,
+            LocalDate validFrom,
+            LocalDate validTo,
+            UUID id,
+            Instant now,
+            IdGenerator idGenerator) {
+        Objects.requireNonNull(now, "now no puede ser null");
+        Objects.requireNonNull(idGenerator, "idGenerator no puede ser null");
+        ShiftAssignment assignment =
+                create(tenantId, employeeId, shiftTemplateId, validFrom, validTo, id);
+        assignment.domainEvents.add(new ShiftAssigned(
+                idGenerator.newId(),
+                now,
+                tenantId,
+                assignment.id,
+                employeeId,
+                shiftTemplateId,
+                shiftTemplateName,
+                assignment.validFrom,
+                assignment.validTo));
+        return assignment;
+    }
+
+    /** Devuelve y limpia los eventos de dominio acumulados por el agregado. */
+    public List<Object> pullDomainEvents() {
+        List<Object> events = List.copyOf(domainEvents);
+        domainEvents.clear();
+        return events;
     }
 
     public static ShiftAssignment reconstitute(

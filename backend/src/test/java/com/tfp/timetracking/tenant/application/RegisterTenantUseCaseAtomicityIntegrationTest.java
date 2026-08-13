@@ -111,6 +111,12 @@ class RegisterTenantUseCaseAtomicityIntegrationTest {
                 }
 
                 @Override
+                public List<User> findActiveByRole(
+                        UUID tenantId, com.tfp.timetracking.identity.domain.Role role) {
+                    return List.of();
+                }
+
+                @Override
                 public PagedResult<User> findByTenant(UUID tenantId, UserStatus status, int page, int size) {
                     return new PagedResult<>(List.of(), page, size, 0, 0);
                 }

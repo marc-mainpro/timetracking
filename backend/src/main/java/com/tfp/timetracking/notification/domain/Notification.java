@@ -24,6 +24,7 @@ public final class Notification {
     private static final int MAX_TITLE_LENGTH = 200;
     private static final int MAX_BODY_LENGTH = 2000;
     private static final int MAX_ERROR_LENGTH = 500;
+    private static final int MAX_ACTION_PATH_LENGTH = 200;
 
     private final UUID id;
     private final UUID tenantId;
@@ -32,6 +33,8 @@ public final class Notification {
     private final NotificationType type;
     private final String title;
     private final String body;
+    private final boolean emailRequired;
+    private final String actionPath;
     private NotificationStatus status;
     private int attempts;
     private String lastError;
@@ -47,6 +50,8 @@ public final class Notification {
             NotificationType type,
             String title,
             String body,
+            boolean emailRequired,
+            String actionPath,
             NotificationStatus status,
             int attempts,
             String lastError,
@@ -60,6 +65,8 @@ public final class Notification {
         this.type = type;
         this.title = title;
         this.body = body;
+        this.emailRequired = emailRequired;
+        this.actionPath = actionPath;
         this.status = status;
         this.attempts = attempts;
         this.lastError = lastError;
@@ -75,6 +82,8 @@ public final class Notification {
             NotificationType type,
             String title,
             String body,
+            boolean emailRequired,
+            String actionPath,
             Instant now,
             IdGenerator idGenerator) {
         Objects.requireNonNull(tenantId, "tenantId no puede ser null");
@@ -89,6 +98,8 @@ public final class Notification {
                 type,
                 requireText(title, "El titulo", MAX_TITLE_LENGTH),
                 requireText(body, "El cuerpo", MAX_BODY_LENGTH),
+                emailRequired,
+                normalizeActionPath(actionPath),
                 NotificationStatus.PENDING,
                 0,
                 null,
@@ -105,6 +116,8 @@ public final class Notification {
             NotificationType type,
             String title,
             String body,
+            boolean emailRequired,
+            String actionPath,
             NotificationStatus status,
             int attempts,
             String lastError,
@@ -119,6 +132,8 @@ public final class Notification {
                 type,
                 title,
                 body,
+                emailRequired,
+                actionPath,
                 status,
                 attempts,
                 lastError,
@@ -173,9 +188,15 @@ public final class Notification {
         return readAt != null;
     }
 
-    /** Solo se envia por correo si hay direccion y sigue pendiente. */
+    /**
+     * Solo se envia por correo si el tipo lo pide, hay direccion y sigue
+     * pendiente.
+     *
+     * <p>{@code emailRequired} lo decide el tipo al crear la notificacion
+     * (T170-02): hay avisos que solo tienen sentido dentro de la aplicacion.
+     */
     public boolean isDeliverable() {
-        return status == NotificationStatus.PENDING && recipientEmail != null;
+        return status == NotificationStatus.PENDING && emailRequired && recipientEmail != null;
     }
 
     private void requirePending(String action) {
@@ -200,6 +221,26 @@ public final class Notification {
         return email == null || email.isBlank() ? null : email.trim();
     }
 
+    /**
+     * Normaliza la ruta destino. Es una ruta del frontend, nunca una URL
+     * absoluta: la base la pone el compositor de correo desde configuracion, de
+     * modo que una notificacion no puede acabar apuntando a otro dominio.
+     */
+    private static String normalizeActionPath(String actionPath) {
+        if (actionPath == null || actionPath.isBlank()) {
+            return null;
+        }
+        String normalized = actionPath.trim();
+        if (!normalized.startsWith("/") || normalized.startsWith("//")) {
+            throw new IllegalArgumentException("La ruta de la notificacion debe ser relativa y empezar por /");
+        }
+        if (normalized.length() > MAX_ACTION_PATH_LENGTH) {
+            throw new IllegalArgumentException(
+                    "La ruta de la notificacion no puede superar los " + MAX_ACTION_PATH_LENGTH + " caracteres");
+        }
+        return normalized;
+    }
+
     private static String truncate(String error) {
         if (error == null) {
             return null;
@@ -214,6 +255,8 @@ public final class Notification {
     public NotificationType type() { return type; }
     public String title() { return title; }
     public String body() { return body; }
+    public boolean emailRequired() { return emailRequired; }
+    public String actionPath() { return actionPath; }
     public NotificationStatus status() { return status; }
     public int attempts() { return attempts; }
     public String lastError() { return lastError; }

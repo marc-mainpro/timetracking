@@ -256,7 +256,8 @@ public final class TenantRegistration {
         this.verificationTokenExpiresAt = null;
         this.verifiedAt = now;
         this.updatedAt = now;
-        this.domainEvents.add(new TenantRegistrationEmailVerified(idGenerator.newId(), now, id, email));
+        this.domainEvents.add(
+                new TenantRegistrationEmailVerified(idGenerator.newId(), now, id, email, companyName));
     }
 
     /**

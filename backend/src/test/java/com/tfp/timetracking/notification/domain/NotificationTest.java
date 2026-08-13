@@ -117,6 +117,8 @@ class NotificationTest {
                         NotificationType.ABSENCE_APPROVED,
                         " ",
                         "cuerpo",
+                        true,
+                        null,
                         NOW,
                         UUID::randomUUID))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -127,6 +129,8 @@ class NotificationTest {
                         NotificationType.ABSENCE_APPROVED,
                         "titulo",
                         "",
+                        true,
+                        null,
                         NOW,
                         UUID::randomUUID))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -140,6 +144,8 @@ class NotificationTest {
                 NotificationType.CORRECTION_APPROVED,
                 "Corrección aprobada",
                 "Tu solicitud ha sido aprobada.",
+                true,
+                "/corrections",
                 NOW,
                 UUID::randomUUID);
     }

@@ -53,6 +53,11 @@ public class NotificationRepositoryAdapter implements NotificationRepository {
     }
 
     @Override
+    public long countPendingForDelivery() {
+        return jpaRepository.countPendingForDelivery();
+    }
+
+    @Override
     public List<Notification> findPendingForDelivery(int limit) {
         return jpaRepository.findPendingForDelivery(PageRequest.of(0, limit)).stream()
                 .map(NotificationMapper::toDomain)

@@ -24,6 +24,17 @@ interface UserJpaRepository extends JpaRepository<UserJpaEntity, UUID> {
 
     Page<UserJpaEntity> findByTenantIdAndStatus(UUID tenantId, String status, Pageable pageable);
 
+    @Query("""
+            select distinct user
+            from UserJpaEntity user
+            join user.roles role
+            where user.tenantId = :tenantId
+              and user.status = 'ACTIVE'
+              and role = :role
+            order by user.email asc
+            """)
+    List<UserJpaEntity> findActiveByRole(@Param("tenantId") UUID tenantId, @Param("role") String role);
+
     @Query(
             value = """
                     select u.id

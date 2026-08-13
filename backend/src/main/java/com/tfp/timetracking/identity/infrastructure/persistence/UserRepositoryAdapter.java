@@ -1,6 +1,7 @@
 package com.tfp.timetracking.identity.infrastructure.persistence;
 
 import com.tfp.timetracking.identity.domain.Email;
+import com.tfp.timetracking.identity.domain.Role;
 import com.tfp.timetracking.identity.domain.User;
 import com.tfp.timetracking.identity.domain.UserRepository;
 import com.tfp.timetracking.identity.domain.UserStatus;
@@ -56,6 +57,13 @@ public class UserRepositoryAdapter implements UserRepository {
     @Override
     public List<User> findAllByTenantId(UUID tenantId) {
         return jpaRepository.findAllByTenantId(tenantId).stream().map(UserMapper::toDomain).toList();
+    }
+
+    @Override
+    public List<User> findActiveByRole(UUID tenantId, Role role) {
+        return jpaRepository.findActiveByRole(tenantId, role.name()).stream()
+                .map(UserMapper::toDomain)
+                .toList();
     }
 
     @Override
