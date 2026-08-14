@@ -115,7 +115,13 @@ public class TenantIntegrationEventMapper implements IntegrationEventMapper {
                     "tenant.registration-email-verified.v1",
                     event.occurredAt(),
                     event.registrationId(),
-                    Map.of("registrationId", event.registrationId(), "email", event.email())));
+                    // companyName se anadio en T170-07 para que el aviso al
+                    // administrador de plataforma pueda nombrar la organizacion.
+                    // Anadir un campo es compatible hacia atras: no versiona.
+                    Map.of(
+                            "registrationId", event.registrationId(),
+                            "email", event.email(),
+                            "companyName", event.companyName())));
         }
         if (domainEvent instanceof TenantRegistrationApproved event) {
             return Optional.of(registrationEvent(

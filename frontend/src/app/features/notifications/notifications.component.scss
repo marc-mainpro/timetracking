@@ -38,6 +38,26 @@
   }
 }
 
+/* El título de una notificación accionable es un botón, no un texto: navega a
+   la pantalla correspondiente. Se estiliza como enlace para que se lea igual
+   que el resto de la lista. */
+.notification-link {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+}
+
 .pill {
   align-self: flex-start;
   padding: 0.1rem 0.5rem;

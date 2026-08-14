@@ -34,6 +34,12 @@ public class NotificationJpaEntity {
     @Column(name = "body", nullable = false, length = 2000)
     private String body;
 
+    @Column(name = "email_required", nullable = false)
+    private boolean emailRequired;
+
+    @Column(name = "action_path", length = 200)
+    private String actionPath;
+
     @Column(name = "status", nullable = false, length = 20)
     private String status;
 
@@ -63,6 +69,8 @@ public class NotificationJpaEntity {
             String type,
             String title,
             String body,
+            boolean emailRequired,
+            String actionPath,
             String status,
             int attempts,
             String lastError,
@@ -76,6 +84,8 @@ public class NotificationJpaEntity {
         this.type = type;
         this.title = title;
         this.body = body;
+        this.emailRequired = emailRequired;
+        this.actionPath = actionPath;
         this.status = status;
         this.attempts = attempts;
         this.lastError = lastError;
@@ -91,6 +101,8 @@ public class NotificationJpaEntity {
     public String getType() { return type; }
     public String getTitle() { return title; }
     public String getBody() { return body; }
+    public boolean isEmailRequired() { return emailRequired; }
+    public String getActionPath() { return actionPath; }
     public String getStatus() { return status; }
     public int getAttempts() { return attempts; }
     public String getLastError() { return lastError; }

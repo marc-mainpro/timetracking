@@ -32,4 +32,16 @@ public interface NotificationRepository {
      * que vigila la salud del envío del sistema entero, no la de un tenant.
      */
     long countByStatus(NotificationStatus status);
+
+    /**
+     * Cuenta el trabajo realmente encolado para envío: mismo filtro que
+     * {@link #findPendingForDelivery(int)}.
+     *
+     * <p>Existe porque {@code countByStatus(PENDING)} <b>no</b> mide la cola
+     * desde T170-02. Una notificación solo in-app nace {@code PENDING} y se
+     * queda así para siempre —nunca se envía, así que nada la mueve de estado—,
+     * de modo que contarla haría crecer el pendiente del panel sin techo y sin
+     * que hubiera nada atascado.
+     */
+    long countPendingForDelivery();
 }

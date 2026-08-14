@@ -309,6 +309,12 @@ class TenantAdminConcurrencyIntegrationTest {
         }
 
         @Override
+        public java.util.List<User> findActiveByRole(
+                UUID tenantId, com.tfp.timetracking.identity.domain.Role role) {
+            return delegate.findActiveByRole(tenantId, role);
+        }
+
+        @Override
         public com.tfp.timetracking.shared.domain.PagedResult<User> findByTenant(
                 UUID tenantId,
                 UserStatus status,

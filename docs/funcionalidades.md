@@ -148,4 +148,4 @@ pila de Docker Compose. 17 ADR documentan las decisiones estructurales.
 
 MFA, SSO, API pública para terceros, broker de mensajería, facturación, alta
 disponibilidad, escalado horizontal, Kubernetes, event sourcing y CQRS completo.
-Descartados en `requisitos-v2-control-horario.md` §11.
+Descartados en `specs/requisitos-v2-control-horario.md` §11.

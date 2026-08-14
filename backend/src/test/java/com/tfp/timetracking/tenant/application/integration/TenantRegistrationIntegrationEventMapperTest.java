@@ -62,11 +62,13 @@ class TenantRegistrationIntegrationEventMapperTest {
     @Test
     void mapsEmailVerified() {
         IntegrationEvent event = MAPPER.map(new TenantRegistrationEmailVerified(
-                        UUID.randomUUID(), OCCURRED_AT, UUID.randomUUID(), "owner@acme.test"))
+                        UUID.randomUUID(), OCCURRED_AT, UUID.randomUUID(), "owner@acme.test", "ACME"))
                 .orElseThrow();
 
         assertThat(event.eventType()).isEqualTo("tenant.registration-email-verified.v1");
         assertThat(event.payload()).containsEntry("email", "owner@acme.test");
+        // T170-07: el aviso al administrador de plataforma nombra la organización.
+        assertThat(event.payload()).containsEntry("companyName", "ACME");
     }
 
     @Test

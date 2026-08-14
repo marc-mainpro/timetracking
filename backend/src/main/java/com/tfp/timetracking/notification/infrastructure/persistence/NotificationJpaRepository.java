@@ -21,8 +21,14 @@ interface NotificationJpaRepository extends JpaRepository<NotificationJpaEntity,
 
     @Query("""
             select n from NotificationJpaEntity n
-            where n.status = 'PENDING' and n.recipientEmail is not null
+            where n.status = 'PENDING' and n.emailRequired = true and n.recipientEmail is not null
             order by n.createdAt asc
             """)
     List<NotificationJpaEntity> findPendingForDelivery(Pageable pageable);
+
+    @Query("""
+            select count(n) from NotificationJpaEntity n
+            where n.status = 'PENDING' and n.emailRequired = true and n.recipientEmail is not null
+            """)
+    long countPendingForDelivery();
 }

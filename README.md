@@ -34,7 +34,7 @@ construido como monolito modular.
 
 MFA, SSO, API pública para terceros, broker de mensajería, facturación, alta
 disponibilidad, escalado horizontal, Kubernetes, event sourcing y CQRS completo.
-Están descartados en `requisitos-v2-control-horario.md` §11 para no condicionar
+Están descartados en `docs/specs/requisitos-v2-control-horario.md` §11 para no condicionar
 la arquitectura con abstracciones anticipadas.
 
 ## Arquitectura
@@ -69,6 +69,8 @@ READMEs de cada subproyecto (stack, estructura y comandos de desarrollo):
 
 Documentación principal:
 
+- Especificaciones (requisitos, diseño, SDD): `docs/specs/`
+- Planificación y planes de épica: `docs/planning/`
 - Arquitectura: `docs/architecture/`
 - Procesos de negocio (diagramas Mermaid): `docs/procesos/`
 - Dominio: `docs/domain/`
@@ -146,7 +148,7 @@ Requisitos: Docker y Docker Compose.
 
 - `backend/` — API Spring Boot ([README](backend/README.md)).
 - `frontend/` — SPA Angular + Dockerfile/nginx ([README](frontend/README.md)).
-- `docs/` — Arquitectura, dominio, seguridad, testing, manuales y demo.
+- `docs/` — Especificaciones, planificación, arquitectura, dominio, seguridad, testing, manuales y demo.
 - `scripts/` — Smoke test y seed de demo.
 - `tasks/` — Fichas de tareas y contexto de ejecución.
 

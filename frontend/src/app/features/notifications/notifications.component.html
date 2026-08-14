@@ -17,7 +17,13 @@
       <article class="notification" [class.notification--unread]="!notification.read">
         <div class="notification-main">
           <span class="pill">{{ typeLabel(notification.type) }}</span>
-          <strong>{{ notification.title }}</strong>
+          @if (notification.actionPath) {
+            <button type="button" class="notification-link" (click)="open(notification)">
+              {{ notification.title }}
+            </button>
+          } @else {
+            <strong>{{ notification.title }}</strong>
+          }
           <p>{{ notification.body }}</p>
           <small>{{ notification.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
         </div>

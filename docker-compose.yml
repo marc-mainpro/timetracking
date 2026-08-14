@@ -71,6 +71,9 @@ services:
       MAIL_HOST: ${MAIL_HOST:-mailpit}
       MAIL_PORT: ${MAIL_PORT:-1025}
       MAIL_FROM: ${MAIL_FROM:-no-reply@timetracking.local}
+      # Base del enlace de las notificaciones por correo (T170-09). Se deriva
+      # del origen del frontend, igual que los enlaces de verificacion.
+      NOTIFICATION_APP_BASE_URL: ${NOTIFICATION_APP_BASE_URL:-${FRONTEND_ORIGIN:-http://localhost:4200}}
     ports:
       - "8080:8080"
     healthcheck:

@@ -2701,6 +2701,15 @@ components:
           type: string
         body:
           type: string
+        actionPath:
+          type: string
+          nullable: true
+          description: >-
+            Ruta de la aplicación a la que lleva el aviso (por ejemplo
+            `/admin/corrections`). Siempre relativa: la base la pone el cliente.
+            `null` en los avisos puramente informativos, que no llevan a ninguna
+            pantalla.
+          example: /admin/corrections
         createdAt:
           type: string
           format: date-time

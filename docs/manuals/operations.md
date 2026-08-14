@@ -23,6 +23,13 @@
   el dominio; deducirlo de ella, además, permitiría envenenar el enlace con una
   cabecera falsa. Deben conservar un único `%s`, que es donde va el token.
   Si se dejan sin definir, ambos correos enviarían enlaces a `localhost:4200`.
+- `NOTIFICATION_APP_BASE_URL`: base absoluta del frontend con la que se compone
+  el enlace de cada notificación por correo (T170-09). Mismo motivo que las
+  anteriores: el correo se compone en un job, fuera de toda petición HTTP. A
+  diferencia de ellas **no lleva `%s`** —la ruta la aporta cada notificación en
+  su `actionPath`— y **no es obligatoria**: si se deja vacía, el correo se envía
+  igual, solo que sin enlace. Debe apuntar al dominio público del frontend, sin
+  barra final.
 - `APP_REQUEST_MAX_PAYLOAD_BYTES`
 - `LOG_STRUCTURED_FORMAT` (formato de log: `ecs` por defecto; vacío = texto plano)
 - `OBSERVABILITY_OUTBOX_PENDING_THRESHOLD` (backlog a partir del cual el health

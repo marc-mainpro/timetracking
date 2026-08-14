@@ -89,6 +89,8 @@ class NotificationControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].title").value("Ausencia aprobada"))
+                // El frontend navega con esta ruta al pulsar la notificación (T170-02).
+                .andExpect(jsonPath("$.content[0].actionPath").value("/absences"))
                 .andExpect(jsonPath("$.content[0].read").value(false));
 
         mockMvc.perform(get("/api/v1/notifications/unread-count")
@@ -170,6 +172,8 @@ class NotificationControllerIntegrationTest {
                 NotificationType.ABSENCE_APPROVED,
                 title,
                 "Cuerpo de la notificación.",
+                true,
+                "/absences",
                 Instant.now(),
                 UUID::randomUUID));
     }

@@ -10,6 +10,12 @@ import org.springframework.stereotype.Component;
  *
  * <p>Lo aporta {@code notification}, que es quien conoce sus estados, y no lo
  * consulta {@code outbox}: la dependencia entre ambos va en este sentido.
+ *
+ * <p><b>Pendiente no es «en estado PENDING»</b> desde T170-02: los avisos solo
+ * in-app nacen {@code PENDING} y nunca salen de ese estado, porque no hay envio
+ * que los mueva. Contarlos haria crecer el pendiente del panel indefinidamente
+ * sin que hubiera nada atascado, que es justo lo contrario de lo que el panel
+ * existe para responder.
  */
 @Component
 public class NotificationQueueStatusContributor implements QueueStatusContributor {
@@ -24,7 +30,7 @@ public class NotificationQueueStatusContributor implements QueueStatusContributo
     public QueueStatus status() {
         return new QueueStatus(
                 "notifications",
-                notificationRepository.countByStatus(NotificationStatus.PENDING),
+                notificationRepository.countPendingForDelivery(),
                 notificationRepository.countByStatus(NotificationStatus.FAILED));
     }
 }

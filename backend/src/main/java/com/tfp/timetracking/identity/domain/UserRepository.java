@@ -34,6 +34,16 @@ public interface UserRepository {
 
     List<User> findAllByTenantId(UUID tenantId);
 
+    /**
+     * Usuarios activos de un tenant que tienen un rol concreto (T170-01).
+     *
+     * <p>La usa el fan-out de notificaciones, que dirige un aviso a un rol y no
+     * a una persona. Filtra por {@code ACTIVE} en la consulta y no en memoria:
+     * un tenant grande tiene muchos usuarios y solo interesan los que podrian
+     * atender el aviso.
+     */
+    List<User> findActiveByRole(UUID tenantId, Role role);
+
     PagedResult<User> findByTenant(UUID tenantId, UserStatus status, int page, int size);
 
     void lockActiveAdmins(UUID tenantId);

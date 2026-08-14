@@ -27,6 +27,24 @@ import org.junit.jupiter.api.Test;
 class ShiftAssignmentUseCasesTest {
 
     private final AuditRecorder auditRecorder = org.mockito.Mockito.mock(AuditRecorder.class);
+    private final com.tfp.timetracking.shared.domain.DomainEventPublisher domainEventPublisher =
+            org.mockito.Mockito.mock(com.tfp.timetracking.shared.domain.DomainEventPublisher.class);
+
+    private AssignShiftUseCase assignShiftUseCase(
+            ShiftAssignmentRepository assignmentRepository,
+            ShiftTemplateRepository templateRepository,
+            UserRepository userRepository,
+            TenantContext tenantContext) {
+        return new AssignShiftUseCase(
+                assignmentRepository,
+                templateRepository,
+                userRepository,
+                tenantContext,
+                auditRecorder,
+                domainEventPublisher,
+                () -> java.time.Instant.parse("2026-08-13T10:00:00Z"),
+                UUID::randomUUID);
+    }
 
     @Test
     void assignsShiftAndListsEffectiveAssignments() {
@@ -53,7 +71,8 @@ class ShiftAssignmentUseCasesTest {
         when(userRepository.findById(tenantId, employeeId)).thenReturn(Optional.of(org.mockito.Mockito.mock(com.tfp.timetracking.identity.domain.User.class)));
         when(assignmentRepository.save(any(ShiftAssignment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ShiftAssignment saved = new AssignShiftUseCase(assignmentRepository, templateRepository, userRepository, tenantContext, auditRecorder)
+        ShiftAssignment saved = assignShiftUseCase(
+                        assignmentRepository, templateRepository, userRepository, tenantContext)
                 .assign(new AssignShiftCommand(employeeId, templateId, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)));
 
         assertThat(saved.employeeId()).isEqualTo(employeeId);
@@ -97,8 +116,8 @@ class ShiftAssignmentUseCasesTest {
                 .thenReturn(Optional.of(org.mockito.Mockito.mock(com.tfp.timetracking.identity.domain.User.class)));
         when(assignmentRepository.findByEmployee(tenantId, employeeId)).thenReturn(List.of(existingAssignment));
 
-        assertThatThrownBy(() -> new AssignShiftUseCase(
-                        assignmentRepository, templateRepository, userRepository, tenantContext, auditRecorder)
+        assertThatThrownBy(() -> assignShiftUseCase(
+                        assignmentRepository, templateRepository, userRepository, tenantContext)
                         .assign(new AssignShiftCommand(
                                 employeeId,
                                 templateId,

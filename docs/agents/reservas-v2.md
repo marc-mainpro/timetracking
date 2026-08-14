@@ -6,7 +6,7 @@ en su propio git worktree, y sin reservas previas dos agentes elegirían el mism
 número de migración o reescribirían el mismo fichero compartido.
 
 Léelo junto a `AGENTS.md` (reglas de arquitectura) y
-`tareas-dependencias-v2-control-horario.md` (alcance de cada tarea).
+`../planning/tareas-dependencias-v2-control-horario.md` (alcance de cada tarea).
 
 > **Antes de escribir nada, comprueba tu base.** En la Ola 1, tres de cinco
 > worktrees se crearon a partir de `main` en lugar de la rama de la ola, y en esa
@@ -140,7 +140,7 @@ Deja un `HANDOFF.md` en la raíz de tu worktree con:
 
 ## 8. Definition of Done
 
-De `tareas-dependencias-v2-control-horario.md` §28. Tu entrega no está lista sin:
+De `../planning/tareas-dependencias-v2-control-horario.md` §28. Tu entrega no está lista sin:
 
 - Tests unitarios de toda regla de negocio.
 - Tests de integración con Testcontainers para persistencia, seguridad y Outbox.

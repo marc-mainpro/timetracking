@@ -1,7 +1,7 @@
 # Informe de cierre de la V2 (T160-05)
 
 Fecha: 2026-08-07. Contrasta uno a uno los 23 criterios de aceptación globales
-de `requisitos-v2-control-horario.md` §12 con evidencia verificable.
+de `../specs/requisitos-v2-control-horario.md` §12 con evidencia verificable.
 
 Criterio de evidencia: se cita el artefacto que lo demuestra —una prueba, una
 migración, un documento— no la intención de haberlo hecho. Lo que no está
