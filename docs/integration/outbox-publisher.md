@@ -121,3 +121,10 @@ No se expone `/actuator/prometheus` en este MVP (no hay dependencia
 `micrometer-registry-prometheus`); el endpoint JSON de Actuator es
 suficiente para el alcance actual. Ampliarlo a un registro Prometheus real
 es una decisión de despliegue posterior, no de esta ficha.
+
+## Vista de proceso
+
+Esta ficha es la referencia operativa del publicador. Para ver el recorrido
+completo de un hecho de negocio —desde el caso de uso que escribe el evento
+hasta el correo que recibe el empleado, con las tres etapas y sus fronteras
+transaccionales dibujadas— ver `docs/procesos/notificaciones-y-outbox.md`.
