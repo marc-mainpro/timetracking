@@ -1,9 +1,11 @@
 package com.tfp.timetracking.notification.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,6 +21,8 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 class NotifyStuckQueuesTest {
 
@@ -64,6 +68,36 @@ class NotifyStuckQueuesTest {
         assertThat(notifyStuckQueues.run()).isZero();
 
         when(getSystemStatus.get()).thenReturn(status(2));
+        assertThat(notifyStuckQueues.run()).isEqualTo(1);
+    }
+
+    @Test
+    void notifiesAgainWhenTheFirstAttemptFails() {
+        givenPlatformAdmin();
+        when(getSystemStatus.get()).thenReturn(status(4));
+        when(repository.save(any())).thenThrow(new IllegalStateException("base de datos caida"));
+
+        assertThatThrownBy(notifyStuckQueues::run).isInstanceOf(IllegalStateException.class);
+
+        // El aviso no se persistio, asi que el flanco no puede darse por consumido.
+        reset(repository);
+        assertThat(notifyStuckQueues.run()).isEqualTo(1);
+    }
+
+    @Test
+    void notifiesAgainWhenTheTransactionRollsBack() {
+        givenPlatformAdmin();
+        when(getSystemStatus.get()).thenReturn(status(5));
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            assertThat(notifyStuckQueues.run()).isEqualTo(1);
+            TransactionSynchronizationManager.getSynchronizations()
+                    .forEach(sync -> sync.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+
         assertThat(notifyStuckQueues.run()).isEqualTo(1);
     }
 

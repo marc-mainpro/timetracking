@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Avisa a los administradores de plataforma cuando alguna cola agota sus
@@ -69,23 +71,55 @@ public class NotifyStuckQueues {
         if (!alerted.compareAndSet(false, true)) {
             return 0;
         }
-        String body = NotificationTexts.queueStuck(status.totalFailed());
-        int notified = 0;
-        for (NotificationRecipient recipient : roleRecipientQuery.findActivePlatformAdmins()) {
-            notificationRepository.save(Notification.create(
-                    PlatformTenant.ID,
-                    recipient.userId(),
-                    recipient.email(),
-                    NotificationType.SYSTEM_QUEUE_STUCK,
-                    "Hay mensajes fallidos sin recuperar",
-                    body,
-                    true,
-                    "/platform/system-status",
-                    clock.now(),
-                    idGenerator));
-            notified++;
+        // El flanco solo queda consumido si el aviso llega a persistirse: si algo
+        // falla o la transaccion revierte, se rearma para que la proxima pasada
+        // reintente en vez de callar mientras el atasco sigue vivo.
+        boolean rearmedOnRollback = rearmOnRollback();
+        try {
+            String body = NotificationTexts.queueStuck(status.totalFailed());
+            int notified = 0;
+            for (NotificationRecipient recipient : roleRecipientQuery.findActivePlatformAdmins()) {
+                notificationRepository.save(Notification.create(
+                        PlatformTenant.ID,
+                        recipient.userId(),
+                        recipient.email(),
+                        NotificationType.SYSTEM_QUEUE_STUCK,
+                        "Hay mensajes fallidos sin recuperar",
+                        body,
+                        true,
+                        "/platform/system-status",
+                        clock.now(),
+                        idGenerator));
+                notified++;
+            }
+            log.warn("notification.queue-stuck.detected totalFailed={} notified={}", status.totalFailed(), notified);
+            return notified;
+        } catch (RuntimeException e) {
+            if (!rearmedOnRollback) {
+                alerted.set(false);
+            }
+            throw e;
         }
-        log.warn("notification.queue-stuck.detected totalFailed={} notified={}", status.totalFailed(), notified);
-        return notified;
+    }
+
+    /**
+     * Deshace el flanco si la transaccion en curso no llega a confirmarse.
+     *
+     * @return cierto si quedo registrada la sincronizacion; falso si no hay
+     *     transaccion activa y el rearme debe hacerlo quien llama
+     */
+    private boolean rearmOnRollback() {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            return false;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status != STATUS_COMMITTED) {
+                    alerted.set(false);
+                }
+            }
+        });
+        return true;
     }
 }
