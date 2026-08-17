@@ -98,21 +98,16 @@ describe('CalendarsService', () => {
     removed.flush(null);
   });
 
-  it('resolves the effective calendar with and without a team', () => {
-    service.resolveEffective('e-1', '2026-03-02', 't-1').subscribe();
-    const withTeam = httpMock.expectOne(
-      '/api/v1/admin/calendar-assignments/effective?employeeId=e-1&date=2026-03-02&teamId=t-1'
-    );
-    expect(withTeam.request.method).toBe('GET');
-    withTeam.flush({});
-
-    // Sin equipo el parámetro se omite: el backend descarta entonces las
-    // asignaciones de ámbito TEAM.
+  it('resuelve el calendario efectivo sin enviar equipo', () => {
     service.resolveEffective('e-1', '2026-03-02').subscribe();
-    const withoutTeam = httpMock.expectOne(
+
+    const request = httpMock.expectOne(
       '/api/v1/admin/calendar-assignments/effective?employeeId=e-1&date=2026-03-02'
     );
-    expect(withoutTeam.request.params.has('teamId')).toBeFalse();
-    withoutTeam.flush({});
+    expect(request.request.method).toBe('GET');
+    // El `teamId` no se manda mientras no haya gestión de equipos: el backend
+    // descarta entonces las asignaciones de ámbito TEAM.
+    expect(request.request.params.has('teamId')).toBeFalse();
+    request.flush({});
   });
 });

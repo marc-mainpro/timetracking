@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AdminEmployeesService, Employee } from '../admin-employees/admin-employees.service';
@@ -30,11 +30,43 @@ const WEEK_DAYS: { value: WeekDay; label: string }[] = [
   { value: 'SUNDAY', label: 'Domingo' }
 ];
 
+/**
+ * Ámbitos que se pueden asignar desde la aplicación. El backend admite además
+ * `TEAM`, pero se queda fuera a propósito: el sistema no gestiona equipos
+ * (ADR-0017), su identificador es opaco y nadie lo resuelve, así que ofrecerlo
+ * asignaba algo que nunca llegaba a aplicarse.
+ */
 const SCOPES: { value: AssignmentScope; label: string }[] = [
   { value: 'TENANT', label: 'Toda la organización' },
-  { value: 'TEAM', label: 'Equipo' },
   { value: 'EMPLOYEE', label: 'Empleado' }
 ];
+
+/** Solo para leer asignaciones de equipo creadas antes de retirar el ámbito. */
+const SCOPE_LABELS: Record<string, string> = {
+  TENANT: 'Toda la organización',
+  TEAM: 'Equipo',
+  EMPLOYEE: 'Empleado'
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  ACTIVE: 'Activo',
+  ARCHIVED: 'Archivado'
+};
+
+const FILTER_LABELS: Record<string, string> = {
+  '': 'Todos',
+  ACTIVE: 'Activos',
+  ARCHIVED: 'Archivados'
+};
+
+/** Retirada pendiente de confirmar: un calendario o una asignación. */
+interface PendingRemoval {
+  readonly kind: 'calendar' | 'assignment';
+  readonly id: string;
+  readonly title: string;
+  readonly consequence: string;
+  readonly confirmLabel: string;
+}
 
 const SOURCE_LABELS: Record<string, string> = {
   WEEKLY_RULE: 'Regla semanal',
@@ -63,6 +95,10 @@ export class AdminCalendarsComponent {
   private readonly errorMessagesService = inject(ErrorMessagesService);
   private readonly fb = inject(FormBuilder);
 
+  private readonly editorDialog = viewChild<ElementRef<HTMLDialogElement>>('editorDialog');
+  private readonly effectiveDialog = viewChild<ElementRef<HTMLDialogElement>>('effectiveDialog');
+  private readonly confirmDialog = viewChild<ElementRef<HTMLDialogElement>>('confirmDialog');
+
   readonly statusFilters = STATUS_FILTERS;
   readonly weekDays = WEEK_DAYS;
   readonly scopes = SCOPES;
@@ -81,6 +117,7 @@ export class AdminCalendarsComponent {
   readonly assignError = signal<string | null>(null);
   readonly effectiveError = signal<string | null>(null);
   readonly employees = signal<Employee[]>([]);
+  readonly pendingRemoval = signal<PendingRemoval | null>(null);
 
   /** Reglas semanales en edición. Se manejan como signal y no como FormArray: son 7 filas fijas. */
   readonly dayRules = signal<DayRule[]>(this.defaultDayRules());
@@ -113,7 +150,6 @@ export class AdminCalendarsComponent {
 
   readonly effectiveForm = this.fb.nonNullable.group({
     employeeId: ['', [Validators.required]],
-    teamId: [''],
     date: ['', [Validators.required]]
   });
 
@@ -132,7 +168,7 @@ export class AdminCalendarsComponent {
 
   employeeName(employeeId: string): string {
     const employee = this.employees().find((candidate) => candidate.id === employeeId);
-    return employee ? `${employee.lastName} ${employee.firstName}` : employeeId;
+    return employee ? `${employee.firstName} ${employee.lastName}` : employeeId;
   }
 
   private defaultDayRules(): DayRule[] {
@@ -174,6 +210,25 @@ export class AdminCalendarsComponent {
 
   // --- Alta y edición ---------------------------------------------------
 
+  openCreate(): void {
+    this.startCreate();
+    this.editorDialog()?.nativeElement.showModal();
+  }
+
+  closeEditor(): void {
+    this.editorDialog()?.nativeElement.close();
+  }
+
+  openEffective(): void {
+    this.effectiveError.set(null);
+    this.effective.set(null);
+    this.effectiveDialog()?.nativeElement.showModal();
+  }
+
+  closeEffective(): void {
+    this.effectiveDialog()?.nativeElement.close();
+  }
+
   startCreate(): void {
     this.editingId.set(null);
     this.formError.set(null);
@@ -186,7 +241,10 @@ export class AdminCalendarsComponent {
   startEdit(calendar: CalendarSummary): void {
     this.formError.set(null);
     this.calendarsService.get(calendar.id).subscribe({
-      next: (detail) => this.fillForm(detail),
+      next: (detail) => {
+        this.fillForm(detail);
+        this.editorDialog()?.nativeElement.showModal();
+      },
       error: (err) => this.error.set(this.errorMessagesService.fromProblem(err.error))
     });
   }
@@ -292,7 +350,8 @@ export class AdminCalendarsComponent {
     request.subscribe({
       next: (detail) => {
         this.saving.set(false);
-        this.message.set(`Calendario "${detail.name}" guardado.`);
+        this.message.set(`Calendario «${detail.name}» guardado.`);
+        this.closeEditor();
         this.startCreate();
         this.load();
       },
@@ -304,20 +363,57 @@ export class AdminCalendarsComponent {
   }
 
   archive(calendar: CalendarSummary): void {
-    if (!window.confirm(`¿Archivar el calendario "${calendar.name}"?`)) {
+    this.ask({
+      kind: 'calendar',
+      id: calendar.id,
+      title: `Archivar ${calendar.name}`,
+      consequence:
+        'Deja de poder asignarse. Las jornadas ya calculadas con él no cambian.',
+      confirmLabel: 'Archivar'
+    });
+  }
+
+  confirmRemoval(): void {
+    const pending = this.pendingRemoval();
+    if (!pending) {
       return;
     }
+    this.cancelRemoval();
     this.error.set(null);
-    this.calendarsService.archive(calendar.id).subscribe({
+
+    if (pending.kind === 'calendar') {
+      this.calendarsService.archive(pending.id).subscribe({
+        next: () => {
+          this.message.set(`${pending.title.replace('Archivar ', '')} archivado.`);
+          if (this.editingId() === pending.id) {
+            this.startCreate();
+          }
+          this.load();
+        },
+        error: (err) => this.error.set(this.errorMessagesService.fromProblem(err.error))
+      });
+      return;
+    }
+
+    this.calendarsService.removeAssignment(pending.id).subscribe({
       next: () => {
-        this.message.set(`Calendario "${calendar.name}" archivado.`);
-        if (this.editingId() === calendar.id) {
-          this.startCreate();
-        }
-        this.load();
+        this.message.set('Asignación retirada.');
+        this.loadAssignments();
       },
       error: (err) => this.error.set(this.errorMessagesService.fromProblem(err.error))
     });
+  }
+
+  cancelRemoval(): void {
+    this.confirmDialog()?.nativeElement.close();
+    this.pendingRemoval.set(null);
+  }
+
+  private ask(removal: PendingRemoval): void {
+    this.error.set(null);
+    this.message.set(null);
+    this.pendingRemoval.set(removal);
+    this.confirmDialog()?.nativeElement.showModal();
   }
 
   // --- Asignaciones ------------------------------------------------------
@@ -338,7 +434,7 @@ export class AdminCalendarsComponent {
       })
       .subscribe({
         next: () => {
-          this.message.set('Calendario asignado.');
+          this.message.set(`${this.calendarName(raw.calendarId)} asignado.`);
           this.assignForm.reset({ calendarId: '', scope: 'TENANT', targetId: '' });
           this.loadAssignments();
         },
@@ -347,15 +443,13 @@ export class AdminCalendarsComponent {
   }
 
   removeAssignment(assignmentId: string): void {
-    if (!window.confirm('¿Retirar esta asignación?')) {
-      return;
-    }
-    this.calendarsService.removeAssignment(assignmentId).subscribe({
-      next: () => {
-        this.message.set('Asignación retirada.');
-        this.loadAssignments();
-      },
-      error: (err) => this.error.set(this.errorMessagesService.fromProblem(err.error))
+    this.ask({
+      kind: 'assignment',
+      id: assignmentId,
+      title: 'Retirar la asignación',
+      consequence:
+        'Quien dependiera de ella pasa a regirse por el ámbito más general que quede.',
+      confirmLabel: 'Retirar'
     });
   }
 
@@ -369,7 +463,7 @@ export class AdminCalendarsComponent {
     const raw = this.effectiveForm.getRawValue();
     this.effectiveError.set(null);
     this.effective.set(null);
-    this.calendarsService.resolveEffective(raw.employeeId, raw.date, raw.teamId || undefined).subscribe({
+    this.calendarsService.resolveEffective(raw.employeeId, raw.date).subscribe({
       next: (effective) => this.effective.set(effective),
       error: (err) => this.effectiveError.set(this.errorMessagesService.fromProblem(err.error))
     });
@@ -382,7 +476,11 @@ export class AdminCalendarsComponent {
   }
 
   statusLabel(status: string): string {
-    return status === '' ? 'Todos' : status === 'ACTIVE' ? 'Activos' : 'Archivados';
+    return STATUS_LABELS[status] ?? status;
+  }
+
+  filterLabel(status: string): string {
+    return FILTER_LABELS[status] ?? status;
   }
 
   sourceLabel(source: string): string {
@@ -390,7 +488,7 @@ export class AdminCalendarsComponent {
   }
 
   scopeLabel(scope: string): string {
-    return this.scopes.find((candidate) => candidate.value === scope)?.label ?? scope;
+    return SCOPE_LABELS[scope] ?? scope;
   }
 
   dayLabel(dayOfWeek: string): string {

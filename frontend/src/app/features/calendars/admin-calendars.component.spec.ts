@@ -226,7 +226,7 @@ describe('AdminCalendarsComponent', () => {
 
   it('resolves the effective calendar and reports when none applies', () => {
     flushInitialLoad();
-    component.effectiveForm.setValue({ employeeId: 'e-1', teamId: '', date: '2026-03-02' });
+    component.effectiveForm.setValue({ employeeId: 'e-1', date: '2026-03-02' });
 
     component.resolveEffective();
     httpMock
@@ -256,12 +256,17 @@ describe('AdminCalendarsComponent', () => {
   it('archives a calendar after confirmation and skips it otherwise', () => {
     flushInitialLoad([calendarSummary]);
 
-    spyOn(window, 'confirm').and.returnValue(false);
+    // Pedir archivar solo abre la confirmación.
     component.archive(calendarSummary as never);
     httpMock.expectNone('/api/v1/admin/calendars/c-1');
+    expect(component.pendingRemoval()?.kind).toBe('calendar');
 
-    (window.confirm as jasmine.Spy).and.returnValue(true);
+    component.cancelRemoval();
+    httpMock.expectNone('/api/v1/admin/calendars/c-1');
+    expect(component.pendingRemoval()).toBeNull();
+
     component.archive(calendarSummary as never);
+    component.confirmRemoval();
     const request = httpMock.expectOne('/api/v1/admin/calendars/c-1');
     expect(request.request.method).toBe('DELETE');
     request.flush(null);
@@ -284,9 +289,10 @@ describe('AdminCalendarsComponent', () => {
   it('exposes readable labels and durations', () => {
     flushInitialLoad([calendarSummary]);
 
-    expect(component.statusLabel('')).toBe('Todos');
-    expect(component.statusLabel('ACTIVE')).toBe('Activos');
-    expect(component.statusLabel('ARCHIVED')).toBe('Archivados');
+    expect(component.filterLabel('')).toBe('Todos');
+    expect(component.filterLabel('ACTIVE')).toBe('Activos');
+    expect(component.statusLabel('ACTIVE')).toBe('Activo');
+    expect(component.statusLabel('ARCHIVED')).toBe('Archivado');
     expect(component.dayLabel('MONDAY')).toBe('Lunes');
     expect(component.dayLabel('OTRO')).toBe('OTRO');
     expect(component.scopeLabel('EMPLOYEE')).toBe('Empleado');
