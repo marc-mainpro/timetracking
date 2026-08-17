@@ -69,40 +69,67 @@ describe('PlatformTenantsComponent', () => {
     expect(component.selectedStatus()).toBe('SUSPENDED');
   });
 
-  it('suspends a tenant with a reason', () => {
-    spyOn(window, 'prompt').and.returnValue('Impago');
+  it('pide confirmación antes de suspender, sin lanzar la petición', () => {
     component.suspend(tenant);
+
+    httpMock.expectNone('/api/v1/platform/tenants/t-1/suspend');
+    expect(component.pendingAction()?.kind).toBe('suspend');
+    expect(component.pendingAction()?.reason).toBe('required');
+  });
+
+  it('suspende con el motivo escrito en el diálogo', () => {
+    component.suspend(tenant);
+    component.reasonControl.setValue('Impago');
+    component.confirmAction();
 
     const suspend = httpMock.expectOne('/api/v1/platform/tenants/t-1/suspend');
     expect(suspend.request.body).toEqual({ reason: 'Impago' });
     suspend.flush({ ...tenant, status: 'SUSPENDED', updatedAt: tenant.createdAt, archivedAt: null, suspensionReason: 'Impago' });
     flushInitial([{ ...tenant, status: 'SUSPENDED' }]);
 
-    expect(component.message()).toContain('suspendido');
+    expect(component.message()).toContain('suspendida');
+    expect(component.pendingAction()).toBeNull();
   });
 
-  it('does not suspend when the reason prompt is cancelled', () => {
-    spyOn(window, 'prompt').and.returnValue(null);
+  it('no suspende sin motivo', () => {
     component.suspend(tenant);
+    component.reasonControl.setValue('   ');
+    component.confirmAction();
+
     httpMock.expectNone('/api/v1/platform/tenants/t-1/suspend');
+    expect(component.reasonControl.invalid).toBeTrue();
   });
 
-  it('rejects an empty suspension reason', () => {
-    spyOn(window, 'prompt').and.returnValue('   ');
+  it('cancelar descarta la acción pendiente', () => {
     component.suspend(tenant);
+    component.cancelAction();
+
     httpMock.expectNone('/api/v1/platform/tenants/t-1/suspend');
-    expect(component.error()).toContain('obligatorio');
+    expect(component.pendingAction()).toBeNull();
   });
 
-  it('activates a tenant after confirmation', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
+  it('archiva con el motivo vacío, que es opcional', () => {
+    component.archive(tenant);
+    expect(component.pendingAction()?.reason).toBe('optional');
+    component.confirmAction();
+
+    const archive = httpMock.expectOne('/api/v1/platform/tenants/t-1/archive');
+    expect(archive.request.body).toEqual({ reason: undefined });
+    archive.flush({ ...tenant, status: 'ARCHIVED', updatedAt: tenant.createdAt, archivedAt: tenant.createdAt, suspensionReason: null });
+    flushInitial([{ ...tenant, status: 'ARCHIVED' }]);
+
+    expect(component.message()).toContain('archivada');
+  });
+
+  it('activa tras confirmar', () => {
     component.activate({ ...tenant, status: 'PENDING' });
+    component.confirmAction();
 
     httpMock
       .expectOne('/api/v1/platform/tenants/t-1/activate')
       .flush({ ...tenant, updatedAt: tenant.createdAt, archivedAt: null, suspensionReason: null });
     flushInitial([tenant]);
-    expect(component.message()).toContain('activado');
+    expect(component.message()).toContain('activada');
   });
 
   it('creates a tenant and reloads the list', () => {
@@ -125,13 +152,14 @@ describe('PlatformTenantsComponent', () => {
       .expectOne((req) => req.url === '/api/v1/platform/tenants' && req.method === 'GET')
       .flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
 
-    expect(component.message()).toContain('creado');
+    expect(component.message()).toContain('creada');
   });
 
   it('does not submit an invalid create form', () => {
     component.form.reset({ tenantName: '', timezone: '', adminEmail: '', adminPassword: '', firstName: '', lastName: '' });
     component.createTenant();
     httpMock.expectNone((req) => req.method === 'POST' && req.url === '/api/v1/platform/tenants');
+    expect(component.form.controls.tenantName.touched).toBeTrue();
   });
 
   it('loads a tenant detail', () => {
@@ -142,11 +170,27 @@ describe('PlatformTenantsComponent', () => {
     expect(component.selectedTenant()?.id).toBe('t-1');
   });
   it('muestra el número de usuarios y el último acceso del tenant', () => {
+    component.load();
+    httpMock.expectOne((req) => req.url === '/api/v1/platform/tenants').flush({
+      content: [{ ...tenant, lastAccessAt: new Date(Date.now() - 3600 * 1000).toISOString() }],
+      page: 0,
+      size: 20,
+      totalElements: 1,
+      totalPages: 1
+    });
     fixture.detectChanges();
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('3 usuarios');
-    expect(text).toContain('último acceso');
+    expect(text).toContain('Último acceso');
+  });
+
+  it('avisa cuando una organización activa lleva meses sin usarse', () => {
+    fixture.detectChanges();
+
+    // El tenant del fixture accedió por última vez hace más de un mes.
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Sin accesos desde');
   });
 
   it('indica cuando un tenant nunca se ha usado', () => {
@@ -162,7 +206,22 @@ describe('PlatformTenantsComponent', () => {
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('1 usuario');
-    expect(text).toContain('sin accesos');
+    expect(text).toContain('Nunca ha accedido');
+  });
+
+  it('traduce los estados en lugar de mostrar el enum', () => {
+    expect(component.statusLabel('PENDING')).toBe('Pendiente');
+    expect(component.statusLabel('ARCHIVED')).toBe('Archivada');
+    expect(component.filterLabel('')).toBe('Todas');
+    expect(component.filterLabel('SUSPENDED')).toBe('Suspendidas');
+  });
+
+  it('marca en silencio una organización activa sin accesos recientes', () => {
+    const old = new Date(Date.now() - 45 * 24 * 3600 * 1000).toISOString();
+    expect(component.isSilent({ ...tenant, lastAccessAt: old })).toBeTrue();
+    expect(component.isSilent({ ...tenant, lastAccessAt: new Date().toISOString() })).toBeFalse();
+    // Una suspendida no está «en silencio»: su inactividad ya está explicada.
+    expect(component.isSilent({ ...tenant, status: 'SUSPENDED', lastAccessAt: old })).toBeFalse();
   });
 
 });

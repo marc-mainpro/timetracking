@@ -28,6 +28,12 @@
   --warn-bg: #f6ecd9;
   --danger: #b91c1c;
   --danger-bg: #f6e4e4;
+  /* Estado terminal (un tenant archivado): ni bien ni advertencia, apagado. */
+  --neutral: #6b7280;
+  --neutral-bg: #eeeef1;
+  /* Hairline mas marcada que --border, para separadores dentro de una misma
+     superficie (la regla de la marca, la escala del dia). */
+  --hairline-strong: #d7d7dd;
   --radius: 12px;
   --radius-sm: 8px;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -232,14 +238,31 @@ th {
 }
 
 .pill--rejected,
-.pill--inactive {
+.pill--inactive,
+.pill--suspended {
   background: var(--danger-bg);
   color: var(--danger);
+}
+
+.pill--archived {
+  background: var(--neutral-bg);
+  color: var(--neutral);
 }
 
 .error {
   margin: 0;
   color: var(--danger);
+}
+
+/* Fallo de envío con peso de bloque, para cuando es la única respuesta que
+   recibe el usuario (pantallas de acceso). El `.error` suelto se mantiene
+   como está: lo usan otras once pantallas. */
+.error--block {
+  padding: 0.7rem 0.85rem;
+  font-size: 0.9rem;
+  background: var(--danger-bg);
+  border-left: 2px solid var(--danger);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
 .validation {
@@ -253,6 +276,12 @@ th {
 .info {
   margin: 0;
   color: var(--text-muted);
+}
+
+/* Enlace secundario bajo una tarjeta de acceso. Vive aquí porque lo comparten
+   las tres pantallas de auth. */
+.secondary-link {
+  font-size: 0.9rem;
 }
 
 .mono {

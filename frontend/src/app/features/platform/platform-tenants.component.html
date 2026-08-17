@@ -1,187 +1,262 @@
-<section class="admin-shell">
-  <header class="card admin-header">
+<section class="console">
+  <header class="console__head">
     <div>
       <p class="eyebrow">Plataforma</p>
-      <h1>Administración de tenants</h1>
+      <h1>Organizaciones</h1>
+    </div>
+    <button type="button" (click)="openCreate()">Crear organización</button>
+  </header>
+
+  <div class="filters" role="group" aria-label="Filtrar por estado">
+    @for (status of statusFilters; track status) {
+      <button
+        type="button"
+        class="ghost filters__chip"
+        [class.filters__chip--on]="selectedStatus() === status"
+        [attr.aria-pressed]="selectedStatus() === status"
+        (click)="applyStatus(status)">
+        {{ filterLabel(status) }}
+      </button>
+    }
+    @if (result(); as result) {
+      <p class="filters__count mono">{{ result.totalElements }}</p>
+    }
+  </div>
+
+  <p class="status-line" role="status">
+    @if (message(); as info) {
+      <span class="ok">{{ info }}</span>
+    }
+    @if (loading()) {
+      <span class="info">Cargando…</span>
+    }
+  </p>
+  @if (error(); as err) {
+    <p class="error error--block">{{ err }}</p>
+  }
+
+  <ul class="tenants">
+    @for (tenant of result()?.content ?? []; track tenant.id; let index = $index) {
+      <li>
+        <button type="button" class="row" (click)="viewDetail(tenant)">
+          <span class="row__name">
+            <strong>{{ tenant.name }}</strong>
+            <small class="mono">{{ tenant.timezone }} · alta {{ relativeTime(tenant.createdAt) }}</small>
+          </span>
+
+          <span class="row__users mono">{{ userCountLabel(tenant) }}</span>
+
+          <span class="row__access" [class.row__access--silent]="isSilent(tenant)">
+            {{ accessLabel(tenant) }}
+          </span>
+
+          <span class="pill pill--{{ tenant.status.toLowerCase() }}">{{ statusLabel(tenant.status) }}</span>
+        </button>
+      </li>
+    } @empty {
+      @if (!loading()) {
+        <li class="empty">
+          @if (selectedStatus()) {
+            <p class="info">No hay organizaciones {{ filterLabel(selectedStatus()) | lowercase }}.</p>
+          } @else {
+            <p class="info">Aún no hay organizaciones.</p>
+            <button type="button" class="ghost" (click)="openCreate()">Crear la primera</button>
+          }
+        </li>
+      }
+    }
+  </ul>
+
+  @if (result(); as result) {
+    <nav class="pager" aria-label="Paginación">
+      <button type="button" class="ghost" (click)="previousPage()" [disabled]="page() === 0 || loading()">
+        Anterior
+      </button>
+      <p class="pager__position mono">Página {{ result.page + 1 }} de {{ result.totalPages || 1 }}</p>
+      <button
+        type="button"
+        class="ghost"
+        (click)="nextPage()"
+        [disabled]="result.page + 1 >= result.totalPages || loading()">
+        Siguiente
+      </button>
+    </nav>
+  }
+
+  <!-- La auditoría es global (el endpoint no filtra por tenant), así que vive
+       al pie y no dentro del detalle de una organización. -->
+  <details class="audit">
+    <summary>Actividad de la plataforma</summary>
+    @for (event of auditEvents(); track event.id) {
+      <p class="audit__row">
+        <span>{{ auditLabel(event) }}</span>
+        <small class="mono">{{ event.occurredAt | date: 'short' }}</small>
+      </p>
+    } @empty {
+      <p class="info">Todavía no se ha registrado actividad.</p>
+    }
+  </details>
+</section>
+
+<!-- Detalle ------------------------------------------------------------- -->
+<dialog #detailDialog class="panel" (close)="selectedTenant.set(null)">
+  @if (selectedTenant(); as tenant) {
+    <header class="panel__head">
+      <div>
+        <p class="eyebrow">Organización</p>
+        <h2>{{ tenant.name }}</h2>
+      </div>
+      <span class="pill pill--{{ tenant.status.toLowerCase() }}">{{ statusLabel(tenant.status) }}</span>
+    </header>
+
+    <dl class="facts">
+      <dt>Usuarios</dt>
+      <dd class="mono">{{ tenant.userCount }}</dd>
+      <dt>Zona horaria</dt>
+      <dd class="mono">{{ tenant.timezone }}</dd>
+      <dt>Último acceso</dt>
+      <dd>{{ accessLabel(tenant) }}</dd>
+      <dt>Alta</dt>
+      <dd class="mono">{{ tenant.createdAt | date: 'medium' }}</dd>
+      <dt>Activación</dt>
+      <dd class="mono">{{ tenant.activatedAt ? (tenant.activatedAt | date: 'medium') : '—' }}</dd>
+      @if (tenant.suspendedAt) {
+        <dt>Suspensión</dt>
+        <dd class="mono">{{ tenant.suspendedAt | date: 'medium' }}</dd>
+      }
+      @if (tenant.suspensionReason) {
+        <dt>Motivo</dt>
+        <dd>{{ tenant.suspensionReason }}</dd>
+      }
+      @if (tenant.archivedAt) {
+        <dt>Archivado</dt>
+        <dd class="mono">{{ tenant.archivedAt | date: 'medium' }}</dd>
+      }
+    </dl>
+
+    <footer class="panel__foot">
+      @if (tenant.status === 'PENDING') {
+        <button type="button" (click)="activate(tenant)">Activar</button>
+      }
+      @if (tenant.status === 'ACTIVE') {
+        <button type="button" class="ghost" (click)="suspend(tenant)">Suspender</button>
+      }
+      @if (tenant.status === 'SUSPENDED') {
+        <button type="button" (click)="reactivate(tenant)">Reactivar</button>
+      }
+      @if (tenant.status === 'ACTIVE' || tenant.status === 'SUSPENDED') {
+        <button type="button" class="danger" (click)="archive(tenant)">Archivar</button>
+      }
+      <button type="button" class="ghost panel__close" (click)="closeDetail()">Cerrar</button>
+    </footer>
+  }
+</dialog>
+
+<!-- Alta ---------------------------------------------------------------- -->
+<dialog #createDialog class="panel">
+  <header class="panel__head">
+    <div>
+      <p class="eyebrow">Alta</p>
+      <h2>Crear organización</h2>
     </div>
   </header>
 
-  @if (message(); as info) {
-    <p class="info">{{ info }}</p>
+  <form [formGroup]="form" (ngSubmit)="createTenant()" class="form">
+    <label>
+      <span>Nombre de la organización</span>
+      <input type="text" formControlName="tenantName" autocomplete="organization" />
+    </label>
+    @if (form.controls.tenantName.invalid && form.controls.tenantName.touched) {
+      <p class="validation">Indica el nombre de la organización.</p>
+    }
+
+    <label>
+      <span>Zona horaria</span>
+      <input type="text" formControlName="timezone" />
+    </label>
+    @if (form.controls.timezone.invalid && form.controls.timezone.touched) {
+      <p class="validation">Indica la zona horaria.</p>
+    }
+
+    <p class="form__section eyebrow">Administrador</p>
+
+    <div class="form__pair">
+      <label>
+        <span>Nombre</span>
+        <input type="text" formControlName="firstName" autocomplete="given-name" />
+      </label>
+      <label>
+        <span>Apellido</span>
+        <input type="text" formControlName="lastName" autocomplete="family-name" />
+      </label>
+    </div>
+    @if (form.controls.firstName.invalid && form.controls.firstName.touched) {
+      <p class="validation">Indica el nombre.</p>
+    }
+    @if (form.controls.lastName.invalid && form.controls.lastName.touched) {
+      <p class="validation">Indica el apellido.</p>
+    }
+
+    <label>
+      <span>Correo</span>
+      <input type="email" formControlName="adminEmail" autocomplete="email" />
+    </label>
+    @if (form.controls.adminEmail.invalid && form.controls.adminEmail.touched) {
+      <p class="validation">
+        @if (form.controls.adminEmail.errors?.['required']) {
+          Introduce un correo.
+        } @else {
+          Introduce un correo válido.
+        }
+      </p>
+    }
+
+    <label>
+      <span>Contraseña inicial</span>
+      <input type="password" formControlName="adminPassword" autocomplete="new-password" />
+    </label>
+    @if (form.controls.adminPassword.invalid && form.controls.adminPassword.touched) {
+      <p class="validation">
+        @if (form.controls.adminPassword.errors?.['required']) {
+          Introduce una contraseña.
+        } @else {
+          La contraseña necesita al menos 10 caracteres.
+        }
+      </p>
+    }
+
+    @if (formError(); as err) {
+      <p class="error error--block">{{ err }}</p>
+    }
+
+    <footer class="panel__foot">
+      <button type="submit" [disabled]="saving()">{{ saving() ? 'Creando…' : 'Crear organización' }}</button>
+      <button type="button" class="ghost" (click)="closeCreate()">Cancelar</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- Confirmación -------------------------------------------------------- -->
+<dialog #confirmDialog class="panel">
+  @if (pendingAction(); as action) {
+    <h2>{{ action.title }}</h2>
+    <p class="consequence">{{ action.consequence }}</p>
+
+    @if (action.reason !== 'none') {
+      <label>
+        <span>Motivo{{ action.reason === 'optional' ? ' (opcional)' : '' }}</span>
+        <textarea [formControl]="reasonControl" rows="2"></textarea>
+      </label>
+      @if (reasonControl.invalid && reasonControl.touched) {
+        <p class="validation">Escribe el motivo de la suspensión: queda registrado.</p>
+      }
+    }
+
+    <footer class="panel__foot">
+      <button type="button" [class.danger]="action.danger" [disabled]="acting()" (click)="confirmAction()">
+        {{ action.confirmLabel }}
+      </button>
+      <button type="button" class="ghost" (click)="cancelAction()">Cancelar</button>
+    </footer>
   }
-  @if (error(); as err) {
-    <p class="error">{{ err }}</p>
-  }
-
-  <section class="layout">
-    <article class="card list-card">
-      <div class="toolbar">
-        @for (status of statusFilters; track status) {
-          <button
-            type="button"
-            [class.active]="selectedStatus() === status"
-            (click)="applyStatus(status)">
-            {{ statusLabel(status) }}
-          </button>
-        }
-      </div>
-
-      @if (loading()) {
-        <p class="info">Cargando…</p>
-      }
-
-      @for (tenant of result()?.content ?? []; track tenant.id) {
-        <div class="tenant-row">
-          <div class="tenant-main">
-            <strong>{{ tenant.name }}</strong>
-            <small>{{ tenant.timezone }} · alta {{ tenant.createdAt | date: 'short' }}</small>
-            <small>
-              {{ tenant.userCount }} {{ tenant.userCount === 1 ? 'usuario' : 'usuarios' }} ·
-              @if (tenant.lastAccessAt) {
-                último acceso {{ tenant.lastAccessAt | date: 'short' }}
-              } @else {
-                sin accesos
-              }
-            </small>
-          </div>
-          <span class="pill pill--{{ tenant.status.toLowerCase() }}">{{ tenant.status }}</span>
-          <div class="row-actions">
-            <button type="button" (click)="viewDetail(tenant)">Detalle</button>
-            @if (tenant.status === 'PENDING') {
-              <button type="button" (click)="activate(tenant)">Activar</button>
-            }
-            @if (tenant.status === 'ACTIVE') {
-              <button type="button" (click)="suspend(tenant)">Suspender</button>
-            }
-            @if (tenant.status === 'SUSPENDED') {
-              <button type="button" (click)="reactivate(tenant)">Reactivar</button>
-            }
-            @if (tenant.status === 'ACTIVE' || tenant.status === 'SUSPENDED') {
-              <button type="button" class="danger" (click)="archive(tenant)">Archivar</button>
-            }
-          </div>
-        </div>
-      } @empty {
-        @if (!loading()) {
-          <p class="info">No hay tenants para este filtro.</p>
-        }
-      }
-
-      @if (result(); as result) {
-        <footer class="pager">
-          <button type="button" (click)="previousPage()" [disabled]="page() === 0 || loading()">Anterior</button>
-          <span>Página {{ result.page + 1 }} de {{ result.totalPages || 1 }}</span>
-          <button
-            type="button"
-            (click)="nextPage()"
-            [disabled]="result.page + 1 >= result.totalPages || loading()">
-            Siguiente
-          </button>
-        </footer>
-      }
-    </article>
-
-    <aside class="card detail-card">
-      <h3>Crear tenant</h3>
-      <form [formGroup]="form" (ngSubmit)="createTenant()" class="create-form">
-        <label>
-          Organización
-          <input type="text" formControlName="tenantName" />
-        </label>
-        @if (form.controls.tenantName.invalid && form.controls.tenantName.touched) {
-          <div class="validation">Indica el nombre de la organización.</div>
-        }
-        <label>
-          Zona horaria
-          <input type="text" formControlName="timezone" />
-        </label>
-        @if (form.controls.timezone.invalid && form.controls.timezone.touched) {
-          <div class="validation">Indica la zona horaria.</div>
-        }
-        <label>
-          Email del admin
-          <input type="email" formControlName="adminEmail" />
-        </label>
-        @if (form.controls.adminEmail.invalid && form.controls.adminEmail.touched) {
-          <div class="validation">
-            @if (form.controls.adminEmail.errors?.['required']) {
-              Introduce un correo.
-            } @else {
-              Introduce un correo válido.
-            }
-          </div>
-        }
-        <label>
-          Contraseña del admin
-          <input type="password" formControlName="adminPassword" autocomplete="new-password" />
-        </label>
-        @if (form.controls.adminPassword.invalid && form.controls.adminPassword.touched) {
-          <div class="validation">
-            @if (form.controls.adminPassword.errors?.['required']) {
-              Introduce una contraseña.
-            } @else {
-              La contraseña debe tener al menos 10 caracteres.
-            }
-          </div>
-        }
-        <div class="two-cols">
-          <label>
-            Nombre
-            <input type="text" formControlName="firstName" />
-          </label>
-          <label>
-            Apellido
-            <input type="text" formControlName="lastName" />
-          </label>
-        </div>
-        @if (form.controls.firstName.invalid && form.controls.firstName.touched) {
-          <div class="validation">Indica el nombre.</div>
-        }
-        @if (form.controls.lastName.invalid && form.controls.lastName.touched) {
-          <div class="validation">Indica el apellido.</div>
-        }
-        @if (formError(); as err) {
-          <p class="error">{{ err }}</p>
-        }
-        <button type="submit" [disabled]="saving()">{{ saving() ? 'Creando…' : 'Crear tenant' }}</button>
-      </form>
-
-      @if (selectedTenant(); as tenant) {
-        <div class="detail-head">
-          <h2>{{ tenant.name }}</h2>
-          <button type="button" (click)="closeDetail()">Cerrar</button>
-        </div>
-        <dl>
-          <dt>Estado</dt>
-          <dd><span class="pill pill--{{ tenant.status.toLowerCase() }}">{{ tenant.status }}</span></dd>
-          <dt>Zona horaria</dt>
-          <dd>{{ tenant.timezone }}</dd>
-          <dt>Creación</dt>
-          <dd>{{ tenant.createdAt | date: 'medium' }}</dd>
-          <dt>Activación</dt>
-          <dd>{{ tenant.activatedAt ? (tenant.activatedAt | date: 'medium') : '—' }}</dd>
-          <dt>Suspensión</dt>
-          <dd>{{ tenant.suspendedAt ? (tenant.suspendedAt | date: 'medium') : '—' }}</dd>
-          @if (tenant.suspensionReason) {
-            <dt>Motivo</dt>
-            <dd>{{ tenant.suspensionReason }}</dd>
-          }
-          <dt>Archivado</dt>
-          <dd>{{ tenant.archivedAt ? (tenant.archivedAt | date: 'medium') : '—' }}</dd>
-        </dl>
-      } @else {
-        <p class="eyebrow">Selecciona un tenant para ver su detalle.</p>
-      }
-
-      <h3>Auditoría de plataforma</h3>
-      @for (event of auditEvents(); track event.id) {
-        <div class="audit-row">
-          <strong>{{ event.action }}</strong>
-          <small>{{ event.occurredAt | date: 'short' }}</small>
-        </div>
-      } @empty {
-        <p class="eyebrow">Sin eventos de auditoría.</p>
-      }
-    </aside>
-  </section>
-</section>
+</dialog>
