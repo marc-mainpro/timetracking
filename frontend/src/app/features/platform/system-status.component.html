@@ -1,50 +1,66 @@
-<section class="admin-shell">
-  <header class="card admin-header">
-    <p class="eyebrow">Plataforma</p>
-    <h1>Estado del sistema</h1>
+<section class="console">
+  <header class="console__head console__head--ruled">
+    <div>
+      <p class="eyebrow">Plataforma</p>
+      <h1>Estado del sistema</h1>
+    </div>
+    <div class="console__refresh">
+      @if (checkedLabel(); as checked) {
+        <p class="checked mono">Consultado {{ checked }}</p>
+      }
+      <button type="button" class="ghost" (click)="load()" [disabled]="loading()">
+        {{ loading() ? 'Consultando…' : 'Actualizar' }}
+      </button>
+    </div>
   </header>
 
   @if (error(); as err) {
-    <p class="error">{{ err }}</p>
-  }
-  @if (loading()) {
-    <p class="info">Cargando…</p>
+    <p class="error error--block">{{ err }}</p>
   }
 
   @if (status(); as status) {
-    <div class="card">
+    <!-- El veredicto primero: quien abre esta pantalla viene a saber si tiene
+         que hacer algo, no a leer cifras. -->
+    <div class="verdict" [class.verdict--attention]="status.needsAttention" role="status">
       @if (status.needsAttention) {
-        <p class="error">
-          {{ status.totalFailed }}
-          {{ status.totalFailed === 1 ? 'elemento agotó' : 'elementos agotaron' }} sus reintentos.
-          No se recuperan solos: requieren intervención.
-        </p>
+        <p class="verdict__count mono">{{ status.totalFailed }}</p>
+        <div>
+          <p class="verdict__title">
+            {{ status.totalFailed === 1 ? 'Un elemento agotó' : 'Elementos que agotaron' }} sus reintentos
+          </p>
+          <p class="verdict__note">No se recuperan solos: hay que intervenir.</p>
+        </div>
       } @else {
-        <p class="info">Sin incidencias. Nada ha agotado sus reintentos.</p>
+        <div>
+          <p class="verdict__title">Sin incidencias</p>
+          <p class="verdict__note">Nada ha agotado sus reintentos.</p>
+        </div>
       }
-
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Cola</th>
-              <th>Pendiente</th>
-              <th>Fallido</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (queue of status.queues; track queue.name) {
-              <tr>
-                <td>{{ queueLabel(queue.name) }}</td>
-                <td>{{ queue.pending }}</td>
-                <td [class.failed]="queue.failed > 0">{{ queue.failed }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-
-      <button type="button" (click)="load()" [disabled]="loading()">Actualizar</button>
     </div>
+
+    <ul class="queues">
+      @for (queue of status.queues; track queue.name) {
+        <li class="queue">
+          <span class="queue__name">
+            <strong>{{ queueLabel(queue.name) }}</strong>
+            @if (queueHint(queue.name); as hint) {
+              <small>{{ hint }}</small>
+            }
+          </span>
+          <span class="queue__figure">
+            <span class="queue__value mono">{{ queue.pending }}</span>
+            <small>en cola</small>
+          </span>
+          <span class="queue__figure" [class.queue__figure--failed]="queue.failed > 0">
+            <span class="queue__value mono">{{ queue.failed }}</span>
+            <small>fallidos</small>
+          </span>
+        </li>
+      }
+    </ul>
+
+    <p class="footnote">
+      Lo que está en cola se procesa solo en la siguiente pasada. Solo lo fallido pide intervención.
+    </p>
   }
 </section>

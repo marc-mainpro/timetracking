@@ -39,8 +39,26 @@ describe('SystemStatusComponent', () => {
     });
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('2 elementos agotaron');
-    expect(text).toContain('requieren intervención');
+    expect(text).toContain('Elementos que agotaron sus reintentos');
+    expect(text).toContain('hay que intervenir');
+    // La cifra de fallos es el dato más grande de la pantalla.
+    expect(text).toContain('2');
+  });
+
+  it('usa el singular cuando solo ha fallado un elemento', () => {
+    flush({
+      queues: [{ name: 'outbox', pending: 0, failed: 1 }],
+      totalFailed: 1,
+      needsAttention: true
+    });
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Un elemento agotó');
+  });
+
+  it('deja constancia de cuándo se consultó el estado', () => {
+    flush({ queues: [], totalFailed: 0, needsAttention: false });
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Consultado');
   });
 
   it('no alarma cuando solo hay trabajo pendiente', () => {
