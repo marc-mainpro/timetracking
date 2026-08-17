@@ -1,0 +1,42 @@
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  white-space: nowrap;
+}
+
+.brand__mark {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  color: var(--text);
+}
+
+.brand__rule {
+  width: 1px;
+  height: 0.95rem;
+  background: var(--hairline-strong);
+}
+
+.brand__name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.brand--sm .brand__mark {
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+}
+
+.brand--sm .brand__rule {
+  height: 0.7rem;
+}
+
+.brand--sm .brand__name {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}

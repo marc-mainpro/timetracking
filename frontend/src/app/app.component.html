@@ -1,87 +1,71 @@
 @if (isAuthenticated()) {
-  <header class="app-bar">
+  <header class="app-bar" [class.app-bar--stacked]="!inlineNav()">
     <button
+      #menuToggle
       type="button"
       class="nav-toggle"
       (click)="toggleMenu()"
       [attr.aria-expanded]="menuOpen()"
       aria-controls="app-drawer"
-      aria-label="Abrir menú de navegación"
+      [attr.aria-label]="menuOpen() ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'"
       >
       <span class="nav-toggle__bars" aria-hidden="true"></span>
     </button>
-    <span class="app-bar__brand">Control horario</span>
-    <nav id="app-drawer" class="app-nav" [class.app-nav--open]="menuOpen()">
-      <p class="app-nav__title">Navegación</p>
-      <div class="app-nav__links">
-        @if (showEmployeeLinks()) {
-          <a routerLink="/employee-dashboard" routerLinkActive="active" (click)="closeMenu()">Mi jornada</a>
-        }
-        @if (showEmployeeLinks()) {
-          <a routerLink="/workdays" routerLinkActive="active" (click)="closeMenu()">Historial</a>
-        }
-        @if (showEmployeeLinks()) {
-          <a routerLink="/corrections" routerLinkActive="active" (click)="closeMenu()">Correcciones</a>
-        }
-        @if (showEmployeeLinks()) {
-          <a routerLink="/absences" routerLinkActive="active" (click)="closeMenu()">Ausencias</a>
-        }
-        @if (showEmployeeLinks()) {
-          <a routerLink="/shifts" routerLinkActive="active" (click)="closeMenu()">Turnos</a>
-        }
-        @if (isAuthenticated()) {
-          <a routerLink="/notifications" routerLinkActive="active" (click)="closeMenu()">
-            Notificaciones
-            @if (unreadNotifications() > 0) {
-              <span class="badge">{{ unreadNotifications() }}</span>
+
+    <a class="app-bar__brand" [routerLink]="homeRoute()">
+      <app-brand-lockup />
+    </a>
+
+    <nav
+      #drawer
+      id="app-drawer"
+      class="app-nav"
+      [class.app-nav--open]="menuOpen()"
+      [attr.aria-modal]="menuOpen() ? 'true' : null"
+      aria-label="Navegación principal"
+      >
+      @for (group of navGroups(); track group.title) {
+        <div class="app-nav__group">
+          <p class="app-nav__title">{{ group.title }}</p>
+          <div class="app-nav__links">
+            @for (link of group.links; track link.path) {
+              <a [routerLink]="link.path" routerLinkActive="active" (click)="closeMenu()">
+                {{ link.label }}
+                @if (link.path === '/notifications' && unreadNotifications() > 0) {
+                  <span class="badge">{{ unreadNotifications() }}</span>
+                }
+              </a>
             }
-          </a>
-        }
-        @if (showEmployeeLinks()) {
-          <a routerLink="/reports" routerLinkActive="active" (click)="closeMenu()">Mis informes</a>
-        }
-        @if (showAdminLinks()) {
-          <a routerLink="/admin/employees" routerLinkActive="active" (click)="closeMenu()">Empleados</a>
-        }
-        @if (showAdminLinks()) {
-          <a routerLink="/admin/calendars" routerLinkActive="active" (click)="closeMenu()">Calendarios</a>
-        }
-        @if (showAdminLinks()) {
-          <a routerLink="/admin/corrections" routerLinkActive="active" (click)="closeMenu()">Revisiones</a>
-        }
-        @if (showAdminLinks()) {
-          <a routerLink="/admin/absences" routerLinkActive="active" (click)="closeMenu()">Ausencias</a>
-        }
-        @if (showAdminLinks()) {
-          <a routerLink="/admin/shifts" routerLinkActive="active" (click)="closeMenu()">Gestión turnos</a>
-        }
-        @if (showAdminLinks()) {
-          <a routerLink="/admin/reports" routerLinkActive="active" (click)="closeMenu()">Informes</a>
-        }
-        @if (showPlatformLinks()) {
-          <a routerLink="/platform/tenants" routerLinkActive="active" (click)="closeMenu()">Tenants</a>
-        }
-        @if (showPlatformLinks()) {
-          <a routerLink="/platform/registrations" routerLinkActive="active" (click)="closeMenu()">Solicitudes</a>
-        }
-        @if (showPlatformLinks()) {
-          <a routerLink="/platform/system-status" routerLinkActive="active" (click)="closeMenu()">Estado</a>
-        }
-      </div>
+          </div>
+        </div>
+      }
     </nav>
-    <button type="button" class="logout ghost" (click)="logout()">Salir</button>
+
+    <div class="app-bar__end">
+      <p class="app-bar__clock mono" aria-hidden="true">{{ now() | date: 'HH:mm' }}</p>
+      <button type="button" class="logout ghost" (click)="logout()">Salir</button>
+    </div>
   </header>
   @if (menuOpen()) {
     <div class="drawer-backdrop" (click)="closeMenu()" aria-hidden="true"></div>
   }
 } @else {
-  <nav class="app-nav app-nav--guest">
-    <a routerLink="/auth/login" routerLinkActive="active">Login</a>
-    <a routerLink="/registro" routerLinkActive="active">Alta de organización</a>
-  </nav>
+  <header class="app-bar app-bar--guest">
+    <a class="app-bar__brand" routerLink="/auth/login">
+      <app-brand-lockup />
+    </a>
+    <nav class="guest-nav" aria-label="Acceso">
+      @if (onLoginPage()) {
+        <a routerLink="/registro">Da de alta tu organización</a>
+      } @else {
+        <a routerLink="/auth/login">Entrar</a>
+      }
+    </nav>
+  </header>
 }
-
 
 <main class="app-main">
   <router-outlet />
 </main>
+
+<app-footer />

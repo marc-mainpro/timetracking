@@ -1,0 +1,111 @@
+/* El host centra la tarjeta en el hueco que dejan la barra superior y el pie.
+   Se descuenta ese cromo del alto del viewport en lugar de encadenar un
+   `height: 100%` desde `app-root`: eso obligaria a dar altura definida a
+   `.app-main` y, con ella, a las catorce pantallas de la app. */
+:host {
+  display: grid;
+  place-items: center;
+  min-height: calc(100dvh - 10rem);
+  padding-block: clamp(1rem, 5vh, 3rem);
+}
+
+@media (min-width: 720px) {
+  :host {
+    min-height: calc(100dvh - 11.5rem);
+  }
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 25rem;
+  padding: 1.5rem;
+}
+
+@media (min-width: 480px) {
+  .auth-card {
+    padding: 2rem 2.25rem 2.25rem;
+  }
+}
+
+/* Cabecera: la hora es el elemento de mayor tamano de la tarjeta. Los
+   segundos van atenuados para que la cifra no cambie de peso cada segundo. */
+.clock-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.clock {
+  margin: 0;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: clamp(2.1rem, 11vw, 2.6rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.clock__s {
+  color: var(--text-muted);
+  opacity: 0.55;
+}
+
+.clock-date {
+  margin: 0;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+.day-rule {
+  position: relative;
+  height: 1px;
+  margin: 1.1rem 0 1.75rem;
+  background: var(--border);
+}
+
+.day-rule__past {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--text);
+}
+
+/* La marca del ahora: un tramo corto y grueso al final de lo transcurrido. */
+.day-rule__past::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  right: 0;
+  width: 2px;
+  height: 7px;
+  background: var(--accent);
+}
+
+h1 {
+  font-size: clamp(1.6rem, 6.5vw, 2rem);
+}
+
+.lede {
+  margin: 0.55rem 0 0;
+  color: var(--text-muted);
+}
+
+/* `:has` evita el margen fantasma cuando la pantalla no proyecta enlaces:
+   `:empty` no sirve porque `ng-content` deja nodos de comentario. */
+.auth-card__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+}
+
+.auth-card__foot:has(*) {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}

@@ -1,7 +1,16 @@
-/* Barra superior (mobile-first): hamburguesa + marca + salir.
-   Los enlaces viven en un cajón lateral (off-canvas) que se abre con el
-   botón hamburguesa. En escritorio (>=720px) la barra desaparece y los
-   enlaces se muestran en línea. */
+/* Shell de la aplicacion: barra superior, contenido y pie. El host reparte la
+   altura en tres filas para que el pie quede abajo sin `position: fixed` ni
+   `100dvh` en las paginas.
+
+   Mobile-first: los enlaces viven en un cajon lateral (off-canvas) que abre la
+   hamburguesa; a partir de 720px la barra los muestra en linea, agrupados por
+   ambito y separados por una hairline. */
+
+:host {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100dvh;
+}
 
 .app-bar {
   display: flex;
@@ -13,18 +22,44 @@
 }
 
 .app-bar__brand {
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-bar__brand:hover {
+  text-decoration: none;
+  opacity: 0.75;
+}
+
+.app-bar__end {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-left: auto;
+}
+
+.app-bar__clock {
+  display: none;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
 }
 
 .app-bar .logout {
-  margin-left: auto;
   min-height: 2.4rem;
   padding: 0.5rem 0.9rem;
   font-size: 0.88rem;
 }
 
-/* Botón hamburguesa */
+/* Barra de invitado: marca y la accion contraria a la pantalla actual. */
+.app-bar--guest .guest-nav {
+  margin-left: auto;
+  font-size: 0.9rem;
+}
+
+/* Boton hamburguesa */
 .nav-toggle {
   display: inline-flex;
   align-items: center;
@@ -62,7 +97,7 @@
   top: 6px;
 }
 
-/* Backdrop del cajón */
+/* Backdrop del cajon */
 .drawer-backdrop {
   position: fixed;
   inset: 0;
@@ -70,7 +105,7 @@
   z-index: 30;
 }
 
-/* Cajón lateral (mobile) */
+/* Cajon lateral (mobile) */
 .app-nav {
   position: fixed;
   top: 0;
@@ -80,8 +115,9 @@
   width: min(80vw, 17rem);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.4rem;
   padding: 1.25rem;
+  overflow-y: auto;
   background: var(--surface);
   border-right: 1px solid var(--border);
   transform: translateX(-100%);
@@ -98,12 +134,18 @@
   }
 }
 
+.app-nav__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .app-nav__title {
   margin: 0;
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 500;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
@@ -134,29 +176,44 @@
   background: var(--bg);
 }
 
-/* Nav de invitado (login/registro): barra simple sin cajón */
-.app-nav--guest {
-  position: static;
-  transform: none;
-  flex-direction: row;
-  width: auto;
-  gap: 1.25rem;
-  padding: 1rem 1.25rem;
-  border-right: 0;
-  border-bottom: 1px solid var(--border);
-}
-
 .app-main {
+  width: 100%;
   max-width: 76rem;
   margin: 0 auto;
   padding: 1.25rem;
 }
 
-/* Escritorio: sin barra ni cajón, enlaces en línea */
+/* Escritorio: sin cajon, enlaces en linea y agrupados. */
 @media (min-width: 720px) {
+  /* Una sola banda mientras los enlaces quepan (ver `INLINE_NAV_MAX_LINKS`):
+     marca, navegacion y sesion comparten linea. */
   .app-bar {
-    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0 1.25rem;
     padding: 0.85rem 1.75rem;
+  }
+
+  .app-bar__end {
+    order: 2;
+  }
+
+  .app-nav {
+    order: 1;
+  }
+
+  /* Dos bandas: identidad y sesion arriba, navegacion debajo. Con trece
+     enlaces, meterlos en la misma linea que la marca los parte en filas
+     sueltas y los grupos dejan de leerse como grupos. */
+  .app-bar--stacked {
+    padding-bottom: 0;
+  }
+
+  .app-bar--stacked .app-nav {
+    order: 3;
+    flex-basis: 100%;
+    margin-top: 0.85rem;
+    padding: 0.7rem 0;
+    border-top: 1px solid var(--border);
   }
 
   .nav-toggle,
@@ -164,8 +221,8 @@
     display: none;
   }
 
-  .app-bar__brand {
-    margin-right: 1.5rem;
+  .app-bar__clock {
+    display: block;
   }
 
   .app-nav {
@@ -174,11 +231,24 @@
     transform: none;
     flex-direction: row;
     align-items: center;
+    flex-wrap: wrap;
     width: auto;
     gap: 0.35rem 1.15rem;
-    padding: 0;
+    overflow: visible;
     background: transparent;
     border-right: 0;
+  }
+
+  .app-nav__group {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.35rem 1.15rem;
+  }
+
+  /* La hairline separa grupos en lugar de repetir el titulo en la barra. */
+  .app-nav__group + .app-nav__group {
+    padding-left: 1.15rem;
+    border-left: 1px solid var(--border);
   }
 
   .app-nav__title {
