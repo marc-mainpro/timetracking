@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import { AuthService } from '../../core/services/auth.service';
+import { AuthShellComponent } from '../../shared/auth-shell/auth-shell.component';
 
 /**
  * Pantalla de solicitud de recuperación de contraseña (RF-USR-006).
@@ -15,7 +16,7 @@ import { AuthService } from '../../core/services/auth.service';
  */
 @Component({
   selector: 'app-forgot-password',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, AuthShellComponent],
   templateUrl: './forgot-password.component.html',
   styleUrl: './forgot-password.component.scss'
 })
@@ -32,6 +33,11 @@ export class ForgotPasswordComponent {
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]]
   });
+
+  /** Método y no `computed`: `invalid`/`touched` de los controles no son señales. */
+  showEmailError(): boolean {
+    return this.form.controls.email.invalid && this.form.controls.email.touched;
+  }
 
   submit(): void {
     if (this.form.invalid || this.loading()) {

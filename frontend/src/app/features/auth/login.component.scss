@@ -1,95 +1,57 @@
-.auth-shell {
-  min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: 1.25rem;
+/* Solo lo estructural: la tarjeta, la cabecera de reloj y la tipografia viven
+   en `app-auth-shell`, y los controles en `styles.scss`. */
+
+/* El componente enrutado es hijo directo de `.app-main`, que es un bloque:
+   sin esto el host seria inline y el grid de `app-auth-shell` quedaria dentro
+   de un contexto de linea. */
+:host {
+  display: block;
 }
 
-.auth-card {
-  width: 100%;
-  max-width: 25rem;
-  padding: 1.5rem;
-}
-
-@media (min-width: 480px) {
-  .auth-card {
-    padding: 2rem;
-  }
-}
-
-.clock-strip {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin: 0 0 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.clock {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 1.35rem;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-.clock-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 0.65rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.clock-dot {
-  width: 0.4rem;
-  height: 0.4rem;
-  border-radius: 50%;
-  background: var(--ok);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .clock-dot {
-    animation: none;
-  }
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.3;
-  }
-}
-
-h1 {
-  font-size: clamp(1.5rem, 6vw, 1.9rem);
-}
-
-.lede {
-  margin: 0.6rem 0 1.5rem;
-  color: var(--text-muted);
+/* El hueco lo pone el `gap` del campo, no el margen global de la etiqueta. */
+.field label > span {
+  margin-bottom: 0;
 }
 
 .auth-form {
   display: grid;
-  gap: 1rem;
+  gap: 1.1rem;
+  margin-top: 1.6rem;
 }
 
-.auth-form button {
-  margin-top: 0.3rem;
+.field {
+  display: grid;
+  gap: 0.45rem;
 }
 
-.secondary-link {
-  display: inline-block;
-  margin-top: 1.35rem;
-  font-size: 0.9rem;
+/* El boton de mostrar contrasena va dentro del marco del campo, no al lado:
+   asi el control sigue leyendose como una sola caja. */
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-field input {
+  padding-right: 5.25rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.35rem;
+  min-height: 2rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  background: transparent;
+  border-color: transparent;
+}
+
+.password-toggle:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--bg);
+}
+
+.auth-form button[type='submit'] {
+  margin-top: 0.4rem;
 }
