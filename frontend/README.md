@@ -23,12 +23,25 @@ estricta. Consume la API REST del backend bajo `/api/v1`.
   `src/styles.scss`.
 - Todas las páginas se maquetan desde móvil hacia arriba (base en una columna,
   rejillas que se abren con `min-width`).
-- Navegación con **menú lateral escondible** (off-canvas + hamburguesa) en
-  móvil y barra en línea en escritorio (`app.component.*`).
+- La app se sirve con `LOCALE_ID: 'es'` (`app.config.ts`): sin registrarlo,
+  `DatePipe` formatea en `en-US` (12 h con AM/PM, mes/día) y toda la interfaz
+  está en español.
+- **Barra superior en dos bandas** en escritorio (`app.component.*`): identidad
+  y sesión arriba, navegación debajo, agrupada por ámbito (Mi tiempo /
+  Administración / Plataforma / Cuenta) y separada por hairline. En móvil, la
+  misma agrupación dentro de un **menú lateral escondible** (off-canvas +
+  hamburguesa) que atrapa el foco mientras está abierto.
+- **Pie común** (`shared/app-footer`) con la marca y la zona horaria del
+  navegador: es la que interpreta las horas que se pintan.
+- **Pantallas de acceso**: comparten `shared/auth-shell`, que pone la tarjeta,
+  la cabecera de reloj (segundos atenuados) y la hairline cuyo relleno mide la
+  fracción transcurrida del día. Las pantallas solo aportan su formulario.
 - **Validación por campo**: cada control muestra su error bajo el campo con
   `<div class="validation">` cuando está `invalid && touched`, con mensaje
-  concreto por tipo de error. `.error` queda para el fallo global del envío
-  (respuesta de la API) y `.validation` para el detalle de cada campo.
+  concreto por tipo de error y `role="alert"` + `aria-invalid` +
+  `aria-describedby` en el control. `.error` queda para el fallo global del
+  envío (respuesta de la API), con la variante `.error--block` cuando es la
+  única respuesta que recibe el usuario.
 - Los tokens de `styles.scss` dan `padding` y `border-radius` a `.card`, así
   que las tarjetas no necesitan estilo local salvo que se salgan del patrón.
 
@@ -40,9 +53,13 @@ src/app/
     guards/        authGuard, roleGuard (control de acceso por rol)
     interceptors/  auth.interceptor (adjunta el token, reintenta con refresh)
     pipes/         iso-duration.pipe (formatea duraciones ISO-8601 del backend)
-    services/      auth.service, error-messages.service
+    services/      auth.service, error-messages.service, clock.service
+  shared/
+    auth-shell/    tarjeta y cabecera de reloj de las pantallas de acceso
+    app-footer/    pie común (marca y zona horaria)
+    brand/         lockup tipográfico de marca (TFP · Control horario)
   features/
-    auth/                login y registro de organización
+    auth/                acceso, recuperar y restablecer contraseña
     registration/        solicitud de alta y verificación por correo
     employee-dashboard/  jornada actual del empleado (reloj en vivo)
     workdays/            historial de jornadas
