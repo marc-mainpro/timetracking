@@ -30,6 +30,21 @@ describe('authInterceptor', () => {
     httpMock.verify();
   });
 
+  /**
+   * El refresh se serializa entre pestañas con un cerrojo que concede de forma
+   * asíncrona, así que la petición no aparece en el mismo turno que el 401.
+   */
+  async function waitForRefresh() {
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      const matches = httpMock.match('/api/v1/auth/refresh');
+      if (matches.length > 0) {
+        return matches[0];
+      }
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+    throw new Error('No se pidió el refresh');
+  }
+
   it('adds bearer token to authenticated requests', () => {
     authService['clearSession']();
     authService['accessToken'].set(sampleToken(['EMPLOYEE']));
@@ -41,7 +56,7 @@ describe('authInterceptor', () => {
     request.flush({});
   });
 
-  it('retries once after refresh on 401', () => {
+  it('retries once after refresh on 401', async () => {
     authService['accessToken'].set(sampleToken(['EMPLOYEE']));
 
     httpClient.get('/api/v1/workdays/current').subscribe();
@@ -49,15 +64,16 @@ describe('authInterceptor', () => {
     const first = httpMock.expectOne('/api/v1/workdays/current');
     first.flush({}, { status: 401, statusText: 'Unauthorized' });
 
-    const refresh = httpMock.expectOne('/api/v1/auth/refresh');
+    const refresh = await waitForRefresh();
     refresh.flush({ accessToken: sampleToken(['EMPLOYEE']), expiresAt: new Date(Date.now() + 60_000).toISOString() });
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     const retried = httpMock.expectOne('/api/v1/workdays/current');
     expect(retried.request.headers.get('X-Auth-Retry')).toBe('1');
     retried.flush({});
   });
 
-  it('does not retry refresh requests and clears the session when refresh fails', () => {
+  it('does not retry refresh requests and clears the session when refresh fails', async () => {
     authService['accessToken'].set(sampleToken(['EMPLOYEE']));
     const navigateSpy = spyOn(router, 'navigate').and.resolveTo(true);
 
@@ -66,8 +82,9 @@ describe('authInterceptor', () => {
     const first = httpMock.expectOne('/api/v1/workdays/current');
     first.flush({}, { status: 401, statusText: 'Unauthorized' });
 
-    const refresh = httpMock.expectOne('/api/v1/auth/refresh');
+    const refresh = await waitForRefresh();
     refresh.flush({}, { status: 401, statusText: 'Unauthorized' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(authService.getAccessToken()).toBeNull();
     expect(navigateSpy).toHaveBeenCalledWith(['/auth/login']);

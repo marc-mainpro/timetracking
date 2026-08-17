@@ -75,19 +75,26 @@ export class AuthService {
     if (this.accessToken()) {
       return of(true);
     }
-    if (!this.hasSessionHint()) {
+    // Solo se descarta cuando consta que aquí no hay sesión. Si nunca se ha
+    // escrito la marca —primera visita, o navegador que ya estaba autenticado
+    // antes de que esta marca existiera— se intenta igual: al desplegar, esas
+    // sesiones son válidas y perderlas obligaría a todo el mundo a entrar de
+    // nuevo una vez.
+    if (this.sessionHint() === 'absent') {
       return of(false);
     }
 
-    return this.withRefreshLock(() =>
-      this.refresh().pipe(
-        map(() => true),
-        catchError(() => {
+    return this.refresh().pipe(
+      map(() => true),
+      catchError((error: unknown) => {
+        // Solo un rechazo del servidor prueba que no hay sesión. Ante un fallo
+        // de red o un 5xx la cookie puede seguir siendo válida, así que se deja
+        // la marca como está para poder reintentarlo en la siguiente carga.
+        if (this.isSessionRejected(error)) {
           this.clearSession();
-          return of(false);
-        })
-      )
-    ).pipe(
+        }
+        return of(false);
+      }),
       // El arranque espera a esto, así que no puede quedarse colgado: si el
       // backend no responde —o el cerrojo lo retiene otra pestaña atascada—, la
       // aplicación sigue sin sesión en lugar de dejar la pantalla en blanco.
@@ -97,18 +104,44 @@ export class AuthService {
   }
 
   /**
-   * Serializa el refresh entre las pestañas del mismo navegador.
+   * Canjea la cookie de refresh por un access token nuevo.
    *
-   * <p>El refresh token es rotatorio con detección de reutilización: si dos
-   * pestañas arrancan a la vez, ambas mandan la misma cookie, la segunda llega
-   * con un valor ya rotado y el backend revoca la cadena entera, cerrando la
-   * sesión en todas partes. Con el cerrojo, la segunda espera y para cuando le
-   * toca el navegador ya guardó la cookie nueva.
+   * <p>Serializado entre las pestañas del mismo navegador: el refresh token es
+   * rotatorio con detección de reutilización, así que si dos pestañas mandan la
+   * misma cookie a la vez, la segunda llega con un valor ya rotado y el backend
+   * revoca la cadena entera, cerrando la sesión en todas partes. El cerrojo
+   * cubre este método —y no solo el arranque— porque el interceptor también
+   * refresca al recibir un 401, y esas dos vías pueden coincidir.
    *
-   * <p>Si el navegador no trae Web Locks se llama directamente: queda la carrera
-   * que había antes, no una peor.
+   * <p>`refreshInFlight` sigue colapsando las llamadas de una misma pestaña; el
+   * cerrojo resuelve lo que aquello no ve, que es el resto de pestañas.
    */
-  private withRefreshLock(work: () => Observable<boolean>): Observable<boolean> {
+  refresh(): Observable<string> {
+    const inFlight = this.refreshInFlight();
+    if (inFlight) {
+      return inFlight;
+    }
+
+    const request = this.withRefreshLock(() => this.requestRefresh()).pipe(
+      finalize(() => this.refreshInFlight.set(null)),
+      shareReplay(1)
+    );
+
+    this.refreshInFlight.set(request);
+    return request;
+  }
+
+  private requestRefresh(): Observable<string> {
+    return this.http
+      .post<AuthTokenResponse>('/api/v1/auth/refresh', {}, { withCredentials: true })
+      .pipe(
+        tap((response) => this.setAccessToken(response.accessToken)),
+        map((response) => response.accessToken)
+      );
+  }
+
+  /** Si el navegador no trae Web Locks se llama directo: queda la carrera que ya había. */
+  private withRefreshLock<T>(work: () => Observable<T>): Observable<T> {
     const locks = navigator.locks;
     if (!locks) {
       return work();
@@ -116,23 +149,10 @@ export class AuthService {
     return defer(() => from(locks.request(REFRESH_LOCK, () => firstValueFrom(work()))));
   }
 
-  refresh(): Observable<string> {
-    const inFlight = this.refreshInFlight();
-    if (inFlight) {
-      return inFlight;
-    }
-
-    const request = this.http
-      .post<AuthTokenResponse>('/api/v1/auth/refresh', {}, { withCredentials: true })
-      .pipe(
-        tap((response) => this.setAccessToken(response.accessToken)),
-        map((response) => response.accessToken),
-        finalize(() => this.refreshInFlight.set(null)),
-        shareReplay(1)
-      );
-
-    this.refreshInFlight.set(request);
-    return request;
+  /** Un 401/403 del refresh significa que esa sesión ya no existe. */
+  private isSessionRejected(error: unknown): boolean {
+    const status = (error as { status?: number } | null)?.status;
+    return status === 401 || status === 403;
   }
 
   logout(): Observable<void> {
@@ -188,32 +208,48 @@ export class AuthService {
 
   clearSession(): void {
     this.accessToken.set(null);
-    this.forgetSessionHint();
+    this.writeSessionHint('0');
   }
 
   private setAccessToken(token: string): void {
     this.accessToken.set(token);
-    this.rememberSessionHint();
+    this.writeSessionHint('1');
   }
 
-  private hasSessionHint(): boolean {
-    return this.readStorage()?.getItem(SESSION_HINT_KEY) === '1';
+  /**
+   * Tres estados, no dos: `present` y `absent` son lo que consta, y `unknown`
+   * cubre tanto la primera visita como el navegador que ya tenía sesión antes
+   * de que esta marca existiera. Ante la duda se intenta el refresh, que como
+   * mucho cuesta un 401.
+   */
+  private sessionHint(): 'present' | 'absent' | 'unknown' {
+    const stored = this.readHint();
+    if (stored === '1') {
+      return 'present';
+    }
+    return stored === '0' ? 'absent' : 'unknown';
   }
 
-  private rememberSessionHint(): void {
-    this.readStorage()?.setItem(SESSION_HINT_KEY, '1');
-  }
-
-  private forgetSessionHint(): void {
-    this.readStorage()?.removeItem(SESSION_HINT_KEY);
-  }
-
-  /** `localStorage` lanza si el navegador lo tiene bloqueado (modo privado). */
-  private readStorage(): Storage | null {
+  /*
+   * El almacenamiento es una optimización, nunca un motivo de fallo: en modo
+   * privado o con la cuota agotada, tanto el acceso como la escritura pueden
+   * lanzar. Como esto se ejecuta dentro del `tap` del login, dejar escapar la
+   * excepción convertiría una autenticación correcta en un error en pantalla.
+   */
+  private readHint(): string | null {
     try {
-      return localStorage;
+      return localStorage.getItem(SESSION_HINT_KEY);
     } catch {
       return null;
+    }
+  }
+
+  private writeSessionHint(value: '0' | '1'): void {
+    try {
+      localStorage.setItem(SESSION_HINT_KEY, value);
+    } catch {
+      // Sin marca se intentará el refresh en cada arranque: es el peor caso
+      // aceptable, y no rompe nada.
     }
   }
 
