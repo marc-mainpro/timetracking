@@ -3,6 +3,7 @@ import { DatePipe, LowerCasePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 
+import { daysSince, relativeTime } from '../../core/relative-time';
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import {
   AuditEvent,
@@ -49,8 +50,6 @@ interface PendingAction {
   readonly reason: 'required' | 'optional' | 'none';
   readonly danger: boolean;
 }
-
-const MILLIS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /** A partir de aquí una cuenta activa se considera en silencio. */
 const SILENCE_THRESHOLD_DAYS = 30;
@@ -301,27 +300,8 @@ export class PlatformTenantsComponent {
     return FILTER_LABELS[status] ?? status;
   }
 
-  /** «hace 8 meses», «hace 2 horas». Sin `ClockService`: ver `renderedAt`. */
   relativeTime(iso: string): string {
-    const elapsed = this.renderedAt() - Date.parse(iso);
-    const format = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
-    const minutes = Math.round(elapsed / 60000);
-    if (Math.abs(minutes) < 60) {
-      return format.format(-minutes, 'minute');
-    }
-    const hours = Math.round(elapsed / 3600000);
-    if (Math.abs(hours) < 24) {
-      return format.format(-hours, 'hour');
-    }
-    const days = Math.round(elapsed / MILLIS_PER_DAY);
-    if (Math.abs(days) < 31) {
-      return format.format(-days, 'day');
-    }
-    const months = Math.round(days / 30);
-    if (Math.abs(months) < 12) {
-      return format.format(-months, 'month');
-    }
-    return format.format(-Math.round(days / 365), 'year');
+    return relativeTime(iso, this.renderedAt());
   }
 
   /** Días sin un solo acceso; null si nunca ha entrado nadie. */
@@ -329,7 +309,7 @@ export class PlatformTenantsComponent {
     if (!tenant.lastAccessAt) {
       return null;
     }
-    return Math.floor((this.renderedAt() - Date.parse(tenant.lastAccessAt)) / MILLIS_PER_DAY);
+    return daysSince(tenant.lastAccessAt, this.renderedAt());
   }
 
   /** Una cuenta viva que lleva más de un mes sin usarse merece una mirada. */

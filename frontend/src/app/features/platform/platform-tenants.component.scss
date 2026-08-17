@@ -5,66 +5,6 @@
    activación y último acceso sobre una escala compartida por toda la página.
    Mobile-first: la cinta es lo primero que se retira cuando no hay ancho. */
 
-.console {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.console__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-/* Filtros ---------------------------------------------------------------- */
-
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
-  padding-bottom: 0.85rem;
-  border-bottom: 1px solid var(--hairline-strong);
-}
-
-.filters__chip {
-  min-height: 2.2rem;
-  padding: 0.35rem 0.8rem;
-  font-size: 0.88rem;
-  border-radius: 999px;
-}
-
-/* El filtro activo se invierte en lugar de subrayarse: con cinco chips, el
-   subrayado obliga a leerlos todos para saber cuál está puesto. */
-.filters__chip--on {
-  color: var(--surface);
-  background: var(--primary);
-  border-color: var(--primary);
-}
-
-.filters__chip--on:hover {
-  background: var(--primary);
-}
-
-.filters__count {
-  margin: 0 0 0 auto;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.status-line {
-  min-height: 1.25rem;
-  margin: 0;
-  font-size: 0.9rem;
-}
-
-.status-line .ok {
-  color: var(--ok);
-}
-
 /* Lista ------------------------------------------------------------------ */
 
 .tenants {
@@ -142,31 +82,6 @@
   justify-self: end;
 }
 
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 2rem 0.5rem;
-}
-
-/* Paginación ------------------------------------------------------------- */
-
-.pager {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding-top: 0.85rem;
-  border-top: 1px solid var(--border);
-}
-
-.pager__position {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
 /* Auditoría -------------------------------------------------------------- */
 
 .audit {
@@ -197,47 +112,9 @@
 
 /* Paneles ---------------------------------------------------------------- */
 
-.panel {
-  width: min(100%, 30rem);
-  max-height: 85dvh;
-  margin: auto;
-  padding: 1.5rem;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow-y: auto;
-}
-
-.panel::backdrop {
-  background: rgba(0, 0, 0, 0.35);
-}
-
-.panel__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-}
-
-.panel__foot {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--border);
-}
-
 /* Cerrar se aparta de las acciones sobre la organización. */
 .panel__close {
   margin-left: auto;
-}
-
-.consequence {
-  margin: 0.5rem 0 1.25rem;
-  color: var(--text-muted);
 }
 
 .facts {
@@ -255,24 +132,6 @@
 .facts dd {
   margin: 0;
   font-size: 0.9rem;
-}
-
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-.form__section {
-  margin: 0.5rem 0 0;
-  padding-top: 0.85rem;
-  border-top: 1px solid var(--border);
-}
-
-.form__pair {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.85rem;
 }
 
 /* Escritorio ------------------------------------------------------------- */
