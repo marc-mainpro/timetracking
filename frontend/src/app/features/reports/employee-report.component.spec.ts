@@ -72,7 +72,7 @@ describe('EmployeeReportComponent', () => {
     httpMock.expectOne((req) => req.url === `/api/v1/reports/employees/${EMPLOYEE_ID}/summary`).flush([]);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Sin datos en el rango seleccionado.');
+    expect(fixture.nativeElement.textContent).toContain('No hay jornadas registradas en ese periodo.');
   });
 
   it('rejects an inverted date range on the client', () => {

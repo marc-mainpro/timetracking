@@ -1,181 +1,124 @@
-.corrections-shell {
-  display: grid;
-  gap: 1.25rem;
-}
+/* Solicitar una corrección. El armazón (`.console`, `.form`) vive en
+   `styles.scss`: aquí el bloque de la jornada registrada, las pausas y la
+   lista de solicitudes.
 
-.corrections-header {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.corrections-header,
-.editor-card,
-.requests-card {
-  padding: 1.5rem;
-}
-
-.corrections-header p:last-child {
-  margin: 0.6rem 0 0;
-  color: var(--text-muted);
-}
+   La jornada original queda arriba y fija mientras se rellena la propuesta:
+   la corrección se escribe mirando lo que hay. */
 
 .history-link {
-  align-self: flex-start;
-  font-weight: 500;
+  font-size: 0.9rem;
 }
 
-.corrections-layout {
-  display: grid;
-  gap: 1.25rem;
-  grid-template-columns: 1fr;
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-.message {
-  display: inline-block;
+.original {
+  padding: 1rem 1.25rem;
+  background: var(--bg);
+  border-radius: var(--radius);
+}
+
+.original__day {
   margin: 0;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  border: 1px solid var(--border);
+  font-weight: 500;
+  text-transform: capitalize;
 }
 
-.message--success {
-  color: var(--ok);
-}
-
-.message--error {
-  color: var(--danger);
-}
-
-.validation {
-  padding: 0.65rem 0.85rem;
-  font-size: 0.88rem;
-  color: var(--danger);
-  background: var(--danger-bg);
-  border-radius: var(--radius-sm);
-}
-
-.editor-summary,
-.time-grid,
-.break-row {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: 1fr;
-}
-
-.correction-form,
-.empty-state,
-.requests-card {
-  display: grid;
-  gap: 1rem;
-}
-
-.break-row,
-.editor-summary > div {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.editor-summary span:not(.eyebrow),
-.editor-summary strong,
-.request-row strong {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-}
-
-.editor-summary span:not(.eyebrow) {
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+.original__span {
+  margin: 0.15rem 0 0;
+  font-size: 1.25rem;
   color: var(--text-muted);
 }
 
-.requests-list {
-  display: grid;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.breaks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
 }
 
-.request-row {
+.breaks__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.65rem 0;
-  border-bottom: 1px solid var(--border);
 }
 
-.request-row:last-child {
-  border-bottom: none;
+.breaks__head .eyebrow {
+  margin: 0;
 }
 
-.request-main {
-  display: grid;
-  gap: 0.2rem;
+.breaks__head button {
+  min-height: 2.2rem;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+.break {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.break input {
+  flex: 1 1 10rem;
+  min-height: 2.4rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.break button {
+  min-height: 2.4rem;
+  padding: 0.4rem 0.9rem;
+}
+
+/* Solicitudes ------------------------------------------------------------ */
+
+.requests {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--hairline-strong);
+}
+
+.requests__list {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.request {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+}
+
+.request + .request {
+  border-top: 1px solid var(--border);
+}
+
+.request__main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
   min-width: 0;
 }
 
-.request-row p {
-  margin: 0;
+.request__main strong {
+  font-weight: 500;
+}
+
+.request__main small {
+  font-size: 0.78rem;
   color: var(--text-muted);
 }
 
-.request-row small {
-  color: var(--text-muted);
-}
-
-.pill--sm {
-  flex: 0 0 auto;
-  padding: 0.15rem 0.5rem;
-  font-size: 0.68rem;
-}
-
-.breaks-header {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 1rem;
-}
-
-.breaks-card {
-  padding: 1rem;
-  border-radius: var(--radius-sm);
-  background: var(--bg);
-}
-
-.break-row {
-  margin-top: 0.75rem;
-  align-items: end;
-}
-
-.eyebrow {
-  display: block;
-}
-
-@media (min-width: 640px) {
-  .corrections-header {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
-
-  .editor-summary {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .time-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .break-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
-  }
-}
-
-@media (min-width: 960px) {
-  .corrections-layout {
-    grid-template-columns: minmax(0, 1.4fr) minmax(18rem, 0.9fr);
-  }
+/* La respuesta de quien la revisó. */
+.request__answer {
+  margin-top: 0.25rem;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--border);
 }

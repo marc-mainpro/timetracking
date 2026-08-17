@@ -1,91 +1,90 @@
-.history-shell {
-  display: grid;
-  gap: 1.25rem;
-}
+/* Historial de jornadas. El armazón (`.console`, `.pager`) vive en
+   `styles.scss`: aquí solo la fila de un día.
 
-.history-header,
-.filters-card,
-.history-card {
-  padding: 1.5rem;
-}
+   La duración va en mono tabular y con el mismo ancho en todas las filas para
+   que la columna se lea en vertical, que es como se compara una semana. */
 
-.filters-card {
+.range {
   display: grid;
-  grid-template-columns: 1fr;
   gap: 1rem;
   align-items: end;
 }
 
-.history-card {
-  display: grid;
-  gap: 0.75rem;
+.days {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.history-row {
+.day {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.6rem;
-  padding: 1rem;
-  border-radius: var(--radius-sm);
-  background: var(--bg);
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    'date worked'
+    'breaks state'
+    'fix fix';
+  align-items: center;
+  gap: 0.4rem 1rem;
+  padding: 0.9rem 0.5rem;
 }
 
-.history-row div {
+.day + .day {
+  border-top: 1px solid var(--border);
+}
+
+.day__date {
+  grid-area: date;
   display: flex;
-  justify-content: space-between;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
 }
 
-.history-row strong {
-  font-size: 0.8rem;
+.day__date strong {
   font-weight: 500;
+  /* El nombre del día llega en minúscula del pipe de fecha. */
+  text-transform: capitalize;
+}
+
+.day__date small {
+  font-size: 0.78rem;
   color: var(--text-muted);
 }
 
-.history-row span {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
+.day__worked {
+  grid-area: worked;
+  justify-self: end;
+  font-size: 1.05rem;
 }
 
-.pager {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  align-items: stretch;
-  margin-top: 0.5rem;
-  text-align: center;
+.day__breaks {
+  grid-area: breaks;
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
 
-.error {
-  display: inline-block;
-  padding: 0.7rem 1rem;
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  border: 1px solid var(--border);
+.day__state {
+  grid-area: state;
+  justify-self: end;
 }
 
-@media (min-width: 640px) {
-  .filters-card {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+.day__fix {
+  grid-area: fix;
+  font-size: 0.85rem;
 }
 
-@media (min-width: 860px) {
-  .history-row {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
-    align-items: center;
+@media (min-width: 720px) {
+  .range {
+    grid-template-columns: repeat(2, minmax(0, 14rem)) auto;
   }
 
-  .history-row div {
-    flex-direction: column;
-    justify-content: flex-start;
-    gap: 0.25rem;
+  .day {
+    grid-template-columns: minmax(10rem, 1fr) 6rem 6rem 7rem auto;
+    grid-template-areas: 'date worked breaks state fix';
+    gap: 0.75rem 1.5rem;
   }
 
-  .pager {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    text-align: left;
+  .day__fix {
+    justify-self: end;
   }
 }

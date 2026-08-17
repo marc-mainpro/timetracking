@@ -1,12 +1,12 @@
-<section class="history-shell">
-  <header class="card history-header">
+<section class="console">
+  <header class="console__head console__head--ruled">
     <div>
       <p class="eyebrow">Historial</p>
-      <h1>Tus jornadas recientes</h1>
+      <h1>Mis jornadas</h1>
     </div>
   </header>
 
-  <form [formGroup]="filters" (ngSubmit)="submitFilters()" class="card filters-card">
+  <form [formGroup]="filters" (ngSubmit)="submitFilters()" class="range">
     <label>
       <span>Desde</span>
       <input type="datetime-local" formControlName="from" />
@@ -15,45 +15,73 @@
       <span>Hasta</span>
       <input type="datetime-local" formControlName="to" />
     </label>
-    <button type="submit" [disabled]="loading()">Aplicar filtros</button>
+    <button type="submit" class="ghost" [disabled]="loading()">Filtrar</button>
   </form>
 
+  <p class="status-line" role="status">
+    @if (loading()) {
+      <span class="info">Cargando…</span>
+    }
+  </p>
   @if (errorMessage(); as message) {
-    <p class="error">{{ message }}</p>
+    <p class="error error--block">{{ message }}</p>
   }
 
   @if (result(); as result) {
-    <section class="card history-card">
-      @for (workday of result.content; track workday) {
-        <div class="history-row">
-          <div>
-            <strong>{{ workday.startedAt | date: 'shortDate' }}</strong>
-            <span>{{ workday.status }}</span>
-          </div>
-          <div>
-            <strong>{{ workday.startedAt | date: 'shortTime' }}</strong>
-            <span>{{ workday.endedAt ? (workday.endedAt | date: 'shortTime') : 'En curso' }}</span>
-          </div>
-          <div>
-            <strong>Pausas</strong>
-            <span>{{ workday.breaks.length }}</span>
-          </div>
-          <div>
-            <strong>Duración</strong>
-            <span>{{ workday.workedDuration | isoDuration }}</span>
-          </div>
+    <ul class="days">
+      @for (workday of result.content; track workday.id) {
+        <li class="day">
+          <span class="day__date">
+            <strong>{{ workday.startedAt | date: 'EEEE d MMM' }}</strong>
+            <small class="mono">
+              {{ workday.startedAt | date: 'HH:mm' }} –
+              {{ workday.endedAt ? (workday.endedAt | date: 'HH:mm') : 'en curso' }}
+            </small>
+          </span>
+
+          <span class="day__worked mono">{{ workday.workedDuration | isoDuration }}</span>
+
+          <span class="day__breaks">
+            {{ workday.breaks.length }} {{ workday.breaks.length === 1 ? 'pausa' : 'pausas' }}
+          </span>
+
+          <span class="day__state">
+            @if (workday.status === 'ADJUSTED') {
+              <!-- Corregida tras una solicitud aprobada: el dato ya no es el
+                   que se fichó, y quien lo lee debe saberlo. -->
+              <span class="pill">Corregida</span>
+            } @else if (workday.status !== 'CLOSED') {
+              <span class="pill pill--active">Abierta</span>
+            }
+          </span>
+
           @if (workday.status === 'CLOSED') {
-            <div>
-              <a [routerLink]="['/corrections']" [queryParams]="{ workdayId: workday.id }">Solicitar corrección</a>
-            </div>
+            <a class="day__fix" [routerLink]="['/corrections']" [queryParams]="{ workdayId: workday.id }">
+              Pedir corrección
+            </a>
           }
-        </div>
+        </li>
+      } @empty {
+        @if (!loading()) {
+          <li class="list-empty">
+            <p class="info">No hay jornadas en este periodo.</p>
+          </li>
+        }
       }
-      <footer class="pager">
-        <button type="button" (click)="previousPage()" [disabled]="page() === 0 || loading()">Anterior</button>
-        <span>Página {{ result.page + 1 }} de {{ result.totalPages || 1 }}</span>
-        <button type="button" (click)="nextPage()" [disabled]="result.page + 1 >= result.totalPages || loading()">Siguiente</button>
-      </footer>
-    </section>
+    </ul>
+
+    <nav class="pager" aria-label="Paginación">
+      <button type="button" class="ghost" (click)="previousPage()" [disabled]="page() === 0 || loading()">
+        Anterior
+      </button>
+      <p class="pager__position mono">Página {{ result.page + 1 }} de {{ result.totalPages || 1 }}</p>
+      <button
+        type="button"
+        class="ghost"
+        (click)="nextPage()"
+        [disabled]="result.page + 1 >= result.totalPages || loading()">
+        Siguiente
+      </button>
+    </nav>
   }
 </section>

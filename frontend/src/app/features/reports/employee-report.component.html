@@ -1,82 +1,77 @@
-<section class="dashboard-shell">
-  <header class="card hero-card">
+<section class="console">
+  <header class="console__head console__head--ruled">
     <div>
       <p class="eyebrow">Mi resumen</p>
-      <h1>Tus horas trabajadas por día</h1>
-      <p class="lede">Elige un rango de fechas para ver el tiempo trabajado, las pausas y las jornadas de cada día.</p>
+      <h1>Mis horas</h1>
     </div>
   </header>
 
-  <section class="card filters-card">
-    <form [formGroup]="form" (ngSubmit)="load()" class="range-form">
-      <label>
-        <span>Desde</span>
-        <input type="date" formControlName="from" />
-      </label>
-      @if (form.controls.from.invalid && form.controls.from.touched) {
-        <div class="validation">Indica la fecha "desde".</div>
-      }
+  <form [formGroup]="form" (ngSubmit)="load()" class="range">
+    <label>
+      <span>Desde</span>
+      <input type="date" formControlName="from" />
+    </label>
+    <label>
+      <span>Hasta</span>
+      <input type="date" formControlName="to" />
+    </label>
+    <button type="submit" class="ghost" [disabled]="loading()">
+      {{ loading() ? 'Calculando…' : 'Consultar' }}
+    </button>
+  </form>
 
-      <label>
-        <span>Hasta</span>
-        <input type="date" formControlName="to" />
-      </label>
-      @if (form.controls.to.invalid && form.controls.to.touched) {
-        <div class="validation">Indica la fecha "hasta".</div>
-      }
+  @if (form.controls.from.invalid && form.controls.from.touched) {
+    <p class="validation">Indica el primer día del periodo.</p>
+  }
+  @if (form.controls.to.invalid && form.controls.to.touched) {
+    <p class="validation">Indica el último día del periodo.</p>
+  }
+  @if (form.errors?.['invalidRange'] && (form.controls.from.touched || form.controls.to.touched)) {
+    <p class="validation">El inicio del periodo no puede ser posterior al fin.</p>
+  }
+  @if (formError(); as message) {
+    <p class="error error--block">{{ message }}</p>
+  }
 
-      <div class="form-actions">
-        <button type="submit" [disabled]="loading()">{{ loading() ? 'Cargando...' : 'Consultar' }}</button>
-      </div>
+  @if (loading()) {
+    <p class="info">Calculando…</p>
+  }
 
-      @if (form.errors?.['invalidRange'] && (form.controls.from.touched || form.controls.to.touched)) {
-        <p class="error">
-          La fecha "desde" debe ser anterior o igual a la fecha "hasta".
-        </p>
-      }
-      @if (formError(); as message) {
-        <p class="error">{{ message }}</p>
-      }
-    </form>
-  </section>
-
-  <section class="card results-card">
-    @if (loading()) {
-      <p>Cargando tu resumen...</p>
-    }
-
-    @if (!loading()) {
-      @if (results() && results()!.length === 0) {
-        <p class="empty">Sin datos en el rango seleccionado.</p>
-      }
-      @if (results() && results()!.length > 0) {
+  @if (!loading()) {
+    @if (results(); as rows) {
+      @if (rows.length === 0) {
+        <p class="info">No hay jornadas registradas en ese periodo.</p>
+      } @else {
         <div class="table-scroll">
           <table>
             <thead>
               <tr>
-                <th>Día</th>
-                <th>Trabajado</th>
-                <th>Pausas</th>
-                <th>Jornadas</th>
-                <th>Ajustadas</th>
-                <th>Abiertas</th>
+                <th scope="col">Día</th>
+                <th scope="col" class="num">Trabajado</th>
+                <th scope="col" class="num">Pausas</th>
+                <th scope="col" class="num">Jornadas</th>
+                <th scope="col" class="num">Corregidas</th>
+                <th scope="col" class="num">Abiertas</th>
               </tr>
             </thead>
             <tbody>
-              @for (row of results(); track row) {
+              @for (row of rows; track row.day) {
                 <tr>
-                  <td>{{ row.day }}</td>
-                  <td>{{ row.worked | isoDuration: 'hm' }}</td>
-                  <td>{{ row.paused | isoDuration: 'hm' }}</td>
-                  <td>{{ row.workdayCount }}</td>
-                  <td>{{ row.adjustedWorkdayCount }}</td>
-                  <td>{{ row.openWorkdays }}</td>
+                  <th scope="row" class="mono">{{ row.day }}</th>
+                  <td class="num">{{ row.worked | isoDuration: 'hm' }}</td>
+                  <td class="num">{{ row.paused | isoDuration: 'hm' }}</td>
+                  <td class="num">{{ row.workdayCount }}</td>
+                  <td class="num">{{ row.adjustedWorkdayCount }}</td>
+                  <!-- Una jornada sin cerrar es tuya: conviene que la veas. -->
+                  <td class="num" [class.num--flag]="row.openWorkdays > 0">{{ row.openWorkdays }}</td>
                 </tr>
               }
             </tbody>
           </table>
         </div>
       }
+    } @else {
+      <p class="info">Elige un periodo y pulsa «Consultar».</p>
     }
-  </section>
+  }
 </section>
