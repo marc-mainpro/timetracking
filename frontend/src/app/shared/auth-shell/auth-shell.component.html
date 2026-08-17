@@ -1,0 +1,27 @@
+<div class="card auth-card">
+  <div class="clock-head">
+    <p class="clock" aria-hidden="true">
+      <span class="clock__hm">{{ hoursAndMinutes() }}</span
+      ><span class="clock__s">{{ seconds() }}</span>
+    </p>
+    <p class="clock-date">{{ now() | date: 'EEE d MMM y' }}</p>
+  </div>
+
+  <!-- La hairline del sistema, cargada de informacion: el relleno es la
+       fraccion del dia transcurrida. Es un valor, no una animacion. -->
+  <div class="day-rule" role="img" [attr.aria-label]="'Hora actual ' + hoursAndMinutes()">
+    <span class="day-rule__past" [style.width]="dayPercent()"></span>
+  </div>
+
+  <p class="eyebrow">{{ eyebrow() }}</p>
+  <h1>{{ heading() }}</h1>
+  @if (lede(); as text) {
+    <p class="lede">{{ text }}</p>
+  }
+
+  <ng-content />
+
+  <div class="auth-card__foot">
+    <ng-content select="[authLinks]" />
+  </div>
+</div>
