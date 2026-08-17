@@ -76,29 +76,39 @@ describe('PlatformRegistrationsComponent', () => {
     request.flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
   });
 
-  it('approves after confirmation and reports that the tenant is still pending', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
+  it('pide confirmación antes de aprobar, sin lanzar la petición', () => {
     component.approve(registration);
+
+    httpMock.expectNone('/api/v1/platform/registrations/r-1/approve');
+    expect(component.pendingDecision()?.kind).toBe('approve');
+  });
+
+  it('aprueba y remite a Organizaciones para activar el alta', () => {
+    component.approve(registration);
+    component.confirmDecision();
 
     httpMock
       .expectOne('/api/v1/platform/registrations/r-1/approve')
       .flush({ ...registration, status: 'CONSUMED', createdTenantId: 't-9' });
     flushList([]);
 
-    expect(component.message()).toContain('PENDING');
-    expect(component.message()).toContain('t-9');
+    expect(component.message()).toContain('Acme aprobada');
+    expect(component.message()).toContain('Organizaciones');
+    expect(component.pendingDecision()).toBeNull();
   });
 
-  it('does not approve when the confirmation is cancelled', () => {
-    spyOn(window, 'confirm').and.returnValue(false);
+  it('cancelar descarta la decisión pendiente', () => {
     component.approve(registration);
+    component.cancelDecision();
 
     httpMock.expectNone('/api/v1/platform/registrations/r-1/approve');
+    expect(component.pendingDecision()).toBeNull();
   });
 
-  it('rejects with a reason', () => {
-    spyOn(window, 'prompt').and.returnValue('Dominio desechable');
+  it('rechaza con el motivo escrito en el diálogo', () => {
     component.reject(registration);
+    component.reasonControl.setValue('Dominio desechable');
+    component.confirmDecision();
 
     const request = httpMock.expectOne('/api/v1/platform/registrations/r-1/reject');
     expect(request.request.body).toEqual({ reason: 'Dominio desechable' });
@@ -108,24 +118,18 @@ describe('PlatformRegistrationsComponent', () => {
     expect(component.message()).toContain('rechazada');
   });
 
-  it('refuses to reject without a reason', () => {
-    spyOn(window, 'prompt').and.returnValue('   ');
+  it('no rechaza sin motivo', () => {
     component.reject(registration);
+    component.reasonControl.setValue('   ');
+    component.confirmDecision();
 
     httpMock.expectNone('/api/v1/platform/registrations/r-1/reject');
-    expect(component.error()).toContain('obligatorio');
-  });
-
-  it('does not reject when the prompt is cancelled', () => {
-    spyOn(window, 'prompt').and.returnValue(null);
-    component.reject(registration);
-
-    httpMock.expectNone('/api/v1/platform/registrations/r-1/reject');
+    expect(component.reasonControl.invalid).toBeTrue();
   });
 
   it('translates a backend error', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
     component.approve(registration);
+    component.confirmDecision();
 
     httpMock
       .expectOne('/api/v1/platform/registrations/r-1/approve')
@@ -142,8 +146,20 @@ describe('PlatformRegistrationsComponent', () => {
     expect(component.page()).toBe(0);
   });
 
-  it('labels the empty filter as "Todas"', () => {
-    expect(component.statusLabel('')).toBe('Todas');
-    expect(component.statusLabel('EXPIRED')).toBe('EXPIRED');
+  it('traduce los estados en lugar de mostrar el enum', () => {
+    expect(component.filterLabel('')).toBe('Todas');
+    expect(component.filterLabel('PENDING_EMAIL_VERIFICATION')).toBe('Sin verificar');
+    expect(component.statusLabel('EXPIRED')).toBe('Caducada');
+    expect(component.statusLabel('CONSUMED')).toBe('Alta creada');
+  });
+
+  it('marca la solicitud que lleva días esperando revisión', () => {
+    const old = new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString();
+    const fresh = new Date(Date.now() - 3600 * 1000).toISOString();
+
+    expect(component.isStale({ ...registration, createdAt: old })).toBeTrue();
+    expect(component.isStale({ ...registration, createdAt: fresh })).toBeFalse();
+    // Lo ya decidido no hace esperar a nadie, por antiguo que sea.
+    expect(component.isStale({ ...registration, status: 'REJECTED', createdAt: old })).toBeFalse();
   });
 });

@@ -1,76 +1,124 @@
-<section class="admin-shell">
-  <header class="card admin-header">
+<section class="console">
+  <header class="console__head">
     <div>
       <p class="eyebrow">Plataforma</p>
       <h1>Solicitudes de alta</h1>
     </div>
   </header>
 
-  @if (message(); as info) {
-    <p class="info">{{ info }}</p>
-  }
-  @if (error(); as err) {
-    <p class="error">{{ err }}</p>
-  }
-
-  <article class="card list-card">
-    <div class="toolbar">
-      @for (status of statusFilters; track status) {
-        <button
-          type="button"
-          [class.active]="selectedStatus() === status"
-          (click)="applyStatus(status)">
-          {{ statusLabel(status) }}
-        </button>
-      }
-    </div>
-
-    @if (loading()) {
-      <p class="info">Cargando…</p>
+  <div class="filters" role="group" aria-label="Filtrar por estado">
+    @for (status of statusFilters; track status) {
+      <button
+        type="button"
+        class="ghost filters__chip"
+        [class.filters__chip--on]="selectedStatus() === status"
+        [attr.aria-pressed]="selectedStatus() === status"
+        (click)="applyStatus(status)">
+        {{ filterLabel(status) }}
+      </button>
     }
+    @if (result(); as result) {
+      <p class="filters__count mono">{{ result.totalElements }}</p>
+    }
+  </div>
 
+  <p class="status-line" role="status">
+    @if (message(); as info) {
+      <span class="ok">{{ info }}</span>
+    }
+    @if (loading()) {
+      <span class="info">Cargando…</span>
+    }
+  </p>
+  @if (error(); as err) {
+    <p class="error error--block">{{ err }}</p>
+  }
+
+  <ul class="requests">
     @for (registration of result()?.content ?? []; track registration.id) {
-      <div class="registration-row">
-        <div class="registration-main">
-          <strong>{{ registration.companyName }}</strong>
-          <small>
-            {{ registration.ownerFirstName }} {{ registration.ownerLastName }} · {{ registration.email }}
-          </small>
-          <small>
-            {{ registration.timezone }} · solicitado {{ registration.createdAt | date: 'short' }}
+      <li class="request">
+        <div class="request__main">
+          <p class="request__company">
+            <strong>{{ registration.companyName }}</strong>
+            <span class="pill pill--{{ registration.status.toLowerCase() }}">
+              {{ statusLabel(registration.status) }}
+            </span>
+          </p>
+          <p class="request__owner">{{ ownerName(registration) }} · {{ registration.email }}</p>
+          <p class="request__meta mono">
+            <span [class.request__meta--stale]="isStale(registration)">
+              Solicitado {{ relativeTime(registration.createdAt) }}
+            </span>
+            <span>{{ registration.timezone }}</span>
             @if (registration.verifiedAt) {
-              · verificado {{ registration.verifiedAt | date: 'short' }}
+              <span>Correo verificado {{ relativeTime(registration.verifiedAt) }}</span>
             }
-          </small>
+            @if (registration.decidedAt) {
+              <span>Decidida {{ registration.decidedAt | date: 'short' }}</span>
+            }
+          </p>
           @if (registration.decisionReason) {
-            <small class="reason">Motivo: {{ registration.decisionReason }}</small>
+            <p class="request__reason">Motivo: {{ registration.decisionReason }}</p>
           }
         </div>
-        <span class="pill pill--{{ registration.status.toLowerCase() }}">{{ registration.status }}</span>
-        <div class="row-actions">
-          @if (registration.status === 'PENDING_REVIEW') {
+
+        @if (registration.status === 'PENDING_REVIEW') {
+          <div class="request__actions">
             <button type="button" (click)="approve(registration)">Aprobar</button>
             <button type="button" class="danger" (click)="reject(registration)">Rechazar</button>
-          }
-        </div>
-      </div>
+          </div>
+        }
+      </li>
     } @empty {
       @if (!loading()) {
-        <p class="info">No hay solicitudes para este filtro.</p>
+        <li class="list-empty">
+          @if (selectedStatus() === 'PENDING_REVIEW') {
+            <p class="info">No queda ninguna solicitud por revisar.</p>
+          } @else {
+            <p class="info">No hay solicitudes {{ filterLabel(selectedStatus()) | lowercase }}.</p>
+          }
+        </li>
+      }
+    }
+  </ul>
+
+  @if (result(); as result) {
+    <nav class="pager" aria-label="Paginación">
+      <button type="button" class="ghost" (click)="previousPage()" [disabled]="page() === 0 || loading()">
+        Anterior
+      </button>
+      <p class="pager__position mono">Página {{ result.page + 1 }} de {{ result.totalPages || 1 }}</p>
+      <button
+        type="button"
+        class="ghost"
+        (click)="nextPage()"
+        [disabled]="result.page + 1 >= result.totalPages || loading()">
+        Siguiente
+      </button>
+    </nav>
+  }
+</section>
+
+<dialog #confirmDialog class="panel">
+  @if (pendingDecision(); as decision) {
+    <h2>{{ decision.title }}</h2>
+    <p class="consequence">{{ decision.consequence }}</p>
+
+    @if (decision.reason === 'required') {
+      <label>
+        <span>Motivo</span>
+        <textarea [formControl]="reasonControl" rows="2"></textarea>
+      </label>
+      @if (reasonControl.invalid && reasonControl.touched) {
+        <p class="validation">Escribe el motivo del rechazo: queda registrado.</p>
       }
     }
 
-    @if (result(); as result) {
-      <footer class="pager">
-        <button type="button" (click)="previousPage()" [disabled]="page() === 0 || loading()">Anterior</button>
-        <span>Página {{ result.page + 1 }} de {{ result.totalPages || 1 }}</span>
-        <button
-          type="button"
-          (click)="nextPage()"
-          [disabled]="result.page + 1 >= result.totalPages || loading()">
-          Siguiente
-        </button>
-      </footer>
-    }
-  </article>
-</section>
+    <footer class="panel__foot">
+      <button type="button" [class.danger]="decision.danger" [disabled]="deciding()" (click)="confirmDecision()">
+        {{ decision.confirmLabel }}
+      </button>
+      <button type="button" class="ghost" (click)="cancelDecision()">Cancelar</button>
+    </footer>
+  }
+</dialog>
