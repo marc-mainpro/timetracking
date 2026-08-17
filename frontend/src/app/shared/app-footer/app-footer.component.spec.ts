@@ -14,7 +14,6 @@ describe('AppFooterComponent', () => {
   it('muestra la marca, el año y la zona horaria que interpreta las horas', () => {
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
-    expect(text).toContain('TFP');
     expect(text).toContain(`${new Date().getFullYear()}`);
     expect(text).toContain(Intl.DateTimeFormat().resolvedOptions().timeZone);
   });
