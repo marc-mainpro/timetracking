@@ -55,7 +55,7 @@
       </li>
     } @empty {
       @if (!loading()) {
-        <li class="empty">
+        <li class="list-empty">
           @if (selectedStatus()) {
             <p class="info">No hay organizaciones {{ filterLabel(selectedStatus()) | lowercase }}.</p>
           } @else {

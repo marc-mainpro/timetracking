@@ -1,15 +1,14 @@
-import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { interval } from 'rxjs';
 
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import { AuthService } from '../../core/services/auth.service';
+import { AuthShellComponent } from '../../shared/auth-shell/auth-shell.component';
 
 @Component({
   selector: 'app-login',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, AuthShellComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
@@ -18,19 +17,29 @@ export class LoginComponent {
   private readonly authService = inject(AuthService);
   private readonly errorMessagesService = inject(ErrorMessagesService);
   private readonly router = inject(Router);
-  private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
-  readonly now = signal(Date.now());
+  readonly passwordVisible = signal(false);
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]]
   });
 
-  constructor() {
-    const subscription = interval(1000).subscribe(() => this.now.set(Date.now()));
-    this.destroyRef.onDestroy(() => subscription.unsubscribe());
+  // Métodos y no `computed`: `invalid`/`touched` de los controles no son
+  // señales, así que un computed se quedaría cacheado en su primer valor.
+  // Centralizan la condición para que el mensaje y los `aria-*` del campo
+  // aparezcan siempre a la par.
+  showEmailError(): boolean {
+    return this.form.controls.email.invalid && this.form.controls.email.touched;
+  }
+
+  showPasswordError(): boolean {
+    return this.form.controls.password.invalid && this.form.controls.password.touched;
+  }
+
+  togglePassword(): void {
+    this.passwordVisible.update((visible) => !visible);
   }
 
   submit(): void {

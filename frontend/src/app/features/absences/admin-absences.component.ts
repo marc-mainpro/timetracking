@@ -1,14 +1,32 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { DatePipe, LowerCasePipe } from '@angular/common';
+import { Observable } from 'rxjs';
 
 import { AdminEmployeesService, Employee } from '../admin-employees/admin-employees.service';
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import { Absence, AbsenceStatus, AbsenceType, AbsencesService } from './absences.service';
 
+const STATUS_FILTERS: readonly (AbsenceStatus | '')[] = ['PENDING', 'APPROVED', 'REJECTED', ''];
+
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: 'Pendiente',
+  APPROVED: 'Aprobada',
+  REJECTED: 'Rechazada'
+};
+
+const FILTER_LABELS: Record<string, string> = {
+  PENDING: 'Pendientes',
+  APPROVED: 'Aprobadas',
+  REJECTED: 'Rechazadas',
+  '': 'Todas'
+};
+
+const MILLIS_PER_DAY = 24 * 60 * 60 * 1000;
+
 @Component({
   selector: 'app-admin-absences',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [DatePipe, LowerCasePipe, ReactiveFormsModule],
   templateUrl: './admin-absences.component.html',
   styleUrl: './admin-absences.component.scss'
 })
@@ -18,6 +36,9 @@ export class AdminAbsencesComponent {
   private readonly errorMessagesService = inject(ErrorMessagesService);
   private readonly fb = inject(FormBuilder);
 
+  private readonly confirmDialog = viewChild<ElementRef<HTMLDialogElement>>('confirmDialog');
+
+  readonly statusFilters = STATUS_FILTERS;
   readonly loading = signal(false);
   readonly decisionLoading = signal(false);
   readonly absences = signal<Absence[]>([]);
@@ -27,14 +48,10 @@ export class AdminAbsencesComponent {
   readonly types = signal<Record<string, string>>({});
   readonly selectedStatus = signal<AbsenceStatus | ''>('PENDING');
   readonly employees = signal<Employee[]>([]);
+  readonly pendingDecision = signal<'approve' | 'reject' | null>(null);
 
-  readonly rejectForm = this.fb.nonNullable.group({
-    resolutionComment: ['', [Validators.required, Validators.maxLength(500)]]
-  });
-
-  readonly approveForm = this.fb.nonNullable.group({
-    resolutionComment: ['', [Validators.maxLength(500)]]
-  });
+  /** Un solo comentario para las dos decisiones: opcional al aprobar, obligatorio al rechazar. */
+  readonly commentControl = this.fb.nonNullable.control('');
 
   constructor() {
     this.loadTypes();
@@ -44,7 +61,11 @@ export class AdminAbsencesComponent {
 
   employeeName(employeeId: string): string {
     const employee = this.employees().find((candidate) => candidate.id === employeeId);
-    return employee ? `${employee.lastName} ${employee.firstName}` : employeeId;
+    return employee ? `${employee.firstName} ${employee.lastName}` : employeeId;
+  }
+
+  typeName(absenceTypeId: string): string {
+    return this.types()[absenceTypeId] ?? absenceTypeId;
   }
 
   applyStatus(status: AbsenceStatus | ''): void {
@@ -55,34 +76,73 @@ export class AdminAbsencesComponent {
 
   selectAbsence(absence: Absence): void {
     this.selectedAbsence.set(absence);
+    this.commentControl.reset('');
+    this.commentControl.setErrors(null);
   }
 
   approve(): void {
-    const absence = this.selectedAbsence();
-    if (!absence || absence.status !== 'PENDING' || this.decisionLoading()) {
-      return;
-    }
-    this.resolve(this.absencesService.approve(absence.id, this.approveForm.controls.resolutionComment.getRawValue()));
+    this.ask('approve');
   }
 
   reject(): void {
+    // Quien pidió la ausencia lee este motivo: sin él se queda sin saber por qué.
+    if (this.commentControl.value.trim().length === 0) {
+      this.commentControl.markAsTouched();
+      this.commentControl.setErrors({ required: true });
+      return;
+    }
+    this.ask('reject');
+  }
+
+  confirmDecision(): void {
+    const decision = this.pendingDecision();
+    const absence = this.selectedAbsence();
+    if (!decision || !absence || this.decisionLoading()) {
+      return;
+    }
+    const comment = this.commentControl.value.trim();
+    this.cancelDecision();
+    this.resolve(
+      decision === 'approve'
+        ? this.absencesService.approve(absence.id, comment)
+        : this.absencesService.reject(absence.id, comment)
+    );
+  }
+
+  cancelDecision(): void {
+    this.confirmDialog()?.nativeElement.close();
+    this.pendingDecision.set(null);
+  }
+
+  statusLabel(status: string): string {
+    return STATUS_LABELS[status] ?? status;
+  }
+
+  filterLabel(status: string): string {
+    return FILTER_LABELS[status] ?? status;
+  }
+
+  /** Días naturales que cubre la solicitud, extremos incluidos. */
+  dayCount(absence: Absence): number {
+    const from = Date.parse(absence.startDate);
+    const to = Date.parse(absence.endDate);
+    return Math.round((to - from) / MILLIS_PER_DAY) + 1;
+  }
+
+  dayCountLabel(absence: Absence): string {
+    const days = this.dayCount(absence);
+    return `${days} ${days === 1 ? 'día' : 'días'}`;
+  }
+
+  private ask(decision: 'approve' | 'reject'): void {
     const absence = this.selectedAbsence();
     if (!absence || absence.status !== 'PENDING' || this.decisionLoading()) {
       return;
     }
-    if (this.rejectForm.invalid) {
-      this.rejectForm.markAllAsTouched();
-      return;
-    }
-    this.resolve(this.absencesService.reject(absence.id, this.rejectForm.controls.resolutionComment.getRawValue()));
-  }
-
-  typeName(absenceTypeId: string): string {
-    return this.types()[absenceTypeId] ?? absenceTypeId;
-  }
-
-  approvedAbsences(): Absence[] {
-    return this.absences().filter((absence) => absence.status === 'APPROVED');
+    this.decisionError.set(null);
+    this.actionMessage.set(null);
+    this.pendingDecision.set(decision);
+    this.confirmDialog()?.nativeElement.showModal();
   }
 
   private load(): void {
@@ -91,7 +151,9 @@ export class AdminAbsencesComponent {
     const year = now.getUTCFullYear();
     this.absencesService.listAdmin(`${year}-01-01`, `${year}-12-31`).subscribe({
       next: (absences) => {
-        const filtered = this.selectedStatus() ? absences.filter((absence) => absence.status === this.selectedStatus()) : absences;
+        const filtered = this.selectedStatus()
+          ? absences.filter((absence) => absence.status === this.selectedStatus())
+          : absences;
         this.absences.set(filtered);
         this.loading.set(false);
       },
@@ -117,13 +179,17 @@ export class AdminAbsencesComponent {
     });
   }
 
-  private resolve(request: ReturnType<AbsencesService['approve']>): void {
+  private resolve(request: Observable<Absence>): void {
     this.decisionLoading.set(true);
     this.decisionError.set(null);
     request.subscribe({
       next: (updated) => {
         this.selectedAbsence.set(updated);
-        this.actionMessage.set(`Solicitud ${updated.status === 'APPROVED' ? 'aprobada' : 'rechazada'} correctamente.`);
+        this.actionMessage.set(
+          `Ausencia de ${this.employeeName(updated.employeeId)} ${
+            updated.status === 'APPROVED' ? 'aprobada' : 'rechazada'
+          }.`
+        );
         this.decisionLoading.set(false);
         this.load();
       },

@@ -10,6 +10,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import { AuthService } from '../../core/services/auth.service';
+import { AuthShellComponent } from '../../shared/auth-shell/auth-shell.component';
 
 type ResetState = 'form' | 'missing-token' | 'done';
 
@@ -34,7 +35,7 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
  */
 @Component({
   selector: 'app-reset-password',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, AuthShellComponent],
   templateUrl: './reset-password.component.html',
   styleUrl: './reset-password.component.scss'
 })
@@ -58,6 +59,26 @@ export class ResetPasswordComponent {
     },
     { validators: passwordsMatch }
   );
+
+  readonly passwordVisible = signal(false);
+
+  togglePassword(): void {
+    this.passwordVisible.update((visible) => !visible);
+  }
+
+  // Métodos y no `computed`: `invalid`/`touched` de los controles no son
+  // señales, así que un computed se quedaría cacheado en su primer valor.
+  showPasswordError(): boolean {
+    return this.form.controls.newPassword.invalid && this.form.controls.newPassword.touched;
+  }
+
+  showConfirmationError(): boolean {
+    return this.form.controls.confirmation.invalid && this.form.controls.confirmation.touched;
+  }
+
+  showMismatch(): boolean {
+    return !!this.form.errors?.['mismatch'] && this.form.controls.confirmation.touched;
+  }
 
   submit(): void {
     if (!this.token || this.form.invalid || this.loading()) {

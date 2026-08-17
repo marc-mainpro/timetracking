@@ -78,7 +78,7 @@ describe('ReportsComponent', () => {
     flushEmployees();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Sin datos en el rango seleccionado.');
+    expect(fixture.nativeElement.textContent).toContain('Nadie registró jornadas en ese rango.');
   });
 
   it('rejects an inverted date range on the client before calling the backend', () => {

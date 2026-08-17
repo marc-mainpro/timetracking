@@ -1,101 +1,153 @@
-<section class="admin-shell">
-  <header class="card admin-header">
+<section class="console">
+  <header class="console__head">
     <div>
       <p class="eyebrow">Ausencias</p>
-      <h1>Revisión de solicitudes de ausencia</h1>
-      <p>Gestiona las solicitudes del tenant y consulta las aprobadas como calendario de equipo simplificado.</p>
+      <h1>Solicitudes del equipo</h1>
     </div>
   </header>
 
-  @if (actionMessage(); as message) {
-    <p class="message message--success">{{ message }}</p>
-  }
+  <div class="filters" role="group" aria-label="Filtrar por estado">
+    @for (status of statusFilters; track status) {
+      <button
+        type="button"
+        class="ghost filters__chip"
+        [class.filters__chip--on]="selectedStatus() === status"
+        [attr.aria-pressed]="selectedStatus() === status"
+        (click)="applyStatus(status)">
+        {{ filterLabel(status) }}
+      </button>
+    }
+    <p class="filters__count mono">{{ absences().length }}</p>
+  </div>
+
+  <p class="status-line" role="status">
+    @if (actionMessage(); as message) {
+      <span class="ok">{{ message }}</span>
+    }
+    @if (loading()) {
+      <span class="info">Cargando…</span>
+    }
+  </p>
   @if (decisionError(); as error) {
-    <p class="message message--error">{{ error }}</p>
+    <p class="error error--block">{{ error }}</p>
   }
 
-  <div class="admin-layout">
-    <aside class="card queue-card">
-      <div class="filter-row">
-        <button type="button" [class.active]="selectedStatus() === 'PENDING'" (click)="applyStatus('PENDING')">Pendientes</button>
-        <button type="button" [class.active]="selectedStatus() === 'APPROVED'" (click)="applyStatus('APPROVED')">Aprobadas</button>
-        <button type="button" [class.active]="selectedStatus() === 'REJECTED'" (click)="applyStatus('REJECTED')">Rechazadas</button>
-        <button type="button" [class.active]="selectedStatus() === ''" (click)="applyStatus('')">Todas</button>
-      </div>
-
-      @if (loading()) {
-        <p>Cargando solicitudes...</p>
-      } @else {
-        @for (absence of absences(); track absence.id) {
-          <button type="button" class="queue-row" (click)="selectAbsence(absence)">
-            <div>
+  <div class="review">
+    <ul class="queue">
+      @for (absence of absences(); track absence.id) {
+        <li>
+          <button
+            type="button"
+            class="queue__row"
+            [class.queue__row--on]="selectedAbsence()?.id === absence.id"
+            [attr.aria-current]="selectedAbsence()?.id === absence.id"
+            (click)="selectAbsence(absence)">
+            <span class="queue__who">
               <strong>{{ employeeName(absence.employeeId) }}</strong>
-              <span>{{ typeName(absence.absenceTypeId) }} · {{ absence.startDate }} al {{ absence.endDate }}</span>
-            </div>
-            <span class="pill" [class.pill--approved]="absence.status === 'APPROVED'" [class.pill--rejected]="absence.status === 'REJECTED'">
-              {{ absence.status }}
+              <small>{{ typeName(absence.absenceTypeId) }}</small>
+              <small class="mono">
+                {{ absence.startDate | date: 'd MMM' }} – {{ absence.endDate | date: 'd MMM' }} ·
+                {{ dayCountLabel(absence) }}
+              </small>
+            </span>
+            <span class="pill pill--{{ absence.status.toLowerCase() }}">
+              {{ statusLabel(absence.status) }}
             </span>
           </button>
+        </li>
+      } @empty {
+        @if (!loading()) {
+          <li class="list-empty">
+            @if (selectedStatus() === 'PENDING') {
+              <p class="info">No queda ninguna solicitud por resolver.</p>
+            } @else {
+              <p class="info">No hay ausencias {{ filterLabel(selectedStatus()).toLowerCase() }} este año.</p>
+            }
+          </li>
         }
       }
-    </aside>
+    </ul>
 
-    <section class="card detail-card">
-      @if (selectedAbsence(); as absence) {
-        <div class="detail-head">
+    @if (selectedAbsence(); as absence) {
+      <section class="detail">
+        <header class="detail__head">
           <div>
-            <p class="eyebrow">Solicitud de {{ employeeName(absence.employeeId) }}</p>
+            <p class="eyebrow">Solicita {{ employeeName(absence.employeeId) }}</p>
             <h2>{{ typeName(absence.absenceTypeId) }}</h2>
-            <p>{{ absence.startDate }} al {{ absence.endDate }}</p>
           </div>
-          <span class="pill" [class.pill--approved]="absence.status === 'APPROVED'" [class.pill--rejected]="absence.status === 'REJECTED'">{{ absence.status }}</span>
-        </div>
+          <span class="pill pill--{{ absence.status.toLowerCase() }}">
+            {{ statusLabel(absence.status) }}
+          </span>
+        </header>
+
+        <dl class="facts">
+          <dt>Desde</dt>
+          <dd class="mono">{{ absence.startDate | date: 'fullDate' }}</dd>
+          <dt>Hasta</dt>
+          <dd class="mono">{{ absence.endDate | date: 'fullDate' }}</dd>
+          <dt>Duración</dt>
+          <dd class="mono">{{ dayCountLabel(absence) }}</dd>
+        </dl>
 
         @if (absence.reason) {
-          <p>{{ absence.reason }}</p>
+          <p class="reason">{{ absence.reason }}</p>
         }
 
         @if (absence.status === 'PENDING') {
-          <div class="decision-grid">
-            <form [formGroup]="approveForm" (ngSubmit)="approve()">
-              <label>
-                <span>Comentario de aprobación (opcional)</span>
-                <textarea rows="3" formControlName="resolutionComment"></textarea>
-              </label>
-              <button type="submit" [disabled]="decisionLoading()">Aprobar</button>
-            </form>
-
-            <form [formGroup]="rejectForm" (ngSubmit)="reject()">
-              <label>
-                <span>Comentario de rechazo</span>
-                <textarea rows="3" formControlName="resolutionComment"></textarea>
-              </label>
-              @if (rejectForm.controls.resolutionComment.invalid && rejectForm.controls.resolutionComment.touched) {
-                <div class="validation">El comentario es obligatorio para rechazar.</div>
-              }
-              <button type="submit" class="danger" [disabled]="decisionLoading()">Rechazar</button>
-            </form>
+          <div class="decision">
+            <label>
+              <span>Comentario</span>
+              <textarea rows="3" maxlength="500" [formControl]="commentControl"></textarea>
+            </label>
+            @if (commentControl.invalid && commentControl.touched) {
+              <p class="validation">Escribe el motivo del rechazo: lo lee quien pidió la ausencia.</p>
+            } @else {
+              <p class="decision__hint">Opcional al aprobar. Obligatorio al rechazar.</p>
+            }
+            <div class="decision__actions">
+              <button type="button" [disabled]="decisionLoading()" (click)="approve()">Aprobar</button>
+              <button type="button" class="danger" [disabled]="decisionLoading()" (click)="reject()">
+                Rechazar
+              </button>
+            </div>
           </div>
+        } @else if (absence.resolutionComment) {
+          <p class="resolution">{{ absence.resolutionComment }}</p>
         }
-      } @else {
-        <div class="detail-card--empty">
-          <p class="eyebrow">Sin selección</p>
-          <h2>Elige una solicitud para revisarla o resolverla.</h2>
-        </div>
-      }
-    </section>
-
-    <section class="card team-calendar-card">
-      <p class="eyebrow">Calendario de equipo</p>
-      <h2>Aprobadas en el rango</h2>
-      @for (absence of approvedAbsences(); track absence.id) {
-        <article class="approved-row">
-          <strong>{{ employeeName(absence.employeeId) }}</strong>
-          <span>{{ typeName(absence.absenceTypeId) }} · {{ absence.startDate }} al {{ absence.endDate }}</span>
-        </article>
-      } @empty {
-        <p>No hay ausencias aprobadas para mostrar.</p>
-      }
-    </section>
+      </section>
+    } @else {
+      <section class="detail detail--empty">
+        <p class="info">Elige una solicitud para revisarla.</p>
+      </section>
+    }
   </div>
 </section>
+
+<dialog #confirmDialog class="panel">
+  @if (pendingDecision(); as decision) {
+    @if (selectedAbsence(); as absence) {
+      @if (decision === 'approve') {
+        <h2>Aprobar la ausencia</h2>
+        <p class="consequence">
+          {{ employeeName(absence.employeeId) }} queda de {{ typeName(absence.absenceTypeId) | lowercase }}
+          {{ dayCountLabel(absence) }}, del {{ absence.startDate | date: 'd MMMM' }} al
+          {{ absence.endDate | date: 'd MMMM' }}.
+        </p>
+      } @else {
+        <h2>Rechazar la ausencia</h2>
+        <p class="consequence">Tu comentario llega a {{ employeeName(absence.employeeId) }}.</p>
+      }
+
+      <footer class="panel__foot">
+        <button
+          type="button"
+          [class.danger]="decision === 'reject'"
+          [disabled]="decisionLoading()"
+          (click)="confirmDecision()">
+          {{ decision === 'approve' ? 'Aprobar' : 'Rechazar' }}
+        </button>
+        <button type="button" class="ghost" (click)="cancelDecision()">Cancelar</button>
+      </footer>
+    }
+  }
+</dialog>

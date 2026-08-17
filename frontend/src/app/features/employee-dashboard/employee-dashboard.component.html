@@ -1,53 +1,81 @@
-<section class="dashboard-shell">
-  <header class="card hero-card">
+<section class="console">
+  <header class="console__head console__head--ruled">
     <div>
       <p class="eyebrow">Mi jornada</p>
-      <h1>Hoy trabajas con el reloj a la vista.</h1>
-      <p class="lede">Controla el inicio, las pausas y el cierre sin salir del panel principal.</p>
+      <h1>Hoy</h1>
     </div>
     <a routerLink="/workdays" class="history-link">Ver historial</a>
   </header>
 
-  @if (!loading()) {
-    <section class="card workday-card">
-      @if (currentWorkday(); as workday) {
-        <div class="status-row">
-          <span class="status-pill" [class.status-pill--break]="workday.status === 'ON_BREAK'">{{ workday.status }}</span>
-          <span class="duration">{{ workedDuration() }}</span>
-        </div>
-        <div class="timeline">
-          <div>
-            <strong>Inicio</strong>
-            <span>{{ workday.startedAt | date: 'shortTime' }}</span>
-          </div>
-          <div>
-            <strong>Pausas</strong>
-            <span>{{ workday.breaks.length }}</span>
-          </div>
-        </div>
-        <div class="actions">
-          <button type="button" (click)="startBreak()" [disabled]="!canStartBreak() || actionLoading()">Iniciar pausa</button>
-          <button type="button" (click)="endBreak()" [disabled]="!isOnBreak() || actionLoading()">Finalizar pausa</button>
-          <button type="button" (click)="endWorkday()" [disabled]="actionLoading()">Finalizar jornada</button>
-        </div>
-      } @else {
-        <section class="card empty-card">
-          <p class="eyebrow">Sin jornada activa</p>
-          <h2>Todo listo para empezar.</h2>
-          <p>Cuando inicies la jornada, verás aquí el tiempo trabajado y las pausas abiertas.</p>
-          <button type="button" (click)="startWorkday()" [disabled]="actionLoading()">Iniciar jornada</button>
-        </section>
-      }
-    </section>
+  @if (loading()) {
+    <p class="info">Cargando tu jornada…</p>
   } @else {
-    <section class="card empty-card">
-      <p>Cargando tu jornada actual...</p>
+    @if (currentWorkday(); as workday) {
+    <!-- El cronómetro es la pantalla: todo lo demás lo acompaña. -->
+    <section class="clock" [class.clock--paused]="isOnBreak()">
+      <p class="clock__state">
+        <span class="pill" [class.pill--active]="!isOnBreak()">
+          {{ isOnBreak() ? 'En pausa' : 'Trabajando' }}
+        </span>
+      </p>
+      <p class="clock__time mono" role="timer" [attr.aria-label]="'Tiempo trabajado ' + workedLabel()">
+        {{ workedLabel() }}
+      </p>
+      <p class="clock__caption">
+        @if (isOnBreak()) {
+          El contador está parado · llevas {{ breakLabel() }} de pausa
+        } @else {
+          trabajado
+        }
+      </p>
     </section>
+
+    <dl class="facts">
+      <div>
+        <dt>Entrada</dt>
+        <dd class="mono">{{ workday.startedAt | date: 'HH:mm' }}</dd>
+      </div>
+      <div>
+        <dt>Pausas</dt>
+        <dd class="mono">{{ closedBreaks() }}</dd>
+      </div>
+    </dl>
+
+    <div class="actions">
+      @if (isOnBreak()) {
+        <button type="button" (click)="endBreak()" [disabled]="actionLoading()">Reanudar</button>
+      } @else {
+        <button type="button" class="ghost" (click)="startBreak()" [disabled]="!canStartBreak() || actionLoading()">
+          Iniciar pausa
+        </button>
+      }
+      <!-- El backend rechaza cerrar con una pausa abierta, así que la acción se
+           desactiva en lugar de dejar que falle. -->
+      <button
+        type="button"
+        class="ghost"
+        (click)="endWorkday()"
+        [disabled]="isOnBreak() || actionLoading()">
+        Finalizar jornada
+      </button>
+    </div>
+    @if (isOnBreak()) {
+      <p class="hint">Reanuda la jornada antes de finalizarla.</p>
+    }
+    } @else {
+      <section class="start">
+        <p class="info">No has fichado todavía.</p>
+        <button type="button" (click)="startWorkday()" [disabled]="actionLoading()">Iniciar jornada</button>
+      </section>
+    }
   }
 
-  @if (infoMessage(); as message) {
-    <p class="info">{{ message }}</p>
+  <p class="status-line" role="status">
+    @if (infoMessage(); as message) {
+      <span class="ok">{{ message }}</span>
+    }
+  </p>
+  @if (errorMessage(); as message) {
+    <p class="error error--block">{{ message }}</p>
   }
-
-
 </section>

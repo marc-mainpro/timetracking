@@ -54,16 +54,17 @@ describe('NotificationsComponent', () => {
     expect(component.loading()).toBeFalse();
   });
 
-  it('marks an unread notification as read and reloads', () => {
+  it('marca como leída en la lista que ya está en pantalla, sin recargarla', () => {
     flushInitial([unread]);
 
     component.markRead(unread);
-
     httpMock.expectOne('/api/v1/notifications/n1/read').flush(null);
-    httpMock
-      .expectOne('/api/v1/notifications?page=0&size=20')
-      .flush({ content: [{ ...unread, read: true, readAt: '2026-08-06T11:00:00Z' }], page: 0, size: 20, totalElements: 1, totalPages: 1 });
+
+    // Recargar devolvía el scroll arriba y podía reordenar lo que se estaba
+    // leyendo, así que la fila se actualiza en el sitio.
+    httpMock.expectNone('/api/v1/notifications?page=0&size=20');
     expect(component.result()?.content[0].read).toBeTrue();
+    expect(component.unreadOnPage()).toBe(0);
   });
 
   it('does not call the API for an already read notification', () => {
@@ -73,6 +74,7 @@ describe('NotificationsComponent', () => {
     component.markRead(read);
 
     httpMock.expectNone('/api/v1/notifications/n1/read');
+    expect(component.unreadOnPage()).toBe(0);
   });
 
   it('translates the type of a notification of each role', () => {
@@ -93,13 +95,6 @@ describe('NotificationsComponent', () => {
     component.open(unread);
 
     httpMock.expectOne('/api/v1/notifications/n1/read').flush(null);
-    httpMock.expectOne('/api/v1/notifications?page=0&size=20').flush({
-      content: [{ ...unread, read: true, readAt: '2026-08-06T11:00:00Z' }],
-      page: 0,
-      size: 20,
-      totalElements: 1,
-      totalPages: 1
-    });
     expect(navigate).toHaveBeenCalledWith('/absences');
   });
 
@@ -117,13 +112,6 @@ describe('NotificationsComponent', () => {
     component.open(informational);
 
     httpMock.expectOne('/api/v1/notifications/n2/read').flush(null);
-    httpMock.expectOne('/api/v1/notifications?page=0&size=20').flush({
-      content: [{ ...informational, read: true }],
-      page: 0,
-      size: 20,
-      totalElements: 1,
-      totalPages: 1
-    });
     expect(navigate).not.toHaveBeenCalled();
   });
 

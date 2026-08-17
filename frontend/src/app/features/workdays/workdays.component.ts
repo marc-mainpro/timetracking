@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -9,7 +9,7 @@ import { PagedWorkdays, WorkdaysService } from './workdays.service';
 
 @Component({
   selector: 'app-workdays',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, IsoDurationPipe],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink, IsoDurationPipe],
   templateUrl: './workdays.component.html',
   styleUrl: './workdays.component.scss'
 })

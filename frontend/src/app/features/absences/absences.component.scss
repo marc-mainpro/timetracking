@@ -1,33 +1,90 @@
-.absences-shell {
+/* Mis ausencias. El armazón (`.console`, `.panel`, `.form`) vive en
+   `styles.scss`: aquí solo la fila de una solicitud.
+
+   La solicitud pasa a un panel: es algo que se hace unas pocas veces al año, y
+   tenerla siempre abierta empujaba hacia abajo lo que sí se consulta, que es
+   en qué estado están las que ya pediste. */
+
+.absences {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.absence {
   display: grid;
-  gap: 1.5rem;
-}
-
-.absences-layout {
-  display: grid;
-  gap: 1rem;
-}
-
-.absence-form,
-.list-card,
-.absence-row,
-.absence-actions {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.date-grid {
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-}
-
-.absence-row {
-  padding: 1rem;
-  border: 1px solid var(--border-color, #d9d9d9);
-  border-radius: 0.75rem;
-}
-
-.absence-actions {
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    'what status'
+    'answer answer'
+    'cancel cancel';
   align-items: start;
+  gap: 0.5rem 1rem;
+  padding: 1rem 0.5rem;
+}
+
+.absence + .absence {
+  border-top: 1px solid var(--border);
+}
+
+.absence__what {
+  grid-area: what;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.absence__what strong {
+  font-weight: 500;
+}
+
+.absence__what small {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Lo que escribiste al pedirla, citado. */
+.absence__reason {
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--border);
+}
+
+.absence .pill {
+  grid-area: status;
+  justify-self: end;
+}
+
+/* La respuesta de quien la resolvió: es lo que se viene a leer. */
+.absence__answer {
+  grid-area: answer;
+  margin: 0.25rem 0 0;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+}
+
+.absence__cancel {
+  grid-area: cancel;
+  justify-self: start;
+  min-height: 2.2rem;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+@media (min-width: 640px) {
+  .absence {
+    grid-template-columns: minmax(12rem, 1fr) 7rem auto;
+    grid-template-areas:
+      'what status cancel'
+      'answer answer answer';
+    align-items: center;
+    gap: 0.5rem 1.5rem;
+  }
+
+  .absence__cancel {
+    justify-self: end;
+  }
 }

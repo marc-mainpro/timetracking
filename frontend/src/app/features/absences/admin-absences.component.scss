@@ -1,19 +1,28 @@
-.admin-layout {
+/* Bandeja de ausencias. El armazón (`.console`, `.filters`, `.review`,
+   `.queue`, `.detail`, `.decision`, `.panel`) vive en `styles.scss`: aquí solo
+   los datos de una solicitud. */
+
+.facts {
   display: grid;
-  gap: 1rem;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1.25rem;
+  margin: 0;
 }
 
-.queue-card,
-.detail-card,
-.team-calendar-card,
-.approved-row,
-.decision-grid {
-  display: grid;
-  gap: 0.75rem;
+.facts dt {
+  font-size: 0.78rem;
+  color: var(--text-muted);
 }
 
-.approved-row {
-  padding: 0.75rem;
-  border: 1px solid var(--border-color, #d9d9d9);
-  border-radius: 0.75rem;
+.facts dd {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Lo que escribió quien la pidió, citado. */
+.reason {
+  margin: 0;
+  padding-left: 0.75rem;
+  color: var(--text-muted);
+  border-left: 2px solid var(--border);
 }

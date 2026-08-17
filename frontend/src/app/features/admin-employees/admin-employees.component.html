@@ -1,126 +1,210 @@
-<section class="admin-shell">
-  <header class="card admin-header">
+<section class="console">
+  <header class="console__head">
     <div>
       <p class="eyebrow">Administración</p>
-      <h1>Gestión de empleados</h1>
+      <h1>Empleados</h1>
     </div>
-    <input
-      type="search"
-      placeholder="Buscar por nombre o correo"
-      [value]="search()"
-      (input)="search.set($any($event.target).value)"
-      />
+    <button type="button" (click)="create()">Dar de alta</button>
   </header>
 
-  <section class="layout">
-    <article class="card list-card">
-      <div class="toolbar">
-        <button type="button" (click)="applyStatus('')">Todos</button>
-        <button type="button" (click)="applyStatus('ACTIVE')">Activos</button>
-        <button type="button" (click)="applyStatus('INACTIVE')">Inactivos</button>
-      </div>
+  <div class="filters" role="group" aria-label="Filtrar por estado">
+    @for (status of statusFilters; track status) {
+      <button
+        type="button"
+        class="ghost filters__chip"
+        [class.filters__chip--on]="selectedStatus() === status"
+        [attr.aria-pressed]="selectedStatus() === status"
+        (click)="applyStatus(status)">
+        {{ filterLabel(status) }}
+      </button>
+    }
+    <!-- Filtra la página cargada, no toda la plantilla: el endpoint no busca. -->
+    <input
+      type="search"
+      class="filters__search"
+      placeholder="Filtrar esta página"
+      aria-label="Filtrar los empleados de esta página por nombre o correo"
+      [value]="search()"
+      (input)="search.set($any($event.target).value)" />
+  </div>
 
-      @if (actionMessage(); as message) {
-        <p class="info">{{ message }}</p>
+  <p class="status-line" role="status">
+    @if (actionMessage(); as message) {
+      <span class="ok">{{ message }}</span>
+    }
+    @if (loading()) {
+      <span class="info">Cargando…</span>
+    }
+  </p>
+  @if (error(); as err) {
+    <p class="error error--block">{{ err }}</p>
+  }
+
+  <ul class="people">
+    @for (employee of visibleEmployees(); track employee.id) {
+      <li class="person">
+        <span class="person__name">
+          <strong>{{ employee.firstName }} {{ employee.lastName }}</strong>
+          <small>{{ employee.email }}</small>
+        </span>
+
+        <span class="person__roles">{{ rolesLabel(employee.roles) }}</span>
+
+        <span class="pill pill--{{ employee.status.toLowerCase() }}">
+          {{ statusLabel(employee.status) }}
+        </span>
+
+        <span class="person__actions">
+          <button type="button" class="ghost" (click)="edit(employee)">Editar</button>
+          <button
+            type="button"
+            [class.danger]="employee.status === 'ACTIVE'"
+            [class.ghost]="employee.status !== 'ACTIVE'"
+            (click)="toggleStatus(employee)">
+            {{ employee.status === 'ACTIVE' ? 'Desactivar' : 'Activar' }}
+          </button>
+        </span>
+      </li>
+    } @empty {
+      @if (!loading()) {
+        <li class="list-empty">
+          @if (search()) {
+            <p class="info">Ningún empleado de esta página coincide con «{{ search() }}».</p>
+          } @else if (selectedStatus()) {
+            <p class="info">No hay empleados {{ filterLabel(selectedStatus()).toLowerCase() }}.</p>
+          } @else {
+            <p class="info">Todavía no hay empleados.</p>
+            <button type="button" class="ghost" (click)="create()">Dar de alta al primero</button>
+          }
+        </li>
       }
+    }
+  </ul>
 
-      @for (employee of visibleEmployees(); track employee) {
-        <div class="employee-row">
-          <div>
-            <strong>{{ employee.firstName }} {{ employee.lastName }}</strong>
-            <span>{{ employee.email }}</span>
-          </div>
-          <div>
-            <span class="pill" [class.pill--inactive]="employee.status === 'INACTIVE'">{{ employee.status }}</span>
-            <small>{{ employee.roles.join(', ') }}</small>
-          </div>
-          <div class="row-actions">
-            <button type="button" (click)="edit(employee)">Editar</button>
-            <button type="button" (click)="toggleStatus(employee)">
-              {{ employee.status === 'ACTIVE' ? 'Desactivar' : 'Activar' }}
-            </button>
-          </div>
-        </div>
-      }
-
-      @if (result(); as result) {
-        <footer class="pager">
-          <button type="button" (click)="previousPage()" [disabled]="page() === 0 || loading()">Anterior</button>
-          <span>Página {{ result.page + 1 }} de {{ result.totalPages || 1 }}</span>
-          <button type="button" (click)="nextPage()" [disabled]="result.page + 1 >= result.totalPages || loading()">Siguiente</button>
-        </footer>
-      }
-    </article>
-
-    <aside class="card form-card">
-      <p class="eyebrow">{{ editingEmployee() ? 'Editar' : 'Alta' }}</p>
-      <h2>{{ editingEmployee() ? 'Actualiza un empleado' : 'Nuevo empleado' }}</h2>
-
-      <form [formGroup]="form" (ngSubmit)="submit()" class="employee-form">
-        <label>
-          <span>Correo</span>
-          <input type="email" formControlName="email" placeholder="empleado@acme.test" />
-        </label>
-        @if (form.controls.email.invalid && form.controls.email.touched) {
-          <div class="validation">
-            @if (form.controls.email.errors?.['required']) {
-              Introduce un correo.
-            } @else {
-              Introduce un correo válido.
-            }
-          </div>
-        }
-
-        <label>
-          <span>Contraseña inicial</span>
-          <input type="password" formControlName="password" placeholder="Mínimo 10 caracteres" />
-        </label>
-        @if (form.controls.password.invalid && form.controls.password.touched) {
-          <div class="validation">
-            @if (form.controls.password.errors?.['required']) {
-              Introduce una contraseña.
-            } @else {
-              La contraseña debe tener al menos 10 caracteres.
-            }
-          </div>
-        }
-
-        <label>
-          <span>Nombre</span>
-          <input type="text" formControlName="firstName" />
-        </label>
-        @if (form.controls.firstName.invalid && form.controls.firstName.touched) {
-          <div class="validation">Indica el nombre.</div>
-        }
-
-        <label>
-          <span>Apellidos</span>
-          <input type="text" formControlName="lastName" />
-        </label>
-        @if (form.controls.lastName.invalid && form.controls.lastName.touched) {
-          <div class="validation">Indica los apellidos.</div>
-        }
-
-        <div class="roles-grid">
-          <label class="role-toggle">
-            <input type="checkbox" formControlName="employee" />
-            <span>EMPLOYEE</span>
-          </label>
-          <label class="role-toggle">
-            <input type="checkbox" formControlName="tenantAdmin" />
-            <span>TENANT_ADMIN</span>
-          </label>
-        </div>
-
-        @if (formError(); as message) {
-          <p class="error">{{ message }}</p>
-        }
-
-        <div class="form-actions">
-          <button type="submit" [disabled]="saving()">{{ saving() ? 'Guardando...' : 'Guardar' }}</button>
-          <button type="button" class="ghost" (click)="resetForm()">Cancelar</button>
-        </div>
-      </form>
-    </aside>
-  </section>
+  @if (result(); as result) {
+    <nav class="pager" aria-label="Paginación">
+      <button type="button" class="ghost" (click)="previousPage()" [disabled]="page() === 0 || loading()">
+        Anterior
+      </button>
+      <p class="pager__position mono">Página {{ result.page + 1 }} de {{ result.totalPages || 1 }}</p>
+      <button
+        type="button"
+        class="ghost"
+        (click)="nextPage()"
+        [disabled]="result.page + 1 >= result.totalPages || loading()">
+        Siguiente
+      </button>
+    </nav>
+  }
 </section>
+
+<!-- Alta y edición -------------------------------------------------------- -->
+<dialog #formDialog class="panel" (close)="resetForm()">
+  <header class="panel__head">
+    <div>
+      <p class="eyebrow">{{ editingEmployee() ? 'Editar' : 'Alta' }}</p>
+      <h2>{{ editingEmployee() ? 'Datos del empleado' : 'Nuevo empleado' }}</h2>
+    </div>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="form">
+    @if (editingEmployee(); as employee) {
+      <!-- El correo identifica la cuenta y no se cambia desde aquí. -->
+      <p class="form__fixed mono">{{ employee.email }}</p>
+    } @else {
+      <label>
+        <span>Correo</span>
+        <input type="email" formControlName="email" autocomplete="email" />
+      </label>
+      @if (form.controls.email.invalid && form.controls.email.touched) {
+        <p class="validation">
+          @if (form.controls.email.errors?.['required']) {
+            Introduce un correo.
+          } @else {
+            Introduce un correo válido.
+          }
+        </p>
+      }
+
+      <label>
+        <span>Contraseña inicial</span>
+        <input type="password" formControlName="password" autocomplete="new-password" />
+      </label>
+      @if (form.controls.password.invalid && form.controls.password.touched) {
+        <p class="validation">
+          @if (form.controls.password.errors?.['required']) {
+            Introduce una contraseña.
+          } @else {
+            La contraseña necesita al menos 10 caracteres.
+          }
+        </p>
+      }
+    }
+
+    <div class="form__pair">
+      <label>
+        <span>Nombre</span>
+        <input type="text" formControlName="firstName" autocomplete="given-name" />
+      </label>
+      <label>
+        <span>Apellidos</span>
+        <input type="text" formControlName="lastName" autocomplete="family-name" />
+      </label>
+    </div>
+    @if (form.controls.firstName.invalid && form.controls.firstName.touched) {
+      <p class="validation">Indica el nombre.</p>
+    }
+    @if (form.controls.lastName.invalid && form.controls.lastName.touched) {
+      <p class="validation">Indica los apellidos.</p>
+    }
+
+    <fieldset class="roles">
+      <legend class="eyebrow">Permisos</legend>
+      <label class="roles__option">
+        <input type="checkbox" formControlName="employee" />
+        <span>
+          Empleado
+          <small>Ficha su jornada y consulta su historial.</small>
+        </span>
+      </label>
+      <label class="roles__option">
+        <input type="checkbox" formControlName="tenantAdmin" />
+        <span>
+          Administrador
+          <small>Gestiona la plantilla, los turnos y las revisiones.</small>
+        </span>
+      </label>
+    </fieldset>
+
+    @if (formError(); as message) {
+      <p class="error error--block">{{ message }}</p>
+    }
+
+    <footer class="panel__foot">
+      <button type="submit" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar' }}</button>
+      <button type="button" class="ghost" (click)="closeForm()">Cancelar</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- Activar y desactivar -------------------------------------------------- -->
+<dialog #confirmDialog class="panel">
+  @if (pendingToggle(); as employee) {
+    @if (employee.status === 'ACTIVE') {
+      <h2>Desactivar a {{ employee.firstName }} {{ employee.lastName }}</h2>
+      <p class="consequence">
+        No podrá entrar ni fichar. Sus jornadas y solicitudes anteriores se conservan.
+      </p>
+    } @else {
+      <h2>Activar a {{ employee.firstName }} {{ employee.lastName }}</h2>
+      <p class="consequence">Recupera el acceso con los permisos que ya tenía.</p>
+    }
+
+    <footer class="panel__foot">
+      <button type="button" [class.danger]="employee.status === 'ACTIVE'" (click)="confirmToggle()">
+        {{ employee.status === 'ACTIVE' ? 'Desactivar' : 'Activar' }}
+      </button>
+      <button type="button" class="ghost" (click)="cancelToggle()">Cancelar</button>
+    </footer>
+  }
+</dialog>

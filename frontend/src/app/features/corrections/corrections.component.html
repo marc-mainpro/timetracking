@@ -1,126 +1,124 @@
-<section class="corrections-shell">
-  <header class="card corrections-header">
+<section class="console">
+  <header class="console__head console__head--ruled">
     <div>
       <p class="eyebrow">Correcciones</p>
-      <h1>Solicita cambios con contexto completo</h1>
-      <p>Prepara una propuesta clara desde una jornada cerrada y sigue su estado sin salir del flujo.</p>
+      <h1>Mis correcciones</h1>
     </div>
-    <a routerLink="/workdays" class="history-link">Elegir otra jornada</a>
+    <a routerLink="/workdays" class="history-link">Ir al historial</a>
   </header>
 
-  @if (actionMessage(); as message) {
-    <p class="message message--success">{{ message }}</p>
-  }
+  <p class="status-line" role="status">
+    @if (actionMessage(); as message) {
+      <span class="ok">{{ message }}</span>
+    }
+  </p>
   @if (formError(); as error) {
-    <p class="message message--error">{{ error }}</p>
+    <p class="error error--block">{{ error }}</p>
   }
 
-  <div class="corrections-layout">
-    <section class="card editor-card">
-      @if (selectedWorkday(); as workday) {
-        <div class="editor-summary">
-          <div>
-            <span class="eyebrow">Jornada base</span>
-            <strong>{{ workday.startedAt | date: 'shortDate' }}</strong>
-          </div>
-          <div>
-            <span>Original</span>
-            <strong>{{ workday.startedAt | date: 'shortTime' }} - {{ workday.endedAt ? (workday.endedAt | date: 'shortTime') : 'Sin cierre' }}</strong>
-          </div>
-          <div>
-            <span>Estado</span>
-            <strong>{{ workday.status }}</strong>
-          </div>
-        </div>
-        <form [formGroup]="form" (ngSubmit)="submit()" class="correction-form">
-          <label>
-            <span>Motivo</span>
-            <textarea formControlName="reason" rows="3" placeholder="Explica qué ocurrió y por qué propones el ajuste"></textarea>
-          </label>
-          @if (form.controls.reason.invalid && form.controls.reason.touched) {
-            <div class="validation">El motivo es obligatorio.</div>
-          }
-          <div class="time-grid">
-            <label>
-              <span>Nuevo inicio</span>
-              <input type="datetime-local" formControlName="startedAt" />
-              @if (form.controls.startedAt.invalid && form.controls.startedAt.touched) {
-                <div class="validation">Indica la nueva hora de inicio.</div>
-              }
-            </label>
-            <label>
-              <span>Nuevo cierre</span>
-              <input type="datetime-local" formControlName="endedAt" />
-              @if (form.controls.endedAt.invalid && form.controls.endedAt.touched) {
-                <div class="validation">Indica la nueva hora de cierre.</div>
-              }
-            </label>
-          </div>
-          @if (form.errors?.['invalidRange']) {
-            <div class="validation">La hora de fin debe ser posterior al inicio.</div>
-          }
-          @if (form.errors?.['invalidBreakRange']) {
-            <div class="validation">Cada pausa debe tener un rango horario válido.</div>
-          }
-          @if (form.errors?.['breakOutsideWorkday']) {
-            <div class="validation">Las pausas deben quedar dentro del nuevo rango propuesto.</div>
-          }
-          @if (form.errors?.['overlappingBreaks']) {
-            <div class="validation">Las pausas no pueden solaparse.</div>
-          }
-          <div class="breaks-card">
-            <div class="breaks-header">
-              <div>
-                <span class="eyebrow">Pausas propuestas</span>
-                <strong>{{ breaks.length }} registradas</strong>
-              </div>
-              <button type="button" (click)="addBreak()">Añadir pausa</button>
-            </div>
-            @for (breakGroup of breaks.controls; track breakGroup; let i = $index) {
-              <div class="break-row" [formGroup]="$any(breakGroup)">
-                <input type="datetime-local" formControlName="startedAt" />
-                <input type="datetime-local" formControlName="endedAt" />
-                <button type="button" class="ghost" (click)="removeBreak(i)">Quitar</button>
-              </div>
-              @if ($any(breakGroup).invalid && $any(breakGroup).touched) {
-                <div class="validation">Indica el inicio y el fin de esta pausa.</div>
-              }
-            }
-          </div>
-          <button type="submit" [disabled]="saving()">{{ saving() ? 'Enviando...' : 'Solicitar corrección' }}</button>
-        </form>
-      } @else {
-        <div class="empty-state">
-          <span class="eyebrow">Paso 1</span>
-          <h2>Empieza desde el historial</h2>
-          <p>Usa el botón “Solicitar corrección” en una jornada cerrada para abrir aquí el formulario ya precargado.</p>
-        </div>
-      }
-
-    </section>
-
-    <section class="card requests-card">
-      <div class="requests-header">
-        <span class="eyebrow">Tus solicitudes</span>
-        <strong>{{ result()?.totalElements ?? 0 }} en total</strong>
+  @if (selectedWorkday(); as workday) {
+    <section class="editor">
+      <!-- Lo que hay registrado, para tenerlo delante mientras se propone el
+           cambio: la corrección se escribe mirando el original. -->
+      <div class="original">
+        <p class="eyebrow">Jornada registrada</p>
+        <p class="original__day">{{ workday.startedAt | date: 'EEEE d MMMM' }}</p>
+        <p class="original__span mono">
+          {{ workday.startedAt | date: 'HH:mm' }} –
+          {{ workday.endedAt ? (workday.endedAt | date: 'HH:mm') : 'sin cierre' }}
+        </p>
       </div>
 
-      <ul class="requests-list">
-        @for (correction of result()?.content ?? []; track correction) {
-          <li class="request-row">
-            <div class="request-main">
-              <strong>{{ correction.createdAt | date: 'short' }}</strong>
-              <p>{{ correction.reason }}</p>
-              @if (correction.resolutionComment) {
-                <small>{{ correction.resolutionComment }}</small>
-              }
-            </div>
-            <span class="pill pill--sm" [class.pill--approved]="correction.status === 'APPROVED'" [class.pill--rejected]="correction.status === 'REJECTED'">
-              {{ correction.status }}
-            </span>
-          </li>
+      <form [formGroup]="form" (ngSubmit)="submit()" class="form">
+        <label>
+          <span>Qué pasó</span>
+          <textarea formControlName="reason" rows="3"></textarea>
+        </label>
+        @if (form.controls.reason.invalid && form.controls.reason.touched) {
+          <p class="validation">Explica el motivo: lo lee quien revisa la solicitud.</p>
         }
-      </ul>
+
+        <div class="form__pair">
+          <label>
+            <span>Entrada propuesta</span>
+            <input type="datetime-local" formControlName="startedAt" />
+          </label>
+          <label>
+            <span>Salida propuesta</span>
+            <input type="datetime-local" formControlName="endedAt" />
+          </label>
+        </div>
+        @if (form.controls.startedAt.invalid && form.controls.startedAt.touched) {
+          <p class="validation">Indica la hora de entrada.</p>
+        }
+        @if (form.controls.endedAt.invalid && form.controls.endedAt.touched) {
+          <p class="validation">Indica la hora de salida.</p>
+        }
+        @if (form.errors?.['invalidRange']) {
+          <p class="validation">La salida tiene que ser posterior a la entrada.</p>
+        }
+        @if (form.errors?.['invalidBreakRange']) {
+          <p class="validation">Cada pausa necesita una hora de inicio y otra de fin válidas.</p>
+        }
+        @if (form.errors?.['breakOutsideWorkday']) {
+          <p class="validation">Las pausas tienen que caer dentro del horario que propones.</p>
+        }
+        @if (form.errors?.['overlappingBreaks']) {
+          <p class="validation">Dos pausas no pueden solaparse.</p>
+        }
+
+        <div class="breaks">
+          <div class="breaks__head">
+            <p class="eyebrow">Pausas propuestas</p>
+            <button type="button" class="ghost" (click)="addBreak()">Añadir pausa</button>
+          </div>
+
+          @for (breakGroup of breaks.controls; track breakGroup; let i = $index) {
+            <div class="break" [formGroup]="$any(breakGroup)">
+              <input type="datetime-local" formControlName="startedAt" aria-label="Inicio de la pausa" />
+              <input type="datetime-local" formControlName="endedAt" aria-label="Fin de la pausa" />
+              <button type="button" class="ghost" (click)="removeBreak(i)">Quitar</button>
+            </div>
+            @if ($any(breakGroup).invalid && $any(breakGroup).touched) {
+              <p class="validation">Indica el inicio y el fin de esta pausa.</p>
+            }
+          } @empty {
+            <p class="info">Sin pausas. Si ese día hiciste alguna, añádela.</p>
+          }
+        </div>
+
+        <button type="submit" [disabled]="saving()">
+          {{ saving() ? 'Enviando…' : 'Enviar solicitud' }}
+        </button>
+      </form>
     </section>
-  </div>
+  } @else {
+    <section class="list-empty">
+      <p class="info">Para pedir una corrección, elige la jornada en el historial.</p>
+      <a routerLink="/workdays" class="secondary-link">Ver mis jornadas</a>
+    </section>
+  }
+
+  <section class="requests">
+    <p class="eyebrow">Mis solicitudes</p>
+
+    <ul class="requests__list">
+      @for (correction of result()?.content ?? []; track correction.id) {
+        <li class="request">
+          <span class="request__main">
+            <strong>{{ correction.reason }}</strong>
+            <small class="mono">{{ correction.createdAt | date: 'short' }}</small>
+            @if (correction.resolutionComment) {
+              <small class="request__answer">{{ correction.resolutionComment }}</small>
+            }
+          </span>
+          <span class="pill pill--{{ correction.status.toLowerCase() }}">
+            {{ statusLabel(correction.status) }}
+          </span>
+        </li>
+      } @empty {
+        <li class="info">Todavía no has pedido ninguna corrección.</li>
+      }
+    </ul>
+  </section>
 </section>

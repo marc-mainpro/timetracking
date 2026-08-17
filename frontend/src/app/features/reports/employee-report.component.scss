@@ -1,60 +1,39 @@
-.dashboard-shell {
+/* Mi resumen de horas. El armazón (`.console`) y la tabla base viven en
+   `styles.scss`: aquí el selector de periodo y las columnas numéricas, que van
+   en mono tabular y a la derecha para compararse en vertical. */
+
+.range {
   display: grid;
-  gap: 1.25rem;
-}
-
-.hero-card,
-.filters-card,
-.results-card {
-  padding: 1.5rem;
-}
-
-h1 {
-  font-size: clamp(1.4rem, 5vw, 1.8rem);
-}
-
-.lede {
-  margin: 0.6rem 0 0;
-  color: var(--text-muted);
-}
-
-.range-form {
-  display: grid;
-  grid-template-columns: 1fr;
   gap: 1rem;
   align-items: end;
 }
 
-.form-actions {
-  display: flex;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-}
-
-.form-actions button {
-  flex: 1 1 auto;
-}
-
-.error {
-  grid-column: 1 / -1;
-  margin: 0;
-}
-
-.empty {
-  color: var(--text-muted);
-}
-
-td {
+.num {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+th.num {
+  font-family: inherit;
+}
+
+/* Una jornada abierta distinta de cero pide cerrarla. */
+.num--flag {
+  color: var(--warn);
+}
+
+/* El día es cabecera de su fila, pero se lee como dato. */
+tbody th {
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text);
 }
 
 @media (min-width: 640px) {
-  .range-form {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
-  }
-
-  .form-actions button {
-    flex: 0 0 auto;
+  .range {
+    grid-template-columns: repeat(2, minmax(0, 12rem)) auto;
   }
 }

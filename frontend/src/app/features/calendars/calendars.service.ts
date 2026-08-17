@@ -4,6 +4,11 @@ import { Observable } from 'rxjs';
 
 export type CalendarStatus = 'ACTIVE' | 'ARCHIVED';
 
+/**
+ * Ámbitos del backend. `TEAM` sigue en el tipo porque puede llegar en datos ya
+ * guardados, pero la aplicación no lo ofrece: no hay gestión de equipos
+ * (ADR-0017).
+ */
 export type AssignmentScope = 'TENANT' | 'TEAM' | 'EMPLOYEE';
 
 /**
@@ -166,14 +171,15 @@ export class CalendarsService {
 
   /**
    * Resuelve el calendario efectivo de un empleado en una fecha aplicando la
-   * precedencia empleado > equipo > tenant. `teamId` lo aporta quien llama: el
-   * sistema todavía no gestiona equipos.
+   * precedencia empleado > tenant.
+   *
+   * <p>El endpoint acepta además un `teamId` para el ámbito intermedio, pero no
+   * se envía: es un identificador opaco que nadie resuelve mientras el sistema
+   * no gestione equipos (ADR-0017), así que sin él las asignaciones de equipo
+   * quedan descartadas y la resolución cae al calendario de la organización.
    */
-  resolveEffective(employeeId: string, date: string, teamId?: string): Observable<EffectiveCalendar> {
-    let params = new HttpParams().set('employeeId', employeeId).set('date', date);
-    if (teamId) {
-      params = params.set('teamId', teamId);
-    }
+  resolveEffective(employeeId: string, date: string): Observable<EffectiveCalendar> {
+    const params = new HttpParams().set('employeeId', employeeId).set('date', date);
     return this.http.get<EffectiveCalendar>('/api/v1/admin/calendar-assignments/effective', { params });
   }
 }

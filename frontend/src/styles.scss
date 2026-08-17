@@ -232,7 +232,8 @@ th {
 }
 
 .pill--approved,
-.pill--active {
+.pill--active,
+.pill--consumed {
   background: var(--ok-bg);
   color: var(--ok);
 }
@@ -244,7 +245,10 @@ th {
   color: var(--danger);
 }
 
-.pill--archived {
+/* Estados terminales o aún sin empezar: ni logro ni fallo, apagados. */
+.pill--archived,
+.pill--expired,
+.pill--pending_email_verification {
   background: var(--neutral-bg);
   color: var(--neutral);
 }
@@ -287,6 +291,281 @@ th {
 .mono {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+   Consola de gestión
+
+   Armazón común de las pantallas de administración y plataforma: cabecera,
+   chips de filtro, aviso de estado, paginación y paneles a demanda. Vive aquí
+   porque lo comparten nueve pantallas; cada una añade solo la disposición de
+   sus propias filas.
+   --------------------------------------------------------------------------- */
+
+.console {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.console__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+/* Sin filtros debajo, la cabecera pone su propia hairline. */
+.console__head--ruled {
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--hairline-strong);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--hairline-strong);
+}
+
+.filters__chip {
+  min-height: 2.2rem;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.88rem;
+  border-radius: 999px;
+}
+
+/* El filtro activo se invierte en lugar de subrayarse: con varios chips, el
+   subrayado obliga a leerlos todos para saber cuál está puesto.
+
+   Va calificado con `button` y repite el `:not(:disabled)` del hover para
+   igualar la especificidad de `button.ghost`, que si no lo repinta como si
+   estuviera inactivo. */
+button.filters__chip--on,
+button.filters__chip--on:hover:not(:disabled) {
+  color: var(--surface);
+  background: var(--primary);
+  border-color: var(--primary);
+  opacity: 1;
+}
+
+.filters__count {
+  margin: 0 0 0 auto;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Reserva el alto del aviso para que la lista no salte al aparecer. */
+.status-line {
+  min-height: 1.25rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.status-line .ok {
+  color: var(--ok);
+}
+
+.list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 2rem 0.5rem;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.pager__position {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Revisión: cola a un lado, detalle al otro. Lo comparten las bandejas de
+   correcciones y de ausencias, donde se decide comparando. */
+.review {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.queue {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.queue li + li {
+  border-top: 1px solid var(--border);
+}
+
+.queue__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+}
+
+.queue__row:hover {
+  background: var(--surface);
+  opacity: 1;
+}
+
+/* La seleccionada se marca con la misma barra de acento que un aviso sin leer. */
+.queue__row--on {
+  background: var(--surface);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.queue__who {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.queue__who strong {
+  font-weight: 500;
+}
+
+.queue__who small {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.detail--empty {
+  padding: 2rem 0.5rem;
+}
+
+.detail__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* Bloque de decisión: un comentario y dos salidas. */
+.decision {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.decision__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.decision__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.resolution {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  color: var(--text-muted);
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+}
+
+@media (min-width: 900px) {
+  .review {
+    grid-template-columns: minmax(16rem, 22rem) 1fr;
+    align-items: start;
+  }
+
+  .queue {
+    padding-right: 1.5rem;
+    border-right: 1px solid var(--border);
+  }
+}
+
+/* Paneles: alta, detalle y confirmación. `<dialog>` nativo, así que el foco y
+   el cierre con Escape los pone el navegador. */
+.panel {
+  width: min(100%, 30rem);
+  max-height: 85dvh;
+  margin: auto;
+  padding: 1.5rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-y: auto;
+}
+
+.panel::backdrop {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.panel__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Lo que va a pasar al confirmar, en la voz de la interfaz. */
+.consequence {
+  margin: 0.5rem 0 1.25rem;
+  color: var(--text-muted);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.form__pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.form__section {
+  margin: 0.5rem 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
 }
 
 /* Contador de notificaciones sin leer en la navegación. */

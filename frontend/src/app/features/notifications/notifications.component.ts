@@ -1,7 +1,7 @@
-import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { relativeTime } from '../../core/relative-time';
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import {
   AppNotification,
@@ -37,7 +37,6 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 @Component({
   selector: 'app-notifications',
   standalone: true,
-  imports: [DatePipe],
   templateUrl: './notifications.component.html',
   styleUrl: './notifications.component.scss'
 })
@@ -51,6 +50,13 @@ export class NotificationsComponent {
   readonly page = signal(0);
   readonly result = signal<PagedNotifications | null>(null);
 
+  /** «Ahora» congelado en cada carga; ver `relative-time`. */
+  private readonly renderedAt = signal(Date.now());
+
+  readonly unreadOnPage = computed(
+    () => (this.result()?.content ?? []).filter((notification) => !notification.read).length
+  );
+
   constructor() {
     this.load();
   }
@@ -61,6 +67,7 @@ export class NotificationsComponent {
     this.notificationsService.list(this.page(), 20).subscribe({
       next: (result) => {
         this.result.set(result);
+        this.renderedAt.set(Date.now());
         this.loading.set(false);
       },
       error: (err) => {
@@ -75,7 +82,10 @@ export class NotificationsComponent {
       return;
     }
     this.notificationsService.markRead(notification.id).subscribe({
-      next: () => this.load(),
+      // Se marca en la lista que ya está en pantalla en lugar de recargar la
+      // página entera: recargar devolvía el scroll arriba y podía reordenar lo
+      // que el usuario estaba leyendo.
+      next: () => this.markReadLocally(notification.id),
       error: (err) => this.error.set(this.errorMessagesService.fromProblem(err.error))
     });
   }
@@ -95,6 +105,10 @@ export class NotificationsComponent {
     return TYPE_LABELS[type] ?? type;
   }
 
+  relativeTime(iso: string): string {
+    return relativeTime(iso, this.renderedAt());
+  }
+
   previousPage(): void {
     if (this.page() > 0) {
       this.page.set(this.page() - 1);
@@ -108,5 +122,20 @@ export class NotificationsComponent {
       this.page.set(this.page() + 1);
       this.load();
     }
+  }
+
+  private markReadLocally(notificationId: string): void {
+    this.result.update((current) =>
+      current === null
+        ? current
+        : {
+            ...current,
+            content: current.content.map((notification) =>
+              notification.id === notificationId
+                ? { ...notification, read: true, readAt: new Date().toISOString() }
+                : notification
+            )
+          }
+    );
   }
 }

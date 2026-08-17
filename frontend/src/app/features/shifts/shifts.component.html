@@ -1,52 +1,55 @@
-<section class="shifts-shell">
-  <header class="card shifts-header">
+<section class="console">
+  <header class="console__head console__head--ruled">
     <div>
       <p class="eyebrow">Turnos</p>
-      <h1>Consulta tu turno asignado</h1>
-      <p>Elige una fecha para ver el turno efectivo que te corresponde ese día.</p>
+      <h1>Mi turno</h1>
     </div>
   </header>
 
-  <form [formGroup]="form" (ngSubmit)="load()" class="card filter-card">
+  <form [formGroup]="form" (ngSubmit)="load()" class="day-picker">
     <label>
-      <span>Fecha</span>
+      <span>Día</span>
       <input type="date" formControlName="date" />
     </label>
-    @if (form.controls.date.invalid && form.controls.date.touched) {
-      <div class="validation">Indica una fecha.</div>
-    }
-    <button type="submit" [disabled]="loading()">Consultar</button>
+    <button type="submit" class="ghost" [disabled]="loading()">Consultar</button>
   </form>
-
-  @if (errorMessage(); as error) {
-    <p class="message message--error">{{ error }}</p>
+  @if (form.controls.date.invalid && form.controls.date.touched) {
+    <p class="validation">Indica el día que quieres consultar.</p>
   }
 
-  <section class="card list-card">
-    @if (loading()) {
-      <p>Cargando turnos...</p>
-    } @else if (shifts().length === 0) {
-      <p class="empty-state">No tienes turnos efectivos para la fecha seleccionada.</p>
-    } @else {
+  @if (errorMessage(); as error) {
+    <p class="error error--block">{{ error }}</p>
+  }
+
+  @if (loading()) {
+    <p class="info">Cargando…</p>
+  } @else {
+    <ul class="shifts">
       @for (shift of shifts(); track shift.assignmentId) {
-        <article class="shift-row">
-          <div>
-            <strong>{{ shift.name }}</strong>
-            <p>{{ shift.startTime }} - {{ shift.endTime }}</p>
-          </div>
-          <div>
-            <span>Pausa prevista</span>
-            <strong>{{ shift.plannedBreakDuration }}</strong>
-          </div>
-          <div>
-            <span>Vigencia</span>
-            <strong>{{ shift.validFrom }}{{ shift.validTo ? ' - ' + shift.validTo : '' }}</strong>
-          </div>
-          @if (shift.crossesMidnight) {
-            <span class="pill">Nocturno</span>
-          }
-        </article>
+        <li class="shift">
+          <p class="shift__hours mono">{{ shift.startTime }} – {{ shift.endTime }}</p>
+          <p class="shift__name">
+            {{ shift.name }}
+            @if (shift.crossesMidnight) {
+              <span class="pill">Acaba al día siguiente</span>
+            }
+          </p>
+          <dl class="shift__facts">
+            <div>
+              <dt>Jornada prevista</dt>
+              <dd class="mono">{{ shift.plannedDuration | isoDuration }}</dd>
+            </div>
+            <div>
+              <dt>Pausa prevista</dt>
+              <dd class="mono">{{ shift.plannedBreakDuration | isoDuration }}</dd>
+            </div>
+          </dl>
+        </li>
+      } @empty {
+        <li class="list-empty">
+          <p class="info">No tienes ningún turno asignado ese día.</p>
+        </li>
       }
-    }
-  </section>
+    </ul>
+  }
 </section>

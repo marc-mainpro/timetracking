@@ -1,11 +1,18 @@
 import { Component, inject, signal } from '@angular/core';
 
+import { relativeTime } from '../../core/relative-time';
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import { SystemStatus, SystemStatusService } from './system-status.service';
 
 const QUEUE_LABELS: Record<string, string> = {
   outbox: 'Eventos de integración',
   notifications: 'Envío de notificaciones'
+};
+
+/** Qué hace cada cola, para quien mira el panel sin conocer el backend. */
+const QUEUE_HINTS: Record<string, string> = {
+  outbox: 'Salida hacia los sistemas conectados',
+  notifications: 'Avisos por correo y en la aplicación'
 };
 
 @Component({
@@ -22,6 +29,9 @@ export class SystemStatusComponent {
   readonly error = signal<string | null>(null);
   readonly status = signal<SystemStatus | null>(null);
 
+  /** Instante de la última respuesta: un panel de estado sin fecha engaña. */
+  private readonly checkedAt = signal<number | null>(null);
+
   constructor() {
     this.load();
   }
@@ -32,6 +42,7 @@ export class SystemStatusComponent {
     this.systemStatusService.get().subscribe({
       next: (status) => {
         this.status.set(status);
+        this.checkedAt.set(Date.now());
         this.loading.set(false);
       },
       error: (err) => {
@@ -43,5 +54,15 @@ export class SystemStatusComponent {
 
   queueLabel(name: string): string {
     return QUEUE_LABELS[name] ?? name;
+  }
+
+  queueHint(name: string): string | null {
+    return QUEUE_HINTS[name] ?? null;
+  }
+
+  /** «Consultado hace 2 minutos»; null mientras no haya habido respuesta. */
+  checkedLabel(): string | null {
+    const checked = this.checkedAt();
+    return checked === null ? null : relativeTime(new Date(checked).toISOString(), Date.now());
   }
 }

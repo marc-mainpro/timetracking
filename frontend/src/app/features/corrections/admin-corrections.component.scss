@@ -1,180 +1,48 @@
-.admin-shell {
+/* Cola de correcciones. El armazón (`.console`, `.filters`, `.review`,
+   `.queue`, `.detail`, `.decision`, `.panel`) vive en `styles.scss`: aquí solo
+   la comparación, que es lo propio de esta pantalla.
+
+   Las horas van en mono para que las cifras se alineen entre los dos lados y
+   la diferencia salte sola. */
+
+.diff {
   display: grid;
-  gap: 1.25rem;
-}
-
-.admin-header,
-.queue-card,
-.detail-card {
-  padding: 1.5rem;
-}
-
-.admin-header p:last-child {
-  margin: 0.6rem 0 0;
-  color: var(--text-muted);
-}
-
-.admin-layout {
-  display: grid;
-  gap: 1.25rem;
-  grid-template-columns: 1fr;
-}
-
-.queue-card,
-.detail-card,
-.decision-grid {
-  display: grid;
-  gap: 1rem;
-}
-
-.filter-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.filter-row button {
-  flex: 1 1 auto;
-  min-height: 2.4rem;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.85rem;
-  color: var(--text);
-  background: transparent;
+  gap: 1px;
+  background: var(--border);
   border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
 }
 
-.filter-row button.active {
-  color: var(--surface);
-  background: var(--primary);
-  border-color: var(--primary);
-}
-
-.queue-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-  min-height: auto;
-  padding: 0.9rem 1rem;
-  text-align: left;
-  color: var(--text);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-
-.queue-row:hover {
-  border-color: var(--accent);
-  opacity: 1;
-}
-
-.queue-row > div {
-  display: grid;
-  gap: 0.25rem;
-}
-
-.queue-row strong {
-  font-weight: 500;
-}
-
-.queue-row span:not(.pill) {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-.detail-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: start;
-}
-
-.diff-grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: 1fr;
-}
-
-.diff-grid article {
+.diff__side {
   padding: 1rem;
-  border-radius: var(--radius-sm);
-  background: var(--bg);
-  display: grid;
-  gap: 0.5rem;
+  background: var(--surface);
 }
 
-.diff-grid article.proposal {
+/* Lo propuesto sobre fondo de éxito: es el lado que entraría en vigor. */
+.diff__side--proposed {
   background: var(--ok-bg);
 }
 
-.diff-grid strong,
-.diff-grid li {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
+.diff__span {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 1.1rem;
 }
 
-.diff-grid ul {
+.diff__breaks {
   margin: 0;
-  padding-left: 1.1rem;
-  display: grid;
-  gap: 0.2rem;
-  font-size: 0.88rem;
-}
-
-.decision-grid {
-  grid-template-columns: 1fr;
-}
-
-.decision-grid form {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.resolution-note {
-  margin: 0;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-sm);
-  background: var(--bg);
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
   color: var(--text-muted);
 }
 
-.message {
-  display: inline-block;
-  margin: 0;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  border: 1px solid var(--border);
+.diff__none {
+  font-family: 'Inter', sans-serif;
 }
 
-.message--success {
-  color: var(--ok);
-}
-
-.message--error {
-  color: var(--danger);
-}
-
-.validation {
-  padding: 0.65rem 0.85rem;
-  font-size: 0.88rem;
-  color: var(--danger);
-  background: var(--danger-bg);
-  border-radius: var(--radius-sm);
-}
-
-@media (min-width: 640px) {
-  .diff-grid,
-  .decision-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 960px) {
-  .admin-layout {
-    grid-template-columns: minmax(18rem, 0.7fr) minmax(0, 1.3fr);
-    align-items: start;
+@media (min-width: 900px) {
+  .diff {
+    grid-template-columns: 1fr 1fr;
   }
 }

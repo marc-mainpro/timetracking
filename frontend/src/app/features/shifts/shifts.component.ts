@@ -1,13 +1,13 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
+import { IsoDurationPipe } from '../../core/pipes/iso-duration.pipe';
 import { AppShift, ShiftsService } from './shifts.service';
 
 @Component({
   selector: 'app-shifts',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule, IsoDurationPipe],
   templateUrl: './shifts.component.html',
   styleUrl: './shifts.component.scss'
 })

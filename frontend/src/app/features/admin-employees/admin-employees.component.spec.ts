@@ -3,11 +3,33 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { AdminEmployeesComponent } from './admin-employees.component';
+import { Employee } from './admin-employees.service';
 
 describe('AdminEmployeesComponent', () => {
   let component: AdminEmployeesComponent;
   let fixture: ComponentFixture<AdminEmployeesComponent>;
   let httpMock: HttpTestingController;
+
+  const activeEmployee: Employee = {
+    id: 'e-1',
+    email: 'ana@acme.test',
+    firstName: 'Ana',
+    lastName: 'Ruiz',
+    status: 'ACTIVE',
+    roles: ['EMPLOYEE'],
+    createdAt: '2026-01-10T09:00:00Z',
+    updatedAt: '2026-01-10T09:00:00Z'
+  };
+
+  function flushList(content: Employee[]): void {
+    httpMock.expectOne((request) => request.url === '/api/v1/employees' && request.method === 'GET').flush({
+      content,
+      page: 0,
+      size: 20,
+      totalElements: content.length,
+      totalPages: content.length === 0 ? 0 : 1
+    });
+  }
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -81,5 +103,55 @@ describe('AdminEmployeesComponent', () => {
     request.flush({ errorCode: 'EMAIL_ALREADY_IN_USE' }, { status: 409, statusText: 'Conflict' });
 
     expect(component.formError()).toContain('correo');
+  });
+
+  it('traduce estados y roles en lugar de mostrar el enum', () => {
+    flushList([]);
+
+    expect(component.statusLabel('ACTIVE')).toBe('Activo');
+    expect(component.filterLabel('INACTIVE')).toBe('Inactivos');
+    expect(component.rolesLabel(['EMPLOYEE', 'TENANT_ADMIN'])).toBe('Empleado · Administrador');
+  });
+
+  it('pide confirmación antes de desactivar, sin lanzar la petición', () => {
+    flushList([activeEmployee]);
+
+    component.toggleStatus(activeEmployee);
+
+    httpMock.expectNone('/api/v1/employees/e-1/deactivate');
+    expect(component.pendingToggle()?.id).toBe('e-1');
+  });
+
+  it('desactiva tras confirmar y lo dice con el nombre de la persona', () => {
+    flushList([activeEmployee]);
+
+    component.toggleStatus(activeEmployee);
+    component.confirmToggle();
+
+    httpMock.expectOne('/api/v1/employees/e-1/deactivate').flush({ ...activeEmployee, status: 'INACTIVE' });
+    flushList([{ ...activeEmployee, status: 'INACTIVE' }]);
+
+    expect(component.actionMessage()).toContain('Ana Ruiz desactivado');
+    expect(component.pendingToggle()).toBeNull();
+  });
+
+  it('cancelar deja al empleado como estaba', () => {
+    flushList([activeEmployee]);
+
+    component.toggleStatus(activeEmployee);
+    component.cancelToggle();
+
+    httpMock.expectNone('/api/v1/employees/e-1/deactivate');
+    expect(component.pendingToggle()).toBeNull();
+  });
+
+  it('filtra la página cargada por nombre o correo', () => {
+    flushList([activeEmployee, { ...activeEmployee, id: 'e-2', firstName: 'Luis', lastName: 'Soto', email: 'luis@acme.test' }]);
+
+    component.search.set('luis');
+    expect(component.visibleEmployees().length).toBe(1);
+
+    component.search.set('ana@acme');
+    expect(component.visibleEmployees()[0].id).toBe('e-1');
   });
 });

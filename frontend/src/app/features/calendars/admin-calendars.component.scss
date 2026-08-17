@@ -1,184 +1,264 @@
-.admin-shell {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
+/* Calendarios laborales. El armazón (`.console`, `.filters`, `.pager`,
+   `.panel`, `.form`) vive en `styles.scss`: aquí la fila de un calendario, las
+   asignaciones y el editor semanal.
 
-.admin-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-}
+   El editor concentra en un panel lo que antes eran tres formularios abiertos
+   a la vez en la página. Mobile-first. */
 
-.eyebrow {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin: 0;
-}
-
-.layout {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 1rem;
-}
-
-@media (max-width: 900px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1rem 1.25rem;
-}
-
-.toolbar {
+.console__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 0.75rem;
 }
 
-.toolbar button.active {
-  font-weight: 700;
-  border-color: var(--accent);
-  color: var(--accent);
+/* Lista ------------------------------------------------------------------ */
+
+.calendars {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.calendar-row {
+.calendar {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    'name status'
+    'counts counts'
+    'actions actions';
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem 0;
+  gap: 0.5rem 1rem;
+  padding: 1rem 0.5rem;
+}
+
+.calendar + .calendar {
   border-top: 1px solid var(--border);
 }
 
-.calendar-main {
+.calendar__name {
+  grid-area: name;
   display: flex;
   flex-direction: column;
-}
-
-.calendar-main small {
-  color: var(--text-muted);
-}
-
-.row-actions {
-  display: flex;
-  gap: 0.35rem;
-  flex-wrap: wrap;
-}
-
-.pill {
-  padding: 0.15rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: var(--border);
-}
-
-.pill--active {
-  background: var(--ok-bg);
-  color: var(--ok);
-}
-
-.pill--archived {
-  background: var(--border);
-  color: var(--text-muted);
-}
-
-.pager {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0.75rem;
-}
-
-.stacked-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.stacked-form label {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.85rem;
-  gap: 0.2rem;
-}
-
-.inline-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-bottom: 0.5rem;
-}
-
-.inline-form input,
-.inline-form select {
-  flex: 1 1 8rem;
+  gap: 0.1rem;
   min-width: 0;
 }
 
-.two-cols {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+.calendar__name strong {
+  font-weight: 500;
 }
 
-.day-rule {
-  display: grid;
-  grid-template-columns: 1fr 5rem auto;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.2rem 0;
+.calendar__name small {
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
-.day-toggle {
+.calendar__counts {
+  grid-area: counts;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.calendar .pill {
+  grid-area: status;
+  justify-self: end;
+}
+
+.calendar__actions {
+  grid-area: actions;
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.4rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.calendar__actions button {
+  min-height: 2.2rem;
+  padding: 0.35rem 0.8rem;
   font-size: 0.85rem;
 }
 
-.day-rule small {
+/* Asignaciones ----------------------------------------------------------- */
+
+.assignments {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--hairline-strong);
+}
+
+.assignments__head {
+  margin-bottom: 1rem;
+}
+
+.assignments__head .info {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.assign-form {
+  display: grid;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.assignment-list {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.assignment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.assignment span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.assignment strong {
+  font-weight: 500;
+}
+
+.assignment small {
+  font-size: 0.78rem;
   color: var(--text-muted);
 }
 
-.entry-row {
+.assignment button {
+  min-height: 2.2rem;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+/* Editor ----------------------------------------------------------------- */
+
+.panel--wide {
+  width: min(100%, 38rem);
+}
+
+.week {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.week__day {
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.week__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.92rem;
+}
+
+/* El día libre se apaga: la semana se lee de un vistazo. */
+.week__day--off .week__toggle {
+  color: var(--text-muted);
+}
+
+.week__minutes {
+  display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.3rem 0;
+}
+
+.week__minutes input {
+  width: 5rem;
+  min-height: 2.2rem;
+  padding: 0.3rem 0.5rem;
+  text-align: right;
+}
+
+.week__minutes small,
+.week__off {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Añadir un festivo o una jornada especial sin salir del editor. */
+.inline-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.inline-add input {
+  flex: 1 1 8rem;
+  min-height: 2.4rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.inline-add input[type='number'] {
+  flex: 0 0 5.5rem;
+  text-align: right;
+}
+
+.inline-add button {
+  min-height: 2.4rem;
+  padding: 0.4rem 0.9rem;
+}
+
+.entries {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
+  font-size: 0.88rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.entry button {
+  min-height: 2rem;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1.25rem;
+  margin: 0.5rem 0 0;
+  padding-top: 0.85rem;
   border-top: 1px solid var(--border);
+}
+
+.facts dt {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.facts dd {
+  margin: 0;
   font-size: 0.9rem;
 }
 
-dl {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.25rem 0.75rem;
-  margin: 0.5rem 0 0;
-}
+@media (min-width: 780px) {
+  .calendar {
+    grid-template-columns: minmax(12rem, 1fr) minmax(10rem, auto) 6rem auto;
+    grid-template-areas: 'name counts status actions';
+    gap: 0.75rem 1.5rem;
+  }
 
-dt {
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.info {
-  color: var(--ok);
-}
-
-.error {
-  color: var(--danger);
+  .assign-form {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  }
 }

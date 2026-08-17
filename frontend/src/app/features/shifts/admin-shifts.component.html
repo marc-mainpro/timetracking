@@ -1,130 +1,193 @@
-<section class="admin-shell">
-  <header class="card admin-header">
+<section class="console">
+  <header class="console__head console__head--ruled">
     <div>
       <p class="eyebrow">Turnos</p>
-      <h1>Plantillas y asignaciones de turnos</h1>
-      <p>Crea plantillas reutilizables y asígnalas a empleados del tenant con una vigencia concreta.</p>
+      <h1>Plantillas de turno</h1>
+    </div>
+    <div class="console__actions">
+      <button type="button" class="ghost" (click)="openAssign()">Asignar turno</button>
+      <button type="button" (click)="openTemplate()">Crear plantilla</button>
     </div>
   </header>
 
-  @if (actionMessage(); as message) {
-    <p class="message message--success">{{ message }}</p>
-  }
+  <p class="status-line" role="status">
+    @if (actionMessage(); as message) {
+      <span class="ok">{{ message }}</span>
+    }
+    @if (loading()) {
+      <span class="info">Cargando…</span>
+    }
+  </p>
   @if (errorMessage(); as error) {
-    <p class="message message--error">{{ error }}</p>
+    <p class="error error--block">{{ error }}</p>
   }
 
-  <div class="admin-layout">
-    <section class="card template-card">
-      <h2>Nueva plantilla</h2>
-      <form [formGroup]="templateForm" (ngSubmit)="createTemplate()" class="form-grid">
-        <label>
-          <span>Nombre</span>
-          <input type="text" formControlName="name" />
-        </label>
-        @if (templateForm.controls.name.invalid && templateForm.controls.name.touched) {
-          <div class="validation">Indica el nombre de la plantilla.</div>
-        }
-        <label>
-          <span>Inicio</span>
-          <input type="time" formControlName="startTime" />
-        </label>
-        @if (templateForm.controls.startTime.invalid && templateForm.controls.startTime.touched) {
-          <div class="validation">Indica la hora de inicio.</div>
-        }
-        <label>
-          <span>Fin</span>
-          <input type="time" formControlName="endTime" />
-        </label>
-        @if (templateForm.controls.endTime.invalid && templateForm.controls.endTime.touched) {
-          <div class="validation">Indica la hora de fin.</div>
-        }
-        <label>
-          <span>Pausa prevista (min)</span>
-          <input type="number" formControlName="plannedBreakMinutes" />
-        </label>
-        @if (templateForm.controls.plannedBreakMinutes.invalid && templateForm.controls.plannedBreakMinutes.touched) {
-          <div class="validation">Indica una pausa entre 0 y 1440 minutos.</div>
-        }
-        <button type="submit" [disabled]="savingTemplate()">Crear plantilla</button>
-      </form>
-    </section>
+  <ul class="templates">
+    @for (template of templates(); track template.id) {
+      <li class="template">
+        <span class="template__name">
+          <strong>{{ template.name }}</strong>
+          <small>Pausa de {{ template.plannedBreakMinutes }} min · {{ workedLabel(template) }} de trabajo</small>
+        </span>
 
-    <section class="card list-card">
-      <h2>Plantillas</h2>
-      @if (loading()) {
-        <p>Cargando plantillas...</p>
-      } @else {
-        @for (template of templates(); track template.id) {
-          <article class="item-row">
-            <div>
-              <strong>{{ template.name }}</strong>
-              <p>{{ template.startTime }} - {{ template.endTime }}</p>
-            </div>
-            <div>
-              <span>Pausa {{ template.plannedBreakMinutes }} min</span>
-              @if (template.crossesMidnight) {
-                <span class="pill">Nocturno</span>
-              }
-            </div>
-          </article>
-        } @empty {
-          <p>No hay plantillas todavía.</p>
-        }
-      }
-    </section>
+        <span class="template__hours mono">{{ template.startTime }} – {{ template.endTime }}</span>
 
-    <section class="card assignment-card">
-      <h2>Asignar turno</h2>
-      <form [formGroup]="assignmentForm" (ngSubmit)="assignShift()" class="form-grid">
-        <label>
-          <span>Empleado</span>
-          <select formControlName="employeeId">
-            <option value="">Selecciona un empleado</option>
-            @for (employee of employees(); track employee.id) {
-              <option [value]="employee.id">{{ employee.firstName }} {{ employee.lastName }}</option>
-            }
-          </select>
-        </label>
-        @if (assignmentForm.controls.employeeId.invalid && assignmentForm.controls.employeeId.touched) {
-          <div class="validation">Selecciona un empleado.</div>
-        }
-        <label>
-          <span>Plantilla</span>
-          <select formControlName="shiftTemplateId">
-            <option value="">Selecciona una plantilla</option>
-            @for (template of templates(); track template.id) {
-              <option [value]="template.id">{{ template.name }}</option>
-            }
-          </select>
-        </label>
-        @if (assignmentForm.controls.shiftTemplateId.invalid && assignmentForm.controls.shiftTemplateId.touched) {
-          <div class="validation">Selecciona una plantilla.</div>
-        }
-        <label>
-          <span>Válido desde</span>
-          <input type="date" formControlName="validFrom" />
-        </label>
-        @if (assignmentForm.controls.validFrom.invalid && assignmentForm.controls.validFrom.touched) {
-          <div class="validation">Indica la fecha de inicio de vigencia.</div>
-        }
-        <label>
-          <span>Válido hasta</span>
-          <input type="date" formControlName="validTo" />
-        </label>
-        <button type="submit" [disabled]="savingAssignment()">Asignar turno</button>
-      </form>
-
-      @if (assignments().length > 0) {
-        <div class="assignment-list">
-          @for (assignment of assignments(); track assignment.id) {
-            <article class="item-row">
-              <strong>{{ employeeName(assignment.employeeId) }}</strong>
-              <span>{{ assignment.validFrom }}{{ assignment.validTo ? ' - ' + assignment.validTo : '' }}</span>
-            </article>
+        <span class="template__tags">
+          @if (template.crossesMidnight) {
+            <span class="pill">Cruza medianoche</span>
           }
-        </div>
+          @if (template.status === 'ARCHIVED') {
+            <span class="pill pill--archived">Archivada</span>
+          }
+        </span>
+
+        <button type="button" class="ghost template__assign" (click)="openAssign(template.id)">
+          Asignar
+        </button>
+      </li>
+    } @empty {
+      @if (!loading()) {
+        <li class="list-empty">
+          <p class="info">Todavía no hay plantillas de turno.</p>
+          <button type="button" class="ghost" (click)="openTemplate()">Crear la primera</button>
+        </li>
+      }
+    }
+  </ul>
+
+  <!-- La API no expone las asignaciones vigentes, así que esto es solo lo
+       hecho ahora mismo y se etiqueta como tal. -->
+  @if (assignments().length > 0) {
+    <section class="session">
+      <p class="eyebrow">Asignado en esta visita</p>
+      @for (assignment of assignments(); track assignment.id) {
+        <p class="session__row">
+          <span>{{ employeeName(assignment.employeeId) }} · {{ templateName(assignment.shiftTemplateId) }}</span>
+          <small class="mono">
+            Desde {{ assignment.validFrom }}{{ assignment.validTo ? ' hasta ' + assignment.validTo : '' }}
+          </small>
+        </p>
       }
     </section>
-  </div>
+  }
 </section>
+
+<!-- Nueva plantilla ------------------------------------------------------- -->
+<dialog #templateDialog class="panel">
+  <header class="panel__head">
+    <div>
+      <p class="eyebrow">Plantilla</p>
+      <h2>Nueva plantilla de turno</h2>
+    </div>
+  </header>
+
+  <form [formGroup]="templateForm" (ngSubmit)="createTemplate()" class="form">
+    <label>
+      <span>Nombre</span>
+      <input type="text" formControlName="name" />
+    </label>
+    @if (templateForm.controls.name.invalid && templateForm.controls.name.touched) {
+      <p class="validation">Indica el nombre de la plantilla.</p>
+    }
+
+    <div class="form__pair">
+      <label>
+        <span>Entrada</span>
+        <input type="time" formControlName="startTime" />
+      </label>
+      <label>
+        <span>Salida</span>
+        <input type="time" formControlName="endTime" />
+      </label>
+    </div>
+    @if (
+      (templateForm.controls.startTime.invalid && templateForm.controls.startTime.touched) ||
+      (templateForm.controls.endTime.invalid && templateForm.controls.endTime.touched)
+    ) {
+      <p class="validation">Indica la hora de entrada y la de salida.</p>
+    }
+
+    <label>
+      <span>Pausa prevista (minutos)</span>
+      <input type="number" formControlName="plannedBreakMinutes" min="0" max="1440" />
+    </label>
+    @if (templateForm.controls.plannedBreakMinutes.invalid && templateForm.controls.plannedBreakMinutes.touched) {
+      <p class="validation">Indica una pausa de entre 0 y 1440 minutos.</p>
+    }
+
+    @if (formError(); as error) {
+      <p class="error error--block">{{ error }}</p>
+    }
+
+    <footer class="panel__foot">
+      <button type="submit" [disabled]="savingTemplate()">
+        {{ savingTemplate() ? 'Creando…' : 'Crear plantilla' }}
+      </button>
+      <button type="button" class="ghost" (click)="closeTemplate()">Cancelar</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- Asignar --------------------------------------------------------------- -->
+<dialog #assignDialog class="panel">
+  <header class="panel__head">
+    <div>
+      <p class="eyebrow">Asignación</p>
+      <h2>Asignar un turno</h2>
+    </div>
+  </header>
+
+  <form [formGroup]="assignmentForm" (ngSubmit)="assignShift()" class="form">
+    <label>
+      <span>Empleado</span>
+      <select formControlName="employeeId">
+        <option value="">Elige un empleado</option>
+        @for (employee of employees(); track employee.id) {
+          <option [value]="employee.id">{{ employee.firstName }} {{ employee.lastName }}</option>
+        }
+      </select>
+    </label>
+    @if (assignmentForm.controls.employeeId.invalid && assignmentForm.controls.employeeId.touched) {
+      <p class="validation">Elige a quién se le asigna el turno.</p>
+    }
+
+    <label>
+      <span>Plantilla</span>
+      <select formControlName="shiftTemplateId">
+        <option value="">Elige una plantilla</option>
+        @for (template of templates(); track template.id) {
+          <option [value]="template.id">{{ template.name }} ({{ template.startTime }}–{{ template.endTime }})</option>
+        }
+      </select>
+    </label>
+    @if (assignmentForm.controls.shiftTemplateId.invalid && assignmentForm.controls.shiftTemplateId.touched) {
+      <p class="validation">Elige la plantilla que se aplica.</p>
+    }
+
+    <div class="form__pair">
+      <label>
+        <span>Desde</span>
+        <input type="date" formControlName="validFrom" />
+      </label>
+      <label>
+        <span>Hasta (opcional)</span>
+        <input type="date" formControlName="validTo" />
+      </label>
+    </div>
+    @if (assignmentForm.controls.validFrom.invalid && assignmentForm.controls.validFrom.touched) {
+      <p class="validation">Indica desde cuándo se aplica.</p>
+    }
+    <p class="decision__hint">Sin fecha de fin, el turno se aplica de forma indefinida.</p>
+
+    @if (formError(); as error) {
+      <p class="error error--block">{{ error }}</p>
+    }
+
+    <footer class="panel__foot">
+      <button type="submit" [disabled]="savingAssignment()">
+        {{ savingAssignment() ? 'Asignando…' : 'Asignar turno' }}
+      </button>
+      <button type="button" class="ghost" (click)="closeAssign()">Cancelar</button>
+    </footer>
+  </form>
+</dialog>

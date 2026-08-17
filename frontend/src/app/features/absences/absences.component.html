@@ -1,92 +1,130 @@
-<section class="absences-shell">
-  <header class="card absences-header">
+<section class="console">
+  <header class="console__head console__head--ruled">
     <div>
       <p class="eyebrow">Ausencias</p>
-      <h1>Solicita y sigue tus ausencias</h1>
-      <p>Registra vacaciones, permisos y otras ausencias con su rango de fechas y consulta su estado.</p>
+      <h1>Mis ausencias</h1>
+    </div>
+    <button type="button" (click)="openForm()">Solicitar ausencia</button>
+  </header>
+
+  <p class="status-line" role="status">
+    @if (actionMessage(); as message) {
+      <span class="ok">{{ message }}</span>
+    }
+    @if (loading()) {
+      <span class="info">Cargando…</span>
+    }
+  </p>
+  @if (formError(); as error) {
+    <p class="error error--block">{{ error }}</p>
+  }
+
+  <ul class="absences">
+    @for (absence of absences(); track absence.id) {
+      <li class="absence">
+        <span class="absence__what">
+          <strong>{{ typeName(absence.absenceTypeId) }}</strong>
+          <small class="mono">
+            {{ absence.startDate | date: 'd MMM' }} – {{ absence.endDate | date: 'd MMM' }} ·
+            {{ dayCountLabel(absence) }}
+          </small>
+          @if (absence.reason) {
+            <small class="absence__reason">{{ absence.reason }}</small>
+          }
+        </span>
+
+        <span class="pill pill--{{ absence.status.toLowerCase() }}">
+          {{ statusLabel(absence.status) }}
+        </span>
+
+        @if (absence.resolutionComment) {
+          <p class="absence__answer">{{ absence.resolutionComment }}</p>
+        }
+
+        @if (absence.status === 'PENDING') {
+          <button type="button" class="ghost absence__cancel" (click)="cancel(absence)">Cancelar</button>
+        }
+      </li>
+    } @empty {
+      @if (!loading()) {
+        <li class="list-empty">
+          <p class="info">Todavía no has solicitado ninguna ausencia este año.</p>
+          <button type="button" class="ghost" (click)="openForm()">Solicitar la primera</button>
+        </li>
+      }
+    }
+  </ul>
+</section>
+
+<!-- Nueva solicitud ------------------------------------------------------- -->
+<dialog #formDialog class="panel">
+  <header class="panel__head">
+    <div>
+      <p class="eyebrow">Solicitud</p>
+      <h2>Solicitar una ausencia</h2>
     </div>
   </header>
 
-  @if (actionMessage(); as message) {
-    <p class="message message--success">{{ message }}</p>
+  <form [formGroup]="form" (ngSubmit)="submit()" class="form">
+    <label>
+      <span>Tipo</span>
+      <select formControlName="absenceTypeId">
+        <option value="">Elige un tipo</option>
+        @for (type of types(); track type.id) {
+          <option [value]="type.id">{{ type.name }}</option>
+        }
+      </select>
+    </label>
+    @if (form.controls.absenceTypeId.invalid && form.controls.absenceTypeId.touched) {
+      <p class="validation">Elige el tipo de ausencia.</p>
+    }
+
+    <div class="form__pair">
+      <label>
+        <span>Desde</span>
+        <input type="date" formControlName="startDate" />
+      </label>
+      <label>
+        <span>Hasta</span>
+        <input type="date" formControlName="endDate" />
+      </label>
+    </div>
+    @if (form.controls.startDate.invalid && form.controls.startDate.touched) {
+      <p class="validation">Indica el primer día.</p>
+    }
+    @if (form.controls.endDate.invalid && form.controls.endDate.touched) {
+      <p class="validation">Indica el último día.</p>
+    }
+
+    <label>
+      <span>Motivo (opcional)</span>
+      <textarea rows="3" maxlength="500" formControlName="reason"></textarea>
+    </label>
+
+    @if (formError(); as error) {
+      <p class="error error--block">{{ error }}</p>
+    }
+
+    <footer class="panel__foot">
+      <button type="submit" [disabled]="saving()">{{ saving() ? 'Enviando…' : 'Solicitar' }}</button>
+      <button type="button" class="ghost" (click)="closeForm()">Cancelar</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- Cancelar una solicitud ------------------------------------------------ -->
+<dialog #confirmDialog class="panel">
+  @if (pendingCancel(); as absence) {
+    <h2>Cancelar la solicitud</h2>
+    <p class="consequence">
+      Retiras tu petición de {{ typeName(absence.absenceTypeId) | lowercase }} del
+      {{ absence.startDate | date: 'd MMMM' }} al {{ absence.endDate | date: 'd MMMM' }}. Puedes
+      volver a solicitarla más adelante.
+    </p>
+
+    <footer class="panel__foot">
+      <button type="button" class="danger" (click)="confirmCancel()">Cancelar la solicitud</button>
+      <button type="button" class="ghost" (click)="cancelCancel()">Volver</button>
+    </footer>
   }
-  @if (formError(); as error) {
-    <p class="message message--error">{{ error }}</p>
-  }
-
-  <div class="absences-layout">
-    <section class="card request-card">
-      <form [formGroup]="form" (ngSubmit)="submit()" class="absence-form">
-        <label>
-          <span>Tipo de ausencia</span>
-          <select formControlName="absenceTypeId">
-            <option value="">Selecciona un tipo</option>
-            @for (type of types(); track type.id) {
-              <option [value]="type.id">{{ type.name }}</option>
-            }
-          </select>
-        </label>
-        @if (form.controls.absenceTypeId.invalid && form.controls.absenceTypeId.touched) {
-          <div class="validation">Selecciona un tipo de ausencia.</div>
-        }
-        <div class="date-grid">
-          <label>
-            <span>Inicio</span>
-            <input type="date" formControlName="startDate" />
-          </label>
-          <label>
-            <span>Fin</span>
-            <input type="date" formControlName="endDate" />
-          </label>
-        </div>
-        @if (form.controls.startDate.invalid && form.controls.startDate.touched) {
-          <div class="validation">Indica la fecha de inicio.</div>
-        }
-        @if (form.controls.endDate.invalid && form.controls.endDate.touched) {
-          <div class="validation">Indica la fecha de fin.</div>
-        }
-        <label>
-          <span>Motivo</span>
-          <textarea rows="3" formControlName="reason" placeholder="Opcional: añade contexto si hace falta"></textarea>
-        </label>
-        <button type="submit" [disabled]="saving()">{{ saving() ? 'Enviando...' : 'Solicitar ausencia' }}</button>
-      </form>
-    </section>
-
-    <section class="card list-card">
-      <div class="list-head">
-        <span class="eyebrow">Mis solicitudes</span>
-        <strong>{{ absences().length }} registradas</strong>
-      </div>
-
-      @if (loading()) {
-        <p>Cargando ausencias...</p>
-      } @else if (absences().length === 0) {
-        <p class="empty-state">Todavía no tienes ausencias registradas.</p>
-      } @else {
-        @for (absence of absences(); track absence.id) {
-          <article class="absence-row">
-            <div>
-              <strong>{{ typeName(absence.absenceTypeId) }}</strong>
-              <p>{{ absence.startDate }} al {{ absence.endDate }}</p>
-              @if (absence.reason) {
-                <small>{{ absence.reason }}</small>
-              }
-            </div>
-            <div class="absence-actions">
-              <span class="pill" [class.pill--approved]="absence.status === 'APPROVED'" [class.pill--rejected]="absence.status === 'REJECTED'">
-                {{ absence.status }}
-              </span>
-              @if (absence.resolutionComment) {
-                <small>{{ absence.resolutionComment }}</small>
-              }
-              @if (absence.status === 'PENDING') {
-                <button type="button" class="ghost" (click)="cancel(absence.id)">Cancelar</button>
-              }
-            </div>
-          </article>
-        }
-      }
-    </section>
-  </div>
-</section>
+</dialog>

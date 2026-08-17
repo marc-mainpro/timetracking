@@ -1,13 +1,22 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { DatePipe, LowerCasePipe } from '@angular/common';
+import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import { Absence, AbsenceType, AbsencesService } from './absences.service';
 
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: 'Pendiente',
+  APPROVED: 'Aprobada',
+  REJECTED: 'Rechazada',
+  CANCELLED: 'Cancelada'
+};
+
+const MILLIS_PER_DAY = 24 * 60 * 60 * 1000;
+
 @Component({
   selector: 'app-absences',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [DatePipe, LowerCasePipe, ReactiveFormsModule],
   templateUrl: './absences.component.html',
   styleUrl: './absences.component.scss'
 })
@@ -16,12 +25,16 @@ export class AbsencesComponent {
   private readonly errorMessagesService = inject(ErrorMessagesService);
   private readonly fb = inject(FormBuilder);
 
+  private readonly formDialog = viewChild<ElementRef<HTMLDialogElement>>('formDialog');
+  private readonly confirmDialog = viewChild<ElementRef<HTMLDialogElement>>('confirmDialog');
+
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly types = signal<AbsenceType[]>([]);
   readonly absences = signal<Absence[]>([]);
   readonly actionMessage = signal<string | null>(null);
   readonly formError = signal<string | null>(null);
+  readonly pendingCancel = signal<Absence | null>(null);
 
   readonly form = this.fb.nonNullable.group({
     absenceTypeId: ['', [Validators.required]],
@@ -33,6 +46,16 @@ export class AbsencesComponent {
   constructor() {
     this.loadTypes();
     this.loadAbsences();
+  }
+
+  openForm(): void {
+    this.formError.set(null);
+    this.form.reset({ absenceTypeId: '', startDate: '', endDate: '', reason: '' });
+    this.formDialog()?.nativeElement.showModal();
+  }
+
+  closeForm(): void {
+    this.formDialog()?.nativeElement.close();
   }
 
   submit(): void {
@@ -56,8 +79,9 @@ export class AbsencesComponent {
     }).subscribe({
       next: () => {
         this.saving.set(false);
-        this.actionMessage.set('Solicitud de ausencia enviada correctamente.');
+        this.actionMessage.set('Solicitud enviada. Te avisaremos cuando se resuelva.');
         this.form.reset({ absenceTypeId: '', startDate: '', endDate: '', reason: '' });
+        this.closeForm();
         this.loadAbsences();
       },
       error: (error) => {
@@ -67,11 +91,20 @@ export class AbsencesComponent {
     });
   }
 
-  cancel(absenceId: string): void {
-    if (!window.confirm('¿Cancelar esta solicitud de ausencia?')) {
+  cancel(absence: Absence): void {
+    this.actionMessage.set(null);
+    this.formError.set(null);
+    this.pendingCancel.set(absence);
+    this.confirmDialog()?.nativeElement.showModal();
+  }
+
+  confirmCancel(): void {
+    const absence = this.pendingCancel();
+    if (!absence) {
       return;
     }
-    this.absencesService.cancel(absenceId).subscribe({
+    this.cancelCancel();
+    this.absencesService.cancel(absence.id).subscribe({
       next: () => {
         this.actionMessage.set('Solicitud cancelada.');
         this.loadAbsences();
@@ -82,8 +115,24 @@ export class AbsencesComponent {
     });
   }
 
+  cancelCancel(): void {
+    this.confirmDialog()?.nativeElement.close();
+    this.pendingCancel.set(null);
+  }
+
   typeName(absenceTypeId: string): string {
     return this.types().find((type) => type.id === absenceTypeId)?.name ?? absenceTypeId;
+  }
+
+  statusLabel(status: string): string {
+    return STATUS_LABELS[status] ?? status;
+  }
+
+  /** Días naturales que cubre la solicitud, extremos incluidos. */
+  dayCountLabel(absence: Absence): string {
+    const days =
+      Math.round((Date.parse(absence.endDate) - Date.parse(absence.startDate)) / MILLIS_PER_DAY) + 1;
+    return `${days} ${days === 1 ? 'día' : 'días'}`;
   }
 
   private loadTypes(): void {

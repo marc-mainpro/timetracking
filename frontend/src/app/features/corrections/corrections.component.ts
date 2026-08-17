@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -7,9 +7,15 @@ import { ErrorMessagesService } from '../../core/services/error-messages.service
 import { Workday } from '../workdays/workdays.service';
 import { CorrectionsService, PagedCorrections } from './corrections.service';
 
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: 'Pendiente',
+  APPROVED: 'Aprobada',
+  REJECTED: 'Rechazada'
+};
+
 @Component({
   selector: 'app-corrections',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink],
   templateUrl: './corrections.component.html',
   styleUrl: './corrections.component.scss'
 })
@@ -41,6 +47,10 @@ export class CorrectionsComponent {
         this.selectWorkday(workdayId);
       }
     });
+  }
+
+  statusLabel(status: string): string {
+    return STATUS_LABELS[status] ?? status;
   }
 
   get breaks(): FormArray {

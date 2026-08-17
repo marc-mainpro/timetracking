@@ -1,56 +1,66 @@
-<section class="admin-shell">
-  <header class="card admin-header">
-    <p class="eyebrow">Avisos</p>
-    <h1>Notificaciones</h1>
+<section class="console">
+  <header class="console__head console__head--ruled">
+    <div>
+      <p class="eyebrow">Avisos</p>
+      <h1>Notificaciones</h1>
+    </div>
+    @if (unreadOnPage() > 0) {
+      <p class="unread-count mono">{{ unreadOnPage() }} sin leer</p>
+    }
   </header>
 
   @if (error(); as err) {
-    <p class="error">{{ err }}</p>
+    <p class="error error--block">{{ err }}</p>
   }
-
   @if (loading()) {
     <p class="info">Cargando…</p>
   }
 
-  <div class="card">
+  <ul class="feed">
     @for (notification of result()?.content ?? []; track notification.id) {
-      <article class="notification" [class.notification--unread]="!notification.read">
-        <div class="notification-main">
-          <span class="pill">{{ typeLabel(notification.type) }}</span>
+      <li class="notice" [class.notice--unread]="!notification.read">
+        <div class="notice__main">
+          <p class="notice__meta">
+            <span class="notice__type">{{ typeLabel(notification.type) }}</span>
+            <span class="mono">{{ relativeTime(notification.createdAt) }}</span>
+          </p>
           @if (notification.actionPath) {
-            <button type="button" class="notification-link" (click)="open(notification)">
+            <button type="button" class="notice__link" (click)="open(notification)">
               {{ notification.title }}
             </button>
           } @else {
-            <strong>{{ notification.title }}</strong>
+            <p class="notice__title">{{ notification.title }}</p>
           }
-          <p>{{ notification.body }}</p>
-          <small>{{ notification.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+          <p class="notice__body">{{ notification.body }}</p>
         </div>
         @if (!notification.read) {
-          <button type="button" (click)="markRead(notification)">Marcar como leída</button>
+          <button type="button" class="ghost notice__read" (click)="markRead(notification)">
+            Marcar leída
+          </button>
         }
-      </article>
+      </li>
     } @empty {
       @if (!loading()) {
-        <p class="info">No tienes notificaciones.</p>
+        <li class="list-empty">
+          <p class="info">No tienes notificaciones.</p>
+        </li>
       }
     }
-  </div>
+  </ul>
 
   @if (result(); as result) {
-    <footer class="pager">
-      <button type="button" (click)="previousPage()" [disabled]="result.page === 0 || loading()">
+    <nav class="pager" aria-label="Paginación">
+      <button type="button" class="ghost" (click)="previousPage()" [disabled]="result.page === 0 || loading()">
         Anterior
       </button>
-      <span>Página {{ result.page + 1 }} de {{ result.totalPages || 1 }}</span>
+      <p class="pager__position mono">Página {{ result.page + 1 }} de {{ result.totalPages || 1 }}</p>
       <button
         type="button"
+        class="ghost"
         (click)="nextPage()"
-        [disabled]="result.page + 1 >= result.totalPages || loading()"
-      >
+        [disabled]="result.page + 1 >= result.totalPages || loading()">
         Siguiente
       </button>
-    </footer>
+    </nav>
   }
 </section>
