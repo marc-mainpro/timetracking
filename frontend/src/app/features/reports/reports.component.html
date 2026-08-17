@@ -1,87 +1,83 @@
-<section class="admin-shell">
-  <header class="card admin-header">
+<section class="console">
+  <header class="console__head console__head--ruled">
     <div>
       <p class="eyebrow">Administración</p>
-      <h1>Informes de tiempo trabajado</h1>
+      <h1>Tiempo trabajado</h1>
     </div>
   </header>
 
-  <section class="card filters-card">
-    <form [formGroup]="form" (ngSubmit)="load()" class="range-form">
-      <label>
-        <span>Desde</span>
-        <input type="date" formControlName="from" />
-      </label>
-      @if (form.controls.from.invalid && form.controls.from.touched) {
-        <div class="validation">Indica la fecha "desde".</div>
-      }
+  <form [formGroup]="form" (ngSubmit)="load()" class="range">
+    <label>
+      <span>Desde</span>
+      <input type="date" formControlName="from" />
+    </label>
+    <label>
+      <span>Hasta</span>
+      <input type="date" formControlName="to" />
+    </label>
 
-      <label>
-        <span>Hasta</span>
-        <input type="date" formControlName="to" />
-      </label>
-      @if (form.controls.to.invalid && form.controls.to.touched) {
-        <div class="validation">Indica la fecha "hasta".</div>
-      }
+    <div class="range__actions">
+      <button type="submit" [disabled]="loading()">{{ loading() ? 'Calculando…' : 'Ver informe' }}</button>
+      <button type="button" class="ghost" (click)="exportCsv()" [disabled]="exporting()">CSV</button>
+      <button type="button" class="ghost" (click)="exportPdf()" [disabled]="exporting()">PDF</button>
+    </div>
+  </form>
 
-      <div class="form-actions">
-        <button type="submit" [disabled]="loading()">{{ loading() ? 'Cargando...' : 'Generar informe' }}</button>
-        <button type="button" class="ghost" (click)="exportCsv()" [disabled]="exporting()">
-          {{ exporting() ? 'Exportando...' : 'Exportar CSV' }}
-        </button>
-        <button type="button" class="ghost" (click)="exportPdf()" [disabled]="exporting()">
-          {{ exporting() ? 'Exportando...' : 'Exportar PDF' }}
-        </button>
-      </div>
+  @if (form.controls.from.invalid && form.controls.from.touched) {
+    <p class="validation">Indica la fecha de inicio.</p>
+  }
+  @if (form.controls.to.invalid && form.controls.to.touched) {
+    <p class="validation">Indica la fecha de fin.</p>
+  }
+  @if (form.errors?.['invalidRange'] && (form.controls.from.touched || form.controls.to.touched)) {
+    <p class="validation">El inicio del rango no puede ser posterior al fin.</p>
+  }
+  @if (formError(); as message) {
+    <p class="error error--block">{{ message }}</p>
+  }
 
-      @if (form.errors?.['invalidRange'] && (form.controls.from.touched || form.controls.to.touched)) {
-        <p class="error">
-          La fecha "desde" debe ser anterior o igual a la fecha "hasta".
-        </p>
-      }
-      @if (formError(); as message) {
-        <p class="error">{{ message }}</p>
-      }
-    </form>
-  </section>
+  @if (loading()) {
+    <p class="info">Calculando…</p>
+  }
 
-  <section class="card results-card">
-    @if (loading()) {
-      <p>Cargando informe...</p>
-    }
-
-    @if (!loading()) {
-      @if (results() && results()!.length === 0) {
-        <p class="empty">Sin datos en el rango seleccionado.</p>
-      }
-      @if (results() && results()!.length > 0) {
-        <div class="table-scroll">
-          <table>
-            <thead>
+  @if (!loading()) {
+    @if (results(); as rows) {
+    @if (rows.length === 0) {
+      <p class="info">Nadie registró jornadas en ese rango.</p>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Empleado</th>
+              <th scope="col" class="num">Trabajado</th>
+              <th scope="col" class="num">Pausas</th>
+              <th scope="col" class="num">Jornadas</th>
+              <th scope="col" class="num">Ajustadas</th>
+              <th scope="col" class="num">Abiertas</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows; track row.employeeId) {
               <tr>
-                <th>Empleado</th>
-                <th>Trabajado</th>
-                <th>Pausas</th>
-                <th>Jornadas</th>
-                <th>Ajustadas</th>
-                <th>Abiertas</th>
+                <th scope="row">{{ employeeName(row.employeeId) }}</th>
+                <td class="num">{{ row.worked | isoDuration: 'hm' }}</td>
+                <td class="num">{{ row.paused | isoDuration: 'hm' }}</td>
+                <td class="num">{{ row.workdayCount }}</td>
+                <!-- Una jornada ajustada nació de una corrección aprobada. -->
+                <td class="num" [class.num--flag]="row.adjustedWorkdayCount > 0">
+                  {{ row.adjustedWorkdayCount }}
+                </td>
+                <!-- Abiertas: alguien se dejó la jornada sin cerrar. -->
+                <td class="num" [class.num--flag]="row.openWorkdays > 0">{{ row.openWorkdays }}</td>
               </tr>
-            </thead>
-            <tbody>
-              @for (row of results(); track row) {
-                <tr>
-                  <td>{{ employeeName(row.employeeId) }}</td>
-                  <td>{{ row.worked | isoDuration: 'hm' }}</td>
-                  <td>{{ row.paused | isoDuration: 'hm' }}</td>
-                  <td>{{ row.workdayCount }}</td>
-                  <td>{{ row.adjustedWorkdayCount }}</td>
-                  <td>{{ row.openWorkdays }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
+            }
+          </tbody>
+        </table>
+      </div>
     }
-  </section>
+    } @else {
+      <p class="info">Elige un rango de fechas y pulsa «Ver informe».</p>
+    }
+  }
 </section>

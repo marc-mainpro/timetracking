@@ -1,59 +1,56 @@
-.admin-shell {
-  display: grid;
-  gap: 1.25rem;
-}
+/* Informe de tiempo trabajado. El armazón (`.console`) y la tabla base viven
+   en `styles.scss`: aquí el selector de rango y las columnas numéricas.
 
-.admin-header,
-.filters-card,
-.results-card {
-  padding: 1.5rem;
-}
+   Las cifras van en mono tabular y alineadas a la derecha para que se comparen
+   en vertical, que es para lo que se abre esta pantalla. */
 
-.range-form {
+.range {
   display: grid;
-  grid-template-columns: 1fr;
   gap: 1rem;
   align-items: end;
 }
 
-.form-actions {
+.range__actions {
   display: flex;
-  gap: 0.6rem;
   flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-.form-actions button {
+.range__actions button {
   flex: 1 1 auto;
 }
 
-.error {
-  grid-column: 1 / -1;
-  margin: 0;
-}
-
-.empty {
-  color: var(--text-muted);
-}
-
-td {
+.num {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
-td:first-child {
+th.num {
   font-family: inherit;
 }
 
+/* Ajustadas y abiertas distintas de cero piden una mirada. */
+.num--flag {
+  color: var(--warn);
+}
+
+/* El nombre es cabecera de su fila, pero se lee como dato: sin el versalitas
+   ni el gris que el sistema da a las cabeceras de columna. */
+tbody th {
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text);
+}
+
 @media (min-width: 640px) {
-  .range-form {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  .range {
+    grid-template-columns: repeat(2, minmax(0, 12rem)) auto;
   }
 
-  .form-actions {
-    grid-column: auto;
-  }
-
-  .form-actions button {
+  .range__actions button {
     flex: 0 0 auto;
   }
 }
