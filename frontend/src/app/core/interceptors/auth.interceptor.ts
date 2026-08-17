@@ -38,13 +38,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(withAuth).pipe(
     catchError((error: HttpErrorResponse) => {
       const alreadyRetried = req.headers.has('X-Auth-Retry');
-      const isRefreshRequest = req.url.includes('/api/v1/auth/refresh');
-      // Como esas rutas ya no llevan token, su único 401 posible es el del
-      // enlace de recuperación caducado o ya usado: habla del enlace, no de la
-      // sesión. Reintentar con refresh acabaría redirigiendo al login y
-      // ocultando el motivo real al usuario.
-      const isPasswordResetRequest = req.url.includes('/api/v1/auth/password/');
-      if (error.status !== 401 || alreadyRetried || isRefreshRequest || isPasswordResetRequest) {
+      // Como las rutas públicas ya no llevan token, su 401 nunca habla de la
+      // sesión: son las credenciales del login, el enlace de recuperación
+      // caducado o el propio refresh agotado. Refrescar ahí sustituiría el
+      // motivo real por el error del refresh («Refresh token inválido o
+      // expirado») y redirigiría al login ocultándoselo al usuario.
+      if (error.status !== 401 || alreadyRetried || isPublicRequest(req.url)) {
         return throwError(() => error);
       }
 

@@ -128,6 +128,25 @@ describe('authInterceptor', () => {
     expect(failed).toBeTrue();
   });
 
+  it('no intenta refrescar ante el 401 de credenciales incorrectas del login', () => {
+    // Sin esto, el error del refresh («Refresh token inválido o expirado»)
+    // sustituía al INVALID_CREDENTIALS que el formulario debe mostrar.
+    const navigateSpy = spyOn(router, 'navigate').and.resolveTo(true);
+    let errorCode: string | undefined;
+
+    httpClient
+      .post('/api/v1/auth/login', { email: 'ana@empresa.test', password: 'mala' })
+      .subscribe({ error: (error) => { errorCode = error.error?.errorCode; } });
+
+    httpMock
+      .expectOne('/api/v1/auth/login')
+      .flush({ errorCode: 'INVALID_CREDENTIALS' }, { status: 401, statusText: 'Unauthorized' });
+
+    httpMock.expectNone('/api/v1/auth/refresh');
+    expect(navigateSpy).not.toHaveBeenCalled();
+    expect(errorCode).toBe('INVALID_CREDENTIALS');
+  });
+
   it('does not retry a request already marked with X-Auth-Retry', () => {
     let failed = false;
     httpClient.get('/api/v1/workdays/current', { headers: { 'X-Auth-Retry': '1' } }).subscribe({ error: () => { failed = true; } });
