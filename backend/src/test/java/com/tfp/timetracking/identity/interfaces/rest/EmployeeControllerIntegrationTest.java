@@ -118,6 +118,83 @@ class EmployeeControllerIntegrationTest {
     }
 
     @Test
+    void listFilteredByRoleOnlyReturnsUsersWithThatRole() throws Exception {
+        TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("employees-role-filter");
+
+        // Sin filtro el listado sigue siendo el de la gestion de usuarios, que
+        // debe seguir viendo tambien a los administradores que no fichan.
+        mockMvc.perform(get("/api/v1/employees")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)));
+
+        mockMvc.perform(get("/api/v1/employees")
+                        .param("role", "EMPLOYEE")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].id").value(tenant.employee().userId().toString()));
+    }
+
+    @Test
+    void listIncludesAdminsThatAreAlsoEmployees() throws Exception {
+        TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("employees-role-both");
+        CreateEmployeeRequest createRequest = new CreateEmployeeRequest(
+                "admin.employee." + UUID.randomUUID() + "@acme.test",
+                "supersecretpwd",
+                "Admin",
+                "Employee",
+                Set.of("EMPLOYEE", "TENANT_ADMIN"));
+
+        MvcResult created = mockMvc.perform(post("/api/v1/employees")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String bothRolesId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(get("/api/v1/employees")
+                        .param("role", "EMPLOYEE")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.content[*].id", org.hamcrest.Matchers.hasItem(bothRolesId)));
+    }
+
+    @Test
+    void rejectsUnknownAndPlatformRolesInTheFilter() throws Exception {
+        TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("employees-role-invalid");
+
+        mockMvc.perform(get("/api/v1/employees")
+                        .param("role", "NO_EXISTE")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token()))
+                .andExpect(status().isBadRequest());
+
+        // Filtrar por un rol de plataforma dentro de un tenant no tiene
+        // significado: no debe parecer una consulta valida que no encuentra a nadie.
+        mockMvc.perform(get("/api/v1/employees")
+                        .param("role", "PLATFORM_ADMIN")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void roleFilterNeverCrossesTenants() throws Exception {
+        TestTenantFactory.TenantActors first = testTenantFactory.createTenantActors("employees-role-tenant-a");
+        TestTenantFactory.TenantActors second = testTenantFactory.createTenantActors("employees-role-tenant-b");
+
+        mockMvc.perform(get("/api/v1/employees")
+                        .param("role", "EMPLOYEE")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + first.admin().token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].id").value(first.employee().userId().toString()))
+                .andExpect(jsonPath("$.content[*].id",
+                        org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(second.employee().userId().toString()))));
+    }
+
+    @Test
     void employeeCannotAccessAdminEndpoints() throws Exception {
         TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("employees-forbidden");
 

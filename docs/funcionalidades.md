@@ -53,8 +53,16 @@ nace operativo de un solo paso.
 
 ## 4. Gestión de empleados
 
-Listado paginado con filtro por estado, alta, edición, activación y desactivación, y
-asignación de roles. `PLATFORM_ADMIN` no es asignable dentro de un tenant.
+Listado paginado con filtro por estado y por rol, alta, edición, activación y
+desactivación, y asignación de roles. `PLATFORM_ADMIN` no es asignable dentro de
+un tenant.
+
+Solo quien tiene el rol `EMPLOYEE` puede recibir un turno o un calendario
+propio: un administrador que no ficha no aparece en esos desplegables y el
+backend rechaza la asignación aunque se fuerce por API (ADR-0019). Un
+administrador puede ser además empleado si se le marca ese rol; en ese caso la
+cabecera ofrece un conmutador entre la vista de empleado y la de
+administración, que decide qué menú se ve pero no qué puede hacer.
 
 ## 5. Control horario
 

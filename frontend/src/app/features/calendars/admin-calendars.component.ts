@@ -116,7 +116,14 @@ export class AdminCalendarsComponent {
   readonly formError = signal<string | null>(null);
   readonly assignError = signal<string | null>(null);
   readonly effectiveError = signal<string | null>(null);
+  /**
+   * Todos los usuarios del tenant, solo para resolver id → nombre en la tabla
+   * de asignaciones: una asignación anterior a alguien que ya no es empleado
+   * debe seguir mostrando su nombre y no un UUID.
+   */
   readonly employees = signal<Employee[]>([]);
+  /** Los que pueden recibir un calendario propio: el desplegable usa esta. */
+  readonly assignableEmployees = signal<Employee[]>([]);
   readonly pendingRemoval = signal<PendingRemoval | null>(null);
 
   /** Reglas semanales en edición. Se manejan como signal y no como FormArray: son 7 filas fijas. */
@@ -163,6 +170,10 @@ export class AdminCalendarsComponent {
     this.employeesService.list(0, 100).subscribe({
       next: (result) => this.employees.set(result.content),
       error: () => this.employees.set([])
+    });
+    this.employeesService.listAssignable().subscribe({
+      next: (result) => this.assignableEmployees.set(result.content),
+      error: () => this.assignableEmployees.set([])
     });
   }
 

@@ -142,7 +142,7 @@
       <span>Empleado</span>
       <select formControlName="employeeId">
         <option value="">Elige un empleado</option>
-        @for (employee of employees(); track employee.id) {
+        @for (employee of assignableEmployees(); track employee.id) {
           <option [value]="employee.id">{{ employee.firstName }} {{ employee.lastName }}</option>
         }
       </select>

@@ -2,13 +2,15 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { Role } from '../../core/models/role';
+
 export interface Employee {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
   status: 'ACTIVE' | 'INACTIVE';
-  roles: string[];
+  roles: Role[];
   createdAt: string;
   updatedAt: string;
 }
@@ -26,7 +28,7 @@ export interface CreateEmployeePayload {
   password: string;
   firstName: string;
   lastName: string;
-  roles: string[];
+  roles: Role[];
 }
 
 export interface UpdateEmployeePayload {
@@ -38,12 +40,25 @@ export interface UpdateEmployeePayload {
 export class AdminEmployeesService {
   private readonly http = inject(HttpClient);
 
-  list(page: number, size: number, status?: string): Observable<PagedEmployees> {
+  list(page: number, size: number, status?: string, role?: Role): Observable<PagedEmployees> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (status) {
       params = params.set('status', status);
     }
+    if (role) {
+      params = params.set('role', role);
+    }
     return this.http.get<PagedEmployees>('/api/v1/employees', { params });
+  }
+
+  /**
+   * Quien puede recibir un turno o un calendario propio: solo empleados en
+   * activo. Es un método aparte y no un parámetro suelto para que la definición
+   * de «asignable» viva en un único sitio; el backend rechaza con 409 cualquier
+   * asignación que se salte esto.
+   */
+  listAssignable(page = 0, size = 100): Observable<PagedEmployees> {
+    return this.list(page, size, 'ACTIVE', 'EMPLOYEE');
   }
 
   create(payload: CreateEmployeePayload): Observable<Employee> {
@@ -62,7 +77,7 @@ export class AdminEmployeesService {
     return this.http.patch<Employee>(`/api/v1/employees/${employeeId}/deactivate`, {});
   }
 
-  assignRoles(employeeId: string, roles: string[]): Observable<Employee> {
+  assignRoles(employeeId: string, roles: Role[]): Observable<Employee> {
     return this.http.put<Employee>(`/api/v1/employees/${employeeId}/roles`, { roles });
   }
 }

@@ -6,7 +6,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.tfp.timetracking.identity.domain.UserRepository;
+import com.tfp.timetracking.shared.application.EmployeeAssignmentTargetQuery;
+import com.tfp.timetracking.shared.application.EmployeeAssignmentTargetQuery.TargetStatus;
 import com.tfp.timetracking.audit.application.AuditRecorder;
 import com.tfp.timetracking.shared.application.TenantContext;
 import com.tfp.timetracking.shift.domain.model.ShiftAssignment;
@@ -33,12 +34,12 @@ class ShiftAssignmentUseCasesTest {
     private AssignShiftUseCase assignShiftUseCase(
             ShiftAssignmentRepository assignmentRepository,
             ShiftTemplateRepository templateRepository,
-            UserRepository userRepository,
+            EmployeeAssignmentTargetQuery targetQuery,
             TenantContext tenantContext) {
         return new AssignShiftUseCase(
                 assignmentRepository,
                 templateRepository,
-                userRepository,
+                targetQuery,
                 tenantContext,
                 auditRecorder,
                 domainEventPublisher,
@@ -50,7 +51,7 @@ class ShiftAssignmentUseCasesTest {
     void assignsShiftAndListsEffectiveAssignments() {
         ShiftAssignmentRepository assignmentRepository = org.mockito.Mockito.mock(ShiftAssignmentRepository.class);
         ShiftTemplateRepository templateRepository = org.mockito.Mockito.mock(ShiftTemplateRepository.class);
-        UserRepository userRepository = org.mockito.Mockito.mock(UserRepository.class);
+        EmployeeAssignmentTargetQuery targetQuery = org.mockito.Mockito.mock(EmployeeAssignmentTargetQuery.class);
         TenantContext tenantContext = org.mockito.Mockito.mock(TenantContext.class);
 
         UUID tenantId = UUID.randomUUID();
@@ -68,11 +69,11 @@ class ShiftAssignmentUseCasesTest {
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(tenantContext.currentUserId()).thenReturn(employeeId);
         when(templateRepository.findById(tenantId, templateId)).thenReturn(Optional.of(template));
-        when(userRepository.findById(tenantId, employeeId)).thenReturn(Optional.of(org.mockito.Mockito.mock(com.tfp.timetracking.identity.domain.User.class)));
+        when(targetQuery.check(tenantId, employeeId)).thenReturn(TargetStatus.ASSIGNABLE);
         when(assignmentRepository.save(any(ShiftAssignment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ShiftAssignment saved = assignShiftUseCase(
-                        assignmentRepository, templateRepository, userRepository, tenantContext)
+                        assignmentRepository, templateRepository, targetQuery, tenantContext)
                 .assign(new AssignShiftCommand(employeeId, templateId, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)));
 
         assertThat(saved.employeeId()).isEqualTo(employeeId);
@@ -85,10 +86,68 @@ class ShiftAssignmentUseCasesTest {
     }
 
     @Test
+    void rejectsAssigningAShiftToSomeoneWithoutTheEmployeeRole() {
+        ShiftAssignmentRepository assignmentRepository = org.mockito.Mockito.mock(ShiftAssignmentRepository.class);
+        ShiftTemplateRepository templateRepository = org.mockito.Mockito.mock(ShiftTemplateRepository.class);
+        EmployeeAssignmentTargetQuery targetQuery = org.mockito.Mockito.mock(EmployeeAssignmentTargetQuery.class);
+        TenantContext tenantContext = org.mockito.Mockito.mock(TenantContext.class);
+
+        UUID tenantId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+        UUID templateId = UUID.randomUUID();
+        when(tenantContext.currentTenantId()).thenReturn(tenantId);
+        when(templateRepository.findById(tenantId, templateId)).thenReturn(Optional.of(ShiftTemplate.reconstitute(
+                templateId,
+                tenantId,
+                "General",
+                LocalTime.of(8, 0),
+                LocalTime.of(16, 0),
+                new ShiftBreakPolicy(Duration.ofMinutes(30)),
+                ShiftTemplateStatus.ACTIVE)));
+        when(targetQuery.check(tenantId, adminId)).thenReturn(TargetStatus.NOT_EMPLOYEE);
+
+        assertThatThrownBy(() -> assignShiftUseCase(
+                        assignmentRepository, templateRepository, targetQuery, tenantContext)
+                        .assign(new AssignShiftCommand(
+                                adminId, templateId, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30))))
+                .isInstanceOf(com.tfp.timetracking.shared.domain.TargetNotEmployeeException.class);
+
+        verify(assignmentRepository, org.mockito.Mockito.never()).save(any(ShiftAssignment.class));
+    }
+
+    @Test
+    void rejectsAssigningAShiftToSomeoneOutsideTheTenant() {
+        ShiftAssignmentRepository assignmentRepository = org.mockito.Mockito.mock(ShiftAssignmentRepository.class);
+        ShiftTemplateRepository templateRepository = org.mockito.Mockito.mock(ShiftTemplateRepository.class);
+        EmployeeAssignmentTargetQuery targetQuery = org.mockito.Mockito.mock(EmployeeAssignmentTargetQuery.class);
+        TenantContext tenantContext = org.mockito.Mockito.mock(TenantContext.class);
+
+        UUID tenantId = UUID.randomUUID();
+        UUID strangerId = UUID.randomUUID();
+        UUID templateId = UUID.randomUUID();
+        when(tenantContext.currentTenantId()).thenReturn(tenantId);
+        when(templateRepository.findById(tenantId, templateId)).thenReturn(Optional.of(ShiftTemplate.reconstitute(
+                templateId,
+                tenantId,
+                "General",
+                LocalTime.of(8, 0),
+                LocalTime.of(16, 0),
+                new ShiftBreakPolicy(Duration.ofMinutes(30)),
+                ShiftTemplateStatus.ACTIVE)));
+        when(targetQuery.check(tenantId, strangerId)).thenReturn(TargetStatus.UNKNOWN);
+
+        assertThatThrownBy(() -> assignShiftUseCase(
+                        assignmentRepository, templateRepository, targetQuery, tenantContext)
+                        .assign(new AssignShiftCommand(
+                                strangerId, templateId, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30))))
+                .isInstanceOf(com.tfp.timetracking.shared.application.ResourceNotFoundException.class);
+    }
+
+    @Test
     void rejectsOverlappingAssignmentsForTheSameEmployee() {
         ShiftAssignmentRepository assignmentRepository = org.mockito.Mockito.mock(ShiftAssignmentRepository.class);
         ShiftTemplateRepository templateRepository = org.mockito.Mockito.mock(ShiftTemplateRepository.class);
-        UserRepository userRepository = org.mockito.Mockito.mock(UserRepository.class);
+        EmployeeAssignmentTargetQuery targetQuery = org.mockito.Mockito.mock(EmployeeAssignmentTargetQuery.class);
         TenantContext tenantContext = org.mockito.Mockito.mock(TenantContext.class);
 
         UUID tenantId = UUID.randomUUID();
@@ -112,12 +171,11 @@ class ShiftAssignmentUseCasesTest {
 
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(templateRepository.findById(tenantId, templateId)).thenReturn(Optional.of(template));
-        when(userRepository.findById(tenantId, employeeId))
-                .thenReturn(Optional.of(org.mockito.Mockito.mock(com.tfp.timetracking.identity.domain.User.class)));
+        when(targetQuery.check(tenantId, employeeId)).thenReturn(TargetStatus.ASSIGNABLE);
         when(assignmentRepository.findByEmployee(tenantId, employeeId)).thenReturn(List.of(existingAssignment));
 
         assertThatThrownBy(() -> assignShiftUseCase(
-                        assignmentRepository, templateRepository, userRepository, tenantContext)
+                        assignmentRepository, templateRepository, targetQuery, tenantContext)
                         .assign(new AssignShiftCommand(
                                 employeeId,
                                 templateId,

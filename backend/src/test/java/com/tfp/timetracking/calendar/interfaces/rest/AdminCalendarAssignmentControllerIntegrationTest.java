@@ -240,13 +240,70 @@ class AdminCalendarAssignmentControllerIntegrationTest {
     // --- Alta, listado y errores -------------------------------------------
 
     @Test
+    void rejectsEmployeeScopeForAnAdminWithoutTheEmployeeRole() throws Exception {
+        TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("assign-not-employee");
+        String token = tenant.admin().token();
+        String calendar = createCalendar(token, "Solo empleados", 480);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("calendarId", calendar);
+        body.put("scope", "EMPLOYEE");
+        body.put("targetId", tenant.admin().userId());
+
+        mockMvc.perform(post("/api/v1/admin/calendar-assignments")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.errorCode").value("TARGET_NOT_EMPLOYEE"));
+    }
+
+    @Test
+    void rejectsEmployeeScopeForSomeoneOutsideTheTenant() throws Exception {
+        TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("assign-unknown-target");
+        TestTenantFactory.TenantActors other = testTenantFactory.createTenantActors("assign-unknown-target-other");
+        String token = tenant.admin().token();
+        String calendar = createCalendar(token, "Ajeno", 480);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("calendarId", calendar);
+        body.put("scope", "EMPLOYEE");
+        // Empleado de otro tenant: desde aqui no existe, y responder 404 evita
+        // confirmar que ese id es de alguien.
+        body.put("targetId", other.employee().userId());
+
+        mockMvc.perform(post("/api/v1/admin/calendar-assignments")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void effectiveCalendarStillAnswersForAnAdminWithoutTheEmployeeRole() throws Exception {
+        TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("assign-effective-admin");
+        String token = tenant.admin().token();
+        String tenantCalendar = createCalendar(token, "Organizacion", 480);
+        assign(token, tenantCalendar, "TENANT", null);
+
+        // Consultar el calendario efectivo es una lectura: el de la
+        // organizacion sigue rigiendo aunque quien pregunte no fiche.
+        mockMvc.perform(get("/api/v1/admin/calendar-assignments/effective")
+                        .param("employeeId", tenant.admin().userId().toString())
+                        .param("date", MONDAY)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.scope").value("TENANT"));
+    }
+
+    @Test
     void listsAssignmentsAndFiltersByCalendar() throws Exception {
         TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("assign-list");
         String token = tenant.admin().token();
         String first = createCalendar(token, "Primero", 480);
         String second = createCalendar(token, "Segundo", 300);
         assign(token, first, "TENANT", null);
-        assign(token, second, "EMPLOYEE", UUID.randomUUID());
+        assign(token, second, "EMPLOYEE", tenant.employee().userId());
 
         mockMvc.perform(get("/api/v1/admin/calendar-assignments")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))

@@ -1,12 +1,13 @@
 package com.tfp.timetracking.shift.application;
 
-import com.tfp.timetracking.identity.domain.UserRepository;
+import com.tfp.timetracking.shared.application.EmployeeAssignmentTargetQuery;
 import com.tfp.timetracking.shared.application.ResourceNotFoundException;
 import com.tfp.timetracking.audit.application.AuditRecorder;
 import com.tfp.timetracking.shared.application.TenantContext;
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.DomainEventPublisher;
 import com.tfp.timetracking.shared.domain.IdGenerator;
+import com.tfp.timetracking.shared.domain.TargetNotEmployeeException;
 import com.tfp.timetracking.shift.domain.model.ShiftAssignment;
 import com.tfp.timetracking.shift.domain.model.ShiftAssignmentRepository;
 import com.tfp.timetracking.shift.domain.model.OverlappingShiftAssignmentException;
@@ -22,7 +23,7 @@ public class AssignShiftUseCase {
 
     private final ShiftAssignmentRepository assignmentRepository;
     private final ShiftTemplateRepository templateRepository;
-    private final UserRepository userRepository;
+    private final EmployeeAssignmentTargetQuery employeeAssignmentTargetQuery;
     private final TenantContext tenantContext;
     private final AuditRecorder auditRecorder;
     private final DomainEventPublisher domainEventPublisher;
@@ -32,7 +33,7 @@ public class AssignShiftUseCase {
     public AssignShiftUseCase(
             ShiftAssignmentRepository assignmentRepository,
             ShiftTemplateRepository templateRepository,
-            UserRepository userRepository,
+            EmployeeAssignmentTargetQuery employeeAssignmentTargetQuery,
             TenantContext tenantContext,
             AuditRecorder auditRecorder,
             DomainEventPublisher domainEventPublisher,
@@ -40,7 +41,7 @@ public class AssignShiftUseCase {
             IdGenerator idGenerator) {
         this.assignmentRepository = assignmentRepository;
         this.templateRepository = templateRepository;
-        this.userRepository = userRepository;
+        this.employeeAssignmentTargetQuery = employeeAssignmentTargetQuery;
         this.tenantContext = tenantContext;
         this.auditRecorder = auditRecorder;
         this.domainEventPublisher = domainEventPublisher;
@@ -55,8 +56,14 @@ public class AssignShiftUseCase {
         if (template.status() == com.tfp.timetracking.shift.domain.model.ShiftTemplateStatus.ARCHIVED) {
             throw new ShiftTemplateArchivedException();
         }
-        userRepository.findById(tenantContext.currentTenantId(), command.employeeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado"));
+        // Un turno solo significa algo sobre alguien que ficha: los endpoints de
+        // jornada exigen el rol EMPLOYEE, asi que asignarselo a un administrador
+        // que no lo tiene crearia una planificacion inservible.
+        switch (employeeAssignmentTargetQuery.check(tenantContext.currentTenantId(), command.employeeId())) {
+            case UNKNOWN -> throw new ResourceNotFoundException("Empleado no encontrado");
+            case NOT_EMPLOYEE -> throw new TargetNotEmployeeException();
+            case ASSIGNABLE -> { }
+        }
         ShiftAssignment assignment = ShiftAssignment.assign(
                 tenantContext.currentTenantId(),
                 command.employeeId(),

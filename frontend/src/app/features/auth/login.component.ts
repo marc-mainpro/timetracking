@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ViewModeService } from '../../core/services/view-mode.service';
 import { AuthShellComponent } from '../../shared/auth-shell/auth-shell.component';
 
 @Component({
@@ -17,6 +18,7 @@ export class LoginComponent {
   private readonly authService = inject(AuthService);
   private readonly errorMessagesService = inject(ErrorMessagesService);
   private readonly router = inject(Router);
+  private readonly viewMode = inject(ViewModeService);
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -54,10 +56,9 @@ export class LoginComponent {
     this.authService.login(this.form.getRawValue()).subscribe({
       next: () => {
         this.loading.set(false);
-        const landingRoute = this.authService.hasRole('TENANT_ADMIN')
-          ? '/admin/employees'
-          : '/employee-dashboard';
-        void this.router.navigate([landingRoute]);
+        // La pantalla de inicio la decide la vista, que recuerda dónde estaba
+        // quien entra con más de un rol.
+        void this.router.navigate([this.viewMode.homeRoute()]);
       },
       error: (error) => {
         this.loading.set(false);

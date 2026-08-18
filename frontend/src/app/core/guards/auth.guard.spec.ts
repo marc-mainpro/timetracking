@@ -7,6 +7,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { authGuard } from './auth.guard';
 import { roleGuard } from './role.guard';
 import { AuthService } from '../services/auth.service';
+import { ViewModeService } from '../services/view-mode.service';
 
 describe('authGuard and roleGuard', () => {
   let authService: AuthService;
@@ -18,6 +19,11 @@ describe('authGuard and roleGuard', () => {
     });
     authService = TestBed.inject(AuthService);
     router = TestBed.inject(Router);
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
   });
 
   it('redirects unauthenticated users to login', () => {
@@ -62,6 +68,25 @@ describe('authGuard and roleGuard', () => {
     authService['accessToken'].set(sampleToken(['PLATFORM_ADMIN']));
     const result = TestBed.runInInjectionContext(() => roleGuard(['TENANT_ADMIN'])({} as never, {} as never));
     expect(result).toEqual(router.createUrlTree(['/platform/tenants']));
+  });
+
+  // La vista es presentación, no permiso: quien administra y además ficha
+  // conserva el acceso a la zona de administración aunque esté viendo el menú
+  // de empleado, para que un enlace guardado siga funcionando.
+  it('lets a user in the employee view still reach the admin area', () => {
+    authService['accessToken'].set(sampleToken(['EMPLOYEE', 'TENANT_ADMIN']));
+    TestBed.inject(ViewModeService).switchTo('EMPLOYEE');
+
+    const result = TestBed.runInInjectionContext(() => roleGuard(['TENANT_ADMIN'])({} as never, {} as never));
+    expect(result).toBeTrue();
+  });
+
+  it('sends a user without the role to the home of their active view', () => {
+    authService['accessToken'].set(sampleToken(['EMPLOYEE', 'TENANT_ADMIN']));
+    TestBed.inject(ViewModeService).switchTo('EMPLOYEE');
+
+    const result = TestBed.runInInjectionContext(() => roleGuard(['PLATFORM_ADMIN'])({} as never, {} as never));
+    expect(result).toEqual(router.createUrlTree(['/employee-dashboard']));
   });
 
   it('allows a PLATFORM_ADMIN through its own guard', () => {

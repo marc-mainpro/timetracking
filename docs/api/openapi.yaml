@@ -530,6 +530,11 @@ paths:
         required: false
         schema:
           type: string
+      - name: role
+        in: query
+        required: false
+        schema:
+          type: string
       responses:
         '200':
           description: OK

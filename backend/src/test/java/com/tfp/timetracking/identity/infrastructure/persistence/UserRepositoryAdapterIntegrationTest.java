@@ -153,12 +153,63 @@ class UserRepositoryAdapterIntegrationTest {
         inactive.deactivate(() -> Instant.now(), UUID::randomUUID);
         userRepository.save(inactive);
 
-        PagedResult<User> all = userRepository.findByTenant(tenantId, null, 0, 10);
-        PagedResult<User> inactiveOnly = userRepository.findByTenant(tenantId, UserStatus.INACTIVE, 0, 10);
+        PagedResult<User> all = userRepository.findByTenant(tenantId, null, null, 0, 10);
+        PagedResult<User> inactiveOnly = userRepository.findByTenant(tenantId, UserStatus.INACTIVE, null, 0, 10);
 
         assertThat(all.content()).hasSize(2);
         assertThat(inactiveOnly.content()).hasSize(1);
         assertThat(inactiveOnly.content().get(0).status()).isEqualTo(UserStatus.INACTIVE);
+    }
+
+    @Test
+    void listByTenantFiltersByRoleWithoutBreakingPaging() {
+        UUID tenantId = insertTenant();
+        userRepository.save(newUser(tenantId, "empleado@example.com"));
+        userRepository.save(withRoles(tenantId, "mixto@example.com", Set.of(Role.TENANT_ADMIN, Role.EMPLOYEE)));
+        userRepository.save(withRoles(tenantId, "solo-admin@example.com", Set.of(Role.TENANT_ADMIN)));
+
+        PagedResult<User> employees = userRepository.findByTenant(tenantId, null, Role.EMPLOYEE, 0, 10);
+
+        assertThat(employees.content()).extracting(user -> user.email().toString())
+                .containsExactly("empleado@example.com", "mixto@example.com");
+        // El total cuenta usuarios y no filas de rol: quien acumula dos roles no
+        // puede contarse dos veces o la paginacion mentiria.
+        assertThat(employees.totalElements()).isEqualTo(2);
+        assertThat(employees.totalPages()).isEqualTo(1);
+
+        PagedResult<User> firstPage = userRepository.findByTenant(tenantId, null, Role.EMPLOYEE, 0, 1);
+        assertThat(firstPage.content()).hasSize(1);
+        assertThat(firstPage.totalElements()).isEqualTo(2);
+        assertThat(firstPage.totalPages()).isEqualTo(2);
+    }
+
+    @Test
+    void listByTenantCombinesStatusAndRoleFilters() {
+        UUID tenantId = insertTenant();
+        userRepository.save(newUser(tenantId, "activo@example.com"));
+        User inactive = newUser(tenantId, "inactivo@example.com");
+        inactive.deactivate(() -> Instant.now(), UUID::randomUUID);
+        userRepository.save(inactive);
+        userRepository.save(withRoles(tenantId, "admin@example.com", Set.of(Role.TENANT_ADMIN)));
+
+        PagedResult<User> activeEmployees =
+                userRepository.findByTenant(tenantId, UserStatus.ACTIVE, Role.EMPLOYEE, 0, 10);
+
+        assertThat(activeEmployees.content()).extracting(user -> user.email().toString())
+                .containsExactly("activo@example.com");
+    }
+
+    @Test
+    void listByTenantWithRoleNeverCrossesTenants() {
+        UUID tenantId = insertTenant();
+        UUID otherTenantId = insertTenant();
+        userRepository.save(newUser(tenantId, "propio@example.com"));
+        userRepository.save(newUser(otherTenantId, "ajeno@example.com"));
+
+        PagedResult<User> employees = userRepository.findByTenant(tenantId, null, Role.EMPLOYEE, 0, 10);
+
+        assertThat(employees.content()).extracting(user -> user.email().toString())
+                .containsExactly("propio@example.com");
     }
 
     @Test
@@ -195,6 +246,12 @@ class UserRepositoryAdapterIntegrationTest {
                 Set.of(Role.EMPLOYEE),
                 now,
                 now);
+    }
+
+    private User withRoles(UUID tenantId, String email, Set<Role> roles) {
+        Instant now = Instant.now();
+        return User.reconstitute(
+                UUID.randomUUID(), tenantId, email, "hash", "First", "Last", UserStatus.ACTIVE, roles, now, now);
     }
 
     private UUID insertTenant() {
