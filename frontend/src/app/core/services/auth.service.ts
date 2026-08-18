@@ -7,10 +7,13 @@ import {
   finalize,
   firstValueFrom,
   from,
+  fromEvent,
   map,
   of,
   shareReplay,
+  takeUntil,
   tap,
+  throwIfEmpty,
   timeout
 } from 'rxjs';
 
@@ -53,6 +56,8 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly accessToken = signal<string | null>(null);
   private readonly refreshInFlight = signal<Observable<string> | null>(null);
+  /** Corta el refresh en curso; ver `abandonRefresh`. */
+  private refreshAbort: AbortController | null = null;
   private readonly claims = computed(() => this.parseToken(this.accessToken()));
 
   login(request: LoginRequest): Observable<void> {
@@ -99,7 +104,15 @@ export class AuthService {
       // backend no responde —o el cerrojo lo retiene otra pestaña atascada—, la
       // aplicación sigue sin sesión en lugar de dejar la pantalla en blanco.
       timeout({ first: RESTORE_TIMEOUT_MS }),
-      catchError(() => of(false))
+      catchError(() => {
+        // Desuscribirse no basta: `shareReplay` mantiene viva la fuente, y la
+        // promesa del cerrojo tampoco es cancelable por sí sola. Sin este
+        // corte, el refresh abandonado seguiría en cola y podría resolverse
+        // mucho después —ya con el usuario en otra cuenta— pisando el token
+        // nuevo y rotando la cookie de refresh de esa sesión.
+        this.abandonRefresh();
+        return of(false);
+      })
     );
   }
 
@@ -122,31 +135,74 @@ export class AuthService {
       return inFlight;
     }
 
-    const request = this.withRefreshLock(() => this.requestRefresh()).pipe(
-      finalize(() => this.refreshInFlight.set(null)),
+    const controller = new AbortController();
+    const request = this.withRefreshLock(controller.signal, () =>
+      this.requestRefresh(controller.signal)
+    ).pipe(
+      finalize(() => {
+        this.refreshInFlight.set(null);
+        if (this.refreshAbort === controller) {
+          this.refreshAbort = null;
+        }
+      }),
       shareReplay(1)
     );
 
+    this.refreshAbort = controller;
     this.refreshInFlight.set(request);
     return request;
   }
 
-  private requestRefresh(): Observable<string> {
+  /**
+   * Abandona el refresh en curso, si lo hay: cancela la espera del cerrojo y la
+   * petición ya en vuelo, de modo que su respuesta no llegue a aplicarse.
+   */
+  private abandonRefresh(): void {
+    const controller = this.refreshAbort;
+    this.refreshAbort = null;
+    this.refreshInFlight.set(null);
+    controller?.abort();
+  }
+
+  /**
+   * `takeUntil` desuscribe el `HttpClient`, que aborta el XHR: la respuesta no
+   * pasa por el `tap`, así que un refresh abandonado nunca fija un token. Que
+   * la petición llegue igualmente al servidor es inevitable —y no importa: la
+   * rotación resultante solo afecta a la cookie de esa misma sesión, que ya no
+   * se está usando.
+   */
+  private requestRefresh(signal: AbortSignal): Observable<string> {
     return this.http
       .post<AuthTokenResponse>('/api/v1/auth/refresh', {}, { withCredentials: true })
       .pipe(
+        takeUntil(fromEvent(signal, 'abort')),
         tap((response) => this.setAccessToken(response.accessToken)),
-        map((response) => response.accessToken)
+        map((response) => response.accessToken),
+        // Cortar por abandono deja el flujo vacío; quien esperaba el token debe
+        // ver un fallo, no una terminación silenciosa.
+        throwIfEmpty(() => new Error('Refresh abandonado'))
       );
   }
 
   /** Si el navegador no trae Web Locks se llama directo: queda la carrera que ya había. */
-  private withRefreshLock<T>(work: () => Observable<T>): Observable<T> {
+  private withRefreshLock<T>(signal: AbortSignal, work: () => Observable<T>): Observable<T> {
     const locks = navigator.locks;
     if (!locks) {
       return work();
     }
-    return defer(() => from(locks.request(REFRESH_LOCK, () => firstValueFrom(work()))));
+    // El `signal` del cerrojo solo descarta la espera en cola: una vez
+    // concedido, el aborto queda en manos de `work`. La guarda cubre el hueco
+    // entre ambos —el turno en que el cerrojo ya se concedió pero la petición
+    // aún no ha arrancado.
+    return defer(() =>
+      from(
+        locks.request(REFRESH_LOCK, { signal }, () =>
+          signal.aborted
+            ? Promise.reject(new Error('Refresh abandonado'))
+            : firstValueFrom(work())
+        )
+      )
+    );
   }
 
   /** Un 401/403 del refresh significa que esa sesión ya no existe. */

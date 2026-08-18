@@ -34,7 +34,9 @@ describe('AuthService', () => {
   });
 
   afterEach(() => {
-    httpMock.verify();
+    // El refresh abandonado deja su petición cancelada a propósito; lo que se
+    // vigila aquí son las que quedaron sin respuesta.
+    httpMock.verify({ ignoreCancelled: true });
   });
 
   it('stores access token after login', () => {
@@ -183,6 +185,32 @@ describe('AuthService', () => {
       expect(await restored).toBeFalse();
       expect(service.isAuthenticated()).toBeFalse();
       expect(localStorage.getItem('tfp.session')).toBe('0');
+    });
+
+    it('descarta la respuesta del refresh que se dio por perdido', async () => {
+      // Lo que hace el `timeout` del arranque cuando el backend no contesta a
+      // tiempo. Sin cancelar, esa petición seguiría viva y su respuesta tardía
+      // pisaría el token de la sesión que se abriera entre medias.
+      localStorage.setItem('tfp.session', '1');
+      let refreshError: unknown = null;
+      service.refresh().subscribe({ error: (error: unknown) => (refreshError = error) });
+      const request = await waitForRefresh();
+
+      service['abandonRefresh']();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(request.cancelled).toBeTrue();
+      expect(refreshError).toBeTruthy();
+      expect(service.getAccessToken()).toBeNull();
+
+      // Y el siguiente refresh arranca limpio, sin quedarse pegado al anterior.
+      service.refresh().subscribe();
+      (await waitForRefresh()).flush({
+        accessToken: sampleToken(['EMPLOYEE']),
+        expiresAt: new Date(Date.now() + 60_000).toISOString()
+      });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(service.isAuthenticated()).toBeTrue();
     });
 
     it('deja la marca puesta al iniciar sesión y la borra al salir', () => {
