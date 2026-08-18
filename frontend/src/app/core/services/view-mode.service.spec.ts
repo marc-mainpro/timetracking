@@ -67,13 +67,42 @@ describe('ViewModeService', () => {
     expect(service.active()).toBe('EMPLOYEE');
   });
 
-  it('no falla cuando el almacenamiento lanza', () => {
+  it('no falla al escribir cuando el almacenamiento lanza', () => {
     spyOn(localStorage, 'getItem').and.throwError('modo privado');
     spyOn(localStorage, 'setItem').and.throwError('modo privado');
 
     const service = serviceWithRoles(['EMPLOYEE', 'TENANT_ADMIN']);
 
     expect(() => service.switchTo('EMPLOYEE')).not.toThrow();
+    expect(service.active()).toBe('EMPLOYEE');
+  });
+
+  it('no falla al leer cuando el almacenamiento lanza', () => {
+    // Sin elección previa: así se ejercita la lectura, que es la que ocurre al
+    // arrancar en una pestaña en modo privado.
+    spyOn(localStorage, 'getItem').and.throwError('modo privado');
+
+    const service = serviceWithRoles(['EMPLOYEE', 'TENANT_ADMIN']);
+
+    expect(() => service.active()).not.toThrow();
+    expect(service.active()).toBe('ADMIN');
+  });
+
+  it('reconoce la zona de plataforma', () => {
+    const service = serviceWithRoles(['PLATFORM_ADMIN', 'EMPLOYEE']);
+    service.switchTo('EMPLOYEE');
+
+    service.syncWithUrl('/platform/tenants');
+
+    expect(service.active()).toBe('PLATFORM');
+  });
+
+  it('no cambia de vista en la raíz', () => {
+    const service = serviceWithRoles(['EMPLOYEE', 'TENANT_ADMIN']);
+    service.switchTo('EMPLOYEE');
+
+    service.syncWithUrl('/');
+
     expect(service.active()).toBe('EMPLOYEE');
   });
 
