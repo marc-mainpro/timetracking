@@ -37,4 +37,22 @@ describe('AdminEmployeesService', () => {
     httpMock.expectOne('/api/v1/employees/emp-1/roles').flush({});
     expect().nothing();
   });
+
+  it('pide solo empleados activos para las asignaciones', () => {
+    service.listAssignable().subscribe();
+
+    const request = httpMock.expectOne(
+      '/api/v1/employees?page=0&size=100&status=ACTIVE&role=EMPLOYEE'
+    );
+    request.flush({ content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 });
+    expect().nothing();
+  });
+
+  it('no manda rol cuando el listado es el de gestión', () => {
+    service.list(0, 20).subscribe();
+
+    const request = httpMock.expectOne('/api/v1/employees?page=0&size=20');
+    expect(request.request.params.has('role')).toBeFalse();
+    request.flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
+  });
 });

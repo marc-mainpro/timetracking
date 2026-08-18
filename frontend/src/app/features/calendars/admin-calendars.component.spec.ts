@@ -28,9 +28,12 @@ describe('AdminCalendarsComponent', () => {
     httpMock
       .expectOne((request) => request.url === '/api/v1/admin/calendar-assignments')
       .flush({ content: [], page: 0, size: 50, totalElements: 0, totalPages: 0 });
+    // Dos: el listado completo resuelve nombres en la tabla y el filtrado por
+    // rol alimenta el desplegable de asignación.
     httpMock
-      .expectOne((request) => request.url === '/api/v1/employees')
-      .flush({ content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 });
+      .match((request) => request.url === '/api/v1/employees')
+      .forEach((request) =>
+        request.flush({ content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 }));
   }
 
   beforeEach(async () => {
@@ -47,6 +50,27 @@ describe('AdminCalendarsComponent', () => {
 
   afterEach(() => {
     httpMock.verify();
+  });
+
+  it('pide para el desplegable solo empleados activos', () => {
+    httpMock
+      .expectOne((request) => request.url === '/api/v1/admin/calendars')
+      .flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
+    httpMock
+      .expectOne((request) => request.url === '/api/v1/admin/calendar-assignments')
+      .flush({ content: [], page: 0, size: 50, totalElements: 0, totalPages: 0 });
+
+    const requests = httpMock.match((request) => request.url === '/api/v1/employees');
+    const assignable = requests.find((request) => request.request.params.get('role') === 'EMPLOYEE');
+
+    expect(assignable).toBeDefined();
+    expect(assignable?.request.params.get('status')).toBe('ACTIVE');
+    // El otro va sin filtro: los nombres de la tabla deben resolverse también
+    // para quien ya no es empleado.
+    expect(requests.some((request) => !request.request.params.has('role'))).toBeTrue();
+
+    requests.forEach((request) =>
+      request.flush({ content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 }));
   });
 
   it('loads calendars and assignments on creation', () => {

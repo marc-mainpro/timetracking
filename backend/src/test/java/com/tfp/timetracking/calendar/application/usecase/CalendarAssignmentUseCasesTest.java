@@ -25,6 +25,8 @@ import com.tfp.timetracking.calendar.domain.model.WorkCalendar;
 import com.tfp.timetracking.calendar.domain.repository.CalendarAssignmentRepository;
 import com.tfp.timetracking.calendar.domain.repository.WorkCalendarRepository;
 import com.tfp.timetracking.shared.application.ResourceNotFoundException;
+import com.tfp.timetracking.shared.application.EmployeeAssignmentTargetQuery;
+import com.tfp.timetracking.shared.application.EmployeeAssignmentTargetQuery.TargetStatus;
 import com.tfp.timetracking.shared.application.TenantContext;
 import com.tfp.timetracking.shared.domain.Clock;
 import com.tfp.timetracking.shared.domain.DomainEventPublisher;
@@ -54,6 +56,7 @@ class CalendarAssignmentUseCasesTest {
 
     private final CalendarAssignmentRepository assignmentRepository = mock(CalendarAssignmentRepository.class);
     private final WorkCalendarRepository calendarRepository = mock(WorkCalendarRepository.class);
+    private final EmployeeAssignmentTargetQuery targetQuery = mock(EmployeeAssignmentTargetQuery.class);
     private final DomainEventPublisher domainEventPublisher = mock(DomainEventPublisher.class);
     private final AuditRecorder auditRecorder = mock(AuditRecorder.class);
     private final Clock clock = () -> NOW;
@@ -83,9 +86,14 @@ class CalendarAssignmentUseCasesTest {
 
     @BeforeEach
     void setUp() {
+        // Por defecto el destinatario es un empleado: los casos que prueban
+        // otra cosa lo redefinen.
+        org.mockito.Mockito.when(targetQuery.check(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(TargetStatus.ASSIGNABLE);
         assignUseCase = new AssignCalendarUseCase(
                 assignmentRepository,
                 calendarRepository,
+                targetQuery,
                 tenantContext,
                 domainEventPublisher,
                 auditRecorder,
@@ -184,6 +192,40 @@ class CalendarAssignmentUseCasesTest {
                 .isThrownBy(() -> assignUseCase.assign(
                         new AssignCalendarCommand(archived.id(), AssignmentScope.TENANT, null)));
         verify(assignmentRepository, never()).save(any());
+    }
+
+    @Test
+    void assignRejectsEmployeeScopeForSomeoneWithoutTheEmployeeRole() {
+        WorkCalendar calendar = calendar("General", 480, CalendarStatus.ACTIVE);
+        when(calendarRepository.findById(TENANT_ID, calendar.id())).thenReturn(Optional.of(calendar));
+        when(targetQuery.check(TENANT_ID, EMPLOYEE_ID)).thenReturn(TargetStatus.NOT_EMPLOYEE);
+
+        assertThatExceptionOfType(com.tfp.timetracking.shared.domain.TargetNotEmployeeException.class)
+                .isThrownBy(() -> assignUseCase.assign(
+                        new AssignCalendarCommand(calendar.id(), AssignmentScope.EMPLOYEE, EMPLOYEE_ID)));
+        verify(assignmentRepository, never()).save(any());
+    }
+
+    @Test
+    void assignRejectsEmployeeScopeForAnUnknownTarget() {
+        WorkCalendar calendar = calendar("General", 480, CalendarStatus.ACTIVE);
+        when(calendarRepository.findById(TENANT_ID, calendar.id())).thenReturn(Optional.of(calendar));
+        when(targetQuery.check(TENANT_ID, EMPLOYEE_ID)).thenReturn(TargetStatus.UNKNOWN);
+
+        assertThatExceptionOfType(com.tfp.timetracking.shared.application.ResourceNotFoundException.class)
+                .isThrownBy(() -> assignUseCase.assign(
+                        new AssignCalendarCommand(calendar.id(), AssignmentScope.EMPLOYEE, EMPLOYEE_ID)));
+        verify(assignmentRepository, never()).save(any());
+    }
+
+    @Test
+    void assignDoesNotCheckTheTargetForTenantScope() {
+        WorkCalendar calendar = calendar("General", 480, CalendarStatus.ACTIVE);
+        when(calendarRepository.findById(TENANT_ID, calendar.id())).thenReturn(Optional.of(calendar));
+
+        assignUseCase.assign(new AssignCalendarCommand(calendar.id(), AssignmentScope.TENANT, null));
+
+        verify(targetQuery, never()).check(any(), any());
     }
 
     @Test

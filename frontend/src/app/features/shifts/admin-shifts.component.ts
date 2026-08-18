@@ -24,7 +24,13 @@ export class AdminShiftsComponent {
   readonly savingTemplate = signal(false);
   readonly savingAssignment = signal(false);
   readonly templates = signal<ShiftTemplate[]>([]);
+  /**
+   * Todos los usuarios del tenant, solo para resolver id → nombre: lo asignado
+   * a quien ya no es empleado debe seguir mostrando su nombre.
+   */
   readonly employees = signal<Employee[]>([]);
+  /** Los que pueden recibir un turno: el desplegable usa esta. */
+  readonly assignableEmployees = signal<Employee[]>([]);
   /**
    * Lo asignado durante esta visita, no las asignaciones vigentes: la API no
    * expone un listado. La pantalla lo dice en lugar de aparentar un histórico.
@@ -178,8 +184,12 @@ export class AdminShiftsComponent {
   }
 
   private loadEmployees(): void {
-    this.employeesService.list(0, 100, 'ACTIVE').subscribe({
+    this.employeesService.list(0, 100).subscribe({
       next: (result) => this.employees.set(result.content),
+      error: (error) => this.errorMessage.set(this.errorMessagesService.fromProblem(error.error))
+    });
+    this.employeesService.listAssignable().subscribe({
+      next: (result) => this.assignableEmployees.set(result.content),
       error: (error) => this.errorMessage.set(this.errorMessagesService.fromProblem(error.error))
     });
   }

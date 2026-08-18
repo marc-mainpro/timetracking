@@ -42,6 +42,20 @@
     </nav>
 
     <div class="app-bar__end">
+      @if (canSwitchView()) {
+        <div class="view-switch" role="group" aria-label="Cambiar de vista">
+          @for (view of availableViews(); track view) {
+            <button
+              type="button"
+              class="view-switch__option"
+              [class.view-switch__option--active]="view === activeView()"
+              [attr.aria-pressed]="view === activeView()"
+              (click)="switchView(view)">
+              {{ viewLabel(view) }}
+            </button>
+          }
+        </div>
+      }
       <p class="app-bar__clock mono" aria-hidden="true">{{ now() | date: 'HH:mm' }}</p>
       <button type="button" class="logout ghost" (click)="logout()">Salir</button>
     </div>

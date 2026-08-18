@@ -97,6 +97,39 @@ class AdminShiftControllerIntegrationTest {
     }
 
     @Test
+    void rejectsAssigningAShiftToAnAdminWithoutTheEmployeeRole() throws Exception {
+        TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("shift-admin-target");
+        String token = tenant.admin().token();
+
+        String response = mockMvc.perform(post("/api/v1/admin/shifts/templates")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "name", "Turno tarde",
+                                "startTime", "14:00:00",
+                                "endTime", "22:00:00",
+                                "plannedBreakMinutes", 30))))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String templateId = objectMapper.readTree(response).get("id").asText();
+
+        // El administrador del tenant no tiene rol de empleado: no ficha, asi
+        // que un turno suyo nunca llegaria a aplicarse.
+        mockMvc.perform(post("/api/v1/admin/shifts/assignments")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "employeeId", tenant.admin().userId(),
+                                "shiftTemplateId", templateId,
+                                "validFrom", "2026-09-01",
+                                "validTo", "2026-09-30"))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.errorCode").value("TARGET_NOT_EMPLOYEE"));
+    }
+
+    @Test
     void enforcesRoleAndTenantIsolation() throws Exception {
         TestTenantFactory.TenantActors owner = testTenantFactory.createTenantActors("shift-owner");
         TestTenantFactory.TenantActors intruder = testTenantFactory.createTenantActors("shift-intruder");

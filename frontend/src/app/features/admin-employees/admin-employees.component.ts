@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
 import { AdminEmployeesService, Employee, PagedEmployees } from './admin-employees.service';
+import { Role } from '../../core/models/role';
 
 const STATUS_FILTERS = ['', 'ACTIVE', 'INACTIVE'] as const;
 
@@ -261,11 +262,11 @@ export class AdminEmployeesComponent {
     this.load();
   }
 
-  private currentRoles(): string[] {
+  private currentRoles(): Role[] {
     return [
       this.form.controls.employee.value ? 'EMPLOYEE' : null,
       this.form.controls.tenantAdmin.value ? 'TENANT_ADMIN' : null
-    ].filter((role): role is string => !!role);
+    ].filter((role): role is Role => !!role);
   }
 
   private afterMutation(message: string): void {

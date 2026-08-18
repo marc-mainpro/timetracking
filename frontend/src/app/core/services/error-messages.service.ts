@@ -38,6 +38,10 @@ export class ErrorMessagesService {
     ['CORRECTION_ALREADY_RESOLVED', 'La corrección ya fue resuelta por otro administrador.'],
     ['SHIFT_TEMPLATE_ALREADY_EXISTS', 'Ya existe una plantilla de turno con ese nombre.'],
     ['SHIFT_TEMPLATE_ARCHIVED', 'La plantilla de turno está archivada y no puede asignarse.'],
+    [
+      'TARGET_NOT_EMPLOYEE',
+      'Esa persona no tiene el rol de empleado, así que no admite turnos ni calendarios propios.'
+    ],
     ['CONCURRENT_MODIFICATION', 'Otra persona modificó este recurso al mismo tiempo. Recargamos el estado más reciente.'],
     ['RESOURCE_NOT_FOUND', 'No se encontró el recurso solicitado.'],
     ['ABSENCE_TYPE_INACTIVE', 'El tipo de ausencia seleccionado ya no está disponible.'],

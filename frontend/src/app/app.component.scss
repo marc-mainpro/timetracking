@@ -40,6 +40,35 @@
   margin-left: auto;
 }
 
+/* Conmutador de vista: dos o tres opciones, la activa marcada. Se muestra solo
+   a quien tiene derecho a mas de una zona. */
+.view-switch {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.view-switch__option {
+  min-height: 2.4rem;
+  padding: 0.4rem 0.8rem;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.view-switch__option:hover {
+  color: var(--text);
+}
+
+.view-switch__option--active {
+  background: var(--neutral-bg);
+  color: var(--text);
+  font-weight: 600;
+}
+
 .app-bar__clock {
   display: none;
   margin: 0;

@@ -184,7 +184,10 @@ plantilla aplicada, si cruza medianoche, la pausa prevista y la vigencia de la
 asignación.
 
 `GET /api/v1/employees`: listado paginado de empleados del tenant del admin,
-con filtro opcional `status`.
+con filtros opcionales `status` y `role`. Sin `role` devuelve todos los usuarios
+del tenant, que es lo que necesita la gestión de usuarios; los desplegables de
+asignación piden `?role=EMPLOYEE&status=ACTIVE`. Filtrar por un rol de
+plataforma responde `400` (ADR-0019).
 
 `POST /api/v1/employees`: crea un empleado del tenant autenticado con password
 inicial hasheada y roles explícitos.
@@ -240,6 +243,11 @@ autenticado.
 tenant autenticado. Body: `{employeeId, shiftTemplateId, validFrom, validTo}`.
 Si el empleado o la plantilla no pertenecen al tenant actual, responde `404`.
 Si la plantilla está archivada, responde `409 SHIFT_TEMPLATE_ARCHIVED`.
+Si el destinatario no tiene el rol `EMPLOYEE`, responde
+`409 TARGET_NOT_EMPLOYEE`: no ficha, así que el turno nunca llegaría a
+aplicarse (ADR-0019). Lo mismo hace
+`POST /api/v1/admin/calendar-assignments` con el ámbito `EMPLOYEE`, que además
+responde `404` si el destinatario no existe en el tenant.
 
 `GET /api/v1/admin/audit-events`: listado paginado de eventos de auditoría del
 tenant autenticado, con filtros opcionales `action`, `from` y `to`. Solo está

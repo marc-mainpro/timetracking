@@ -114,7 +114,11 @@ class PlatformAdminBootstrapTest {
 
         @Override
         public com.tfp.timetracking.shared.domain.PagedResult<User> findByTenant(
-                UUID tenantId, com.tfp.timetracking.identity.domain.UserStatus status, int page, int size) {
+                UUID tenantId,
+                com.tfp.timetracking.identity.domain.UserStatus status,
+                com.tfp.timetracking.identity.domain.Role role,
+                int page,
+                int size) {
             return null;
         }
 

@@ -44,7 +44,16 @@ public interface UserRepository {
      */
     List<User> findActiveByRole(UUID tenantId, Role role);
 
-    PagedResult<User> findByTenant(UUID tenantId, UserStatus status, int page, int size);
+    /**
+     * Listado paginado de los usuarios de un tenant.
+     *
+     * @param status estado por el que acotar, o {@code null} para no acotar
+     * @param role rol que debe tener el usuario, o {@code null} para no acotar.
+     *     El filtro se resuelve en la consulta y no en memoria: hacerlo despues
+     *     de paginar daria paginas de tamano variable y un {@code totalElements}
+     *     que no corresponde a lo que se devuelve.
+     */
+    PagedResult<User> findByTenant(UUID tenantId, UserStatus status, Role role, int page, int size);
 
     void lockActiveAdmins(UUID tenantId);
 

@@ -24,6 +24,57 @@ interface UserJpaRepository extends JpaRepository<UserJpaEntity, UUID> {
 
     Page<UserJpaEntity> findByTenantIdAndStatus(UUID tenantId, String status, Pageable pageable);
 
+    /**
+     * Listado paginado de los usuarios del tenant que tienen un rol concreto.
+     *
+     * <p>Usa {@code member of} y no un {@code join} sobre la coleccion de roles:
+     * el join devolveria una fila por rol —obligando a un {@code distinct} que
+     * Hibernate resuelve paginando en memoria—, mientras que {@code member of}
+     * se traduce a un {@code exists} que deja una fila por usuario y permite a
+     * Postgres aplicar el {@code limit/offset}.
+     *
+     * <p>El {@code countQuery} es explicito porque el derivado automaticamente
+     * a partir de una consulta con {@code member of} no siempre coincide, y de
+     * el dependen {@code totalElements} y {@code totalPages}.
+     */
+    @Query(
+            value = """
+                    select user
+                    from UserJpaEntity user
+                    where user.tenantId = :tenantId
+                      and :role member of user.roles
+                    """,
+            countQuery = """
+                    select count(user)
+                    from UserJpaEntity user
+                    where user.tenantId = :tenantId
+                      and :role member of user.roles
+                    """)
+    Page<UserJpaEntity> findByTenantIdAndRole(
+            @Param("tenantId") UUID tenantId, @Param("role") String role, Pageable pageable);
+
+    /** Variante de {@link #findByTenantIdAndRole} acotada ademas por estado. */
+    @Query(
+            value = """
+                    select user
+                    from UserJpaEntity user
+                    where user.tenantId = :tenantId
+                      and user.status = :status
+                      and :role member of user.roles
+                    """,
+            countQuery = """
+                    select count(user)
+                    from UserJpaEntity user
+                    where user.tenantId = :tenantId
+                      and user.status = :status
+                      and :role member of user.roles
+                    """)
+    Page<UserJpaEntity> findByTenantIdAndStatusAndRole(
+            @Param("tenantId") UUID tenantId,
+            @Param("status") String status,
+            @Param("role") String role,
+            Pageable pageable);
+
     @Query("""
             select distinct user
             from UserJpaEntity user

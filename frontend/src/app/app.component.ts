@@ -6,6 +6,8 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { filter } from 'rxjs';
 
 import { AuthService } from './core/services/auth.service';
+import { ViewModeService } from './core/services/view-mode.service';
+import { ViewMode } from './core/models/role';
 import { ClockService } from './core/services/clock.service';
 import { AppFooterComponent } from './shared/app-footer/app-footer.component';
 import { BrandLockupComponent } from './shared/brand/brand-lockup.component';
@@ -24,14 +26,21 @@ interface NavGroup {
 
 const FOCUSABLE = 'a[href], button:not([disabled])';
 
+/** Nombre de cada vista en el conmutador de la cabecera. */
+const VIEW_LABELS: Readonly<Record<ViewMode, string>> = {
+  PLATFORM: 'Plataforma',
+  ADMIN: 'Administración',
+  EMPLOYEE: 'Empleado'
+};
+
 /**
  * Enlaces que caben junto a la marca y el bloque de sesión sin apretar la barra.
  *
- * <p>El administrador de plataforma ve cuatro (tres de «Plataforma» más
- * «Notificaciones») y le sobra sitio: bajarlos a una segunda banda dejaba la
- * barra medio vacía. Quien acumula empleado y administración llega a trece, y
- * ahí la banda inferior sí hace falta: en línea se parten en filas sueltas y
- * los grupos dejan de leerse como grupos.
+ * <p>Desde que la barra muestra una sola vista a la vez, el máximo son siete
+ * (los seis de un ámbito más «Notificaciones») y la banda inferior ya no llega
+ * a hacer falta. El límite se mantiene por si un ámbito crece: en línea, los
+ * enlaces de más se parten en filas sueltas y los grupos dejan de leerse como
+ * grupos.
  */
 const INLINE_NAV_MAX_LINKS = 8;
 
@@ -50,6 +59,7 @@ const INLINE_NAV_MAX_LINKS = 8;
 })
 export class AppComponent {
   private readonly authService = inject(AuthService);
+  private readonly viewMode = inject(ViewModeService);
   private readonly notificationsService = inject(NotificationsService);
   private readonly clock = inject(ClockService);
   private readonly router = inject(Router);
@@ -66,7 +76,11 @@ export class AppComponent {
     // Cerrar el menú lateral al navegar a otra ruta.
     this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe((event) => {
       this.menuOpen.set(false);
-      this.currentUrl.set((event as NavigationEnd).urlAfterRedirects);
+      const url = (event as NavigationEnd).urlAfterRedirects;
+      this.currentUrl.set(url);
+      // Un enlace guardado o el botón de atrás pueden llevar a la otra zona:
+      // el menú debe acompañar a la pantalla, no contradecirla.
+      this.viewMode.syncWithUrl(url);
       this.refreshUnreadNotifications();
     });
   }
@@ -91,16 +105,46 @@ export class AppComponent {
     return this.authService.isAuthenticated();
   }
 
+  /*
+   * El menú sigue a la vista activa, no a los roles: quien administra y además
+   * ficha conserva el acceso a ambas zonas —los guards miran el JWT—, pero ve
+   * los enlaces de una cada vez.
+   */
   showEmployeeLinks(): boolean {
-    return this.authService.hasRole('EMPLOYEE');
+    return this.viewMode.active() === 'EMPLOYEE';
   }
 
   showAdminLinks(): boolean {
-    return this.authService.hasRole('TENANT_ADMIN');
+    return this.viewMode.active() === 'ADMIN';
   }
 
   showPlatformLinks(): boolean {
-    return this.authService.hasRole('PLATFORM_ADMIN');
+    return this.viewMode.active() === 'PLATFORM';
+  }
+
+  /** Solo se ofrece a quien tiene derecho a más de una zona. */
+  canSwitchView(): boolean {
+    return this.viewMode.canSwitch();
+  }
+
+  availableViews(): readonly ViewMode[] {
+    return this.viewMode.available();
+  }
+
+  activeView(): ViewMode | null {
+    return this.viewMode.active();
+  }
+
+  viewLabel(view: ViewMode): string {
+    return VIEW_LABELS[view];
+  }
+
+  switchView(view: ViewMode): void {
+    this.viewMode.switchTo(view);
+    this.closeMenu();
+    // La pantalla actual puede no pertenecer a la vista nueva; quedarse en ella
+    // dejaría el menú mostrando una zona y el contenido otra.
+    void this.router.navigate([this.viewMode.homeRouteFor(view)]);
   }
 
   /** Estamos en la pantalla de entrar: el header ofrece la acción contraria. */
@@ -108,15 +152,9 @@ export class AppComponent {
     return this.currentUrl().startsWith('/auth/login');
   }
 
-  /** La marca lleva a la pantalla de inicio del rol, no siempre a la misma ruta. */
+  /** La marca lleva al inicio de la vista activa, no siempre a la misma ruta. */
   homeRoute(): string {
-    if (this.showAdminLinks()) {
-      return '/admin/employees';
-    }
-    if (this.showPlatformLinks()) {
-      return '/platform/tenants';
-    }
-    return '/employee-dashboard';
+    return this.viewMode.homeRoute();
   }
 
   navGroups(): readonly NavGroup[] {
