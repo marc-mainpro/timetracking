@@ -41,7 +41,13 @@ const EMPLOYEE_SEGMENTS = new Set([
 @Injectable({ providedIn: 'root' })
 export class ViewModeService {
   private readonly authService = inject(AuthService);
-  private readonly chosen = signal<ViewMode | null>(null);
+  /**
+   * Elección de esta sesión, con su dueño. Lleva el `sub` por el mismo motivo
+   * que lo almacenado: cerrar sesión y entrar con otra cuenta no recarga la
+   * aplicación, así que sin dueño el signal sobreviviría al cambio de usuario
+   * y la segunda cuenta heredaría la vista de la primera.
+   */
+  private readonly chosen = signal<{ owner: string; view: ViewMode } | null>(null);
 
   /** Vistas a las que dan derecho los roles del usuario, en orden de prioridad. */
   readonly available = computed<ViewMode[]>(() => {
@@ -56,12 +62,15 @@ export class ViewModeService {
    */
   readonly active = computed<ViewMode | null>(() => {
     const available = this.available();
+    const userId = this.authService.currentUserId();
+    const chosen = this.chosen();
     // Lo almacenado se lee aquí y no al construir el servicio: al arrancar, la
     // sesión aún se está recuperando y todavía no hay usuario con el que
     // comparar. Dentro del computed, además, se reevalúa al llegar el token.
-    const chosen = this.chosen() ?? this.readStoredView();
-    if (chosen && available.includes(chosen)) {
-      return chosen;
+    const view =
+      chosen && userId && chosen.owner === userId ? chosen.view : this.readStoredView();
+    if (view && available.includes(view)) {
+      return view;
     }
     return available[0] ?? null;
   });
@@ -70,11 +79,12 @@ export class ViewModeService {
   readonly canSwitch = computed(() => this.available().length > 1);
 
   switchTo(view: ViewMode): void {
-    if (!this.available().includes(view)) {
+    const userId = this.authService.currentUserId();
+    if (!userId || !this.available().includes(view)) {
       return;
     }
-    this.chosen.set(view);
-    this.persist(view);
+    this.chosen.set({ owner: userId, view });
+    this.persist(userId, view);
   }
 
   homeRouteFor(view: ViewMode): string {
@@ -138,11 +148,7 @@ export class ViewModeService {
     }
   }
 
-  private persist(view: ViewMode): void {
-    const userId = this.authService.currentUserId();
-    if (!userId) {
-      return;
-    }
+  private persist(userId: string, view: ViewMode): void {
     try {
       localStorage.setItem(VIEW_KEY, `${userId}:${view}`);
     } catch {

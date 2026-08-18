@@ -141,6 +141,36 @@ describe('ViewModeService', () => {
     expect(service.active()).toBe('EMPLOYEE');
   });
 
+  it('no hereda la vista del usuario anterior al cambiar de sesión sin recargar', () => {
+    // Con token real, no con espías: así la reactividad es la de producción,
+    // que es justo lo que decide si el cambio de usuario se nota.
+    const authService = TestBed.inject(AuthService);
+    authService['accessToken'].set(sampleToken('user-1', ['EMPLOYEE', 'TENANT_ADMIN']));
+    const service = TestBed.inject(ViewModeService);
+
+    service.switchTo('EMPLOYEE');
+    expect(service.active()).toBe('EMPLOYEE');
+
+    // Cerrar sesión y entrar con otra cuenta no recarga la aplicación: la
+    // elección de la primera no puede sobrevivir en memoria.
+    authService.clearSession();
+    authService['accessToken'].set(sampleToken('user-2', ['EMPLOYEE', 'TENANT_ADMIN']));
+
+    expect(service.active()).toBe('ADMIN');
+  });
+
+  it('conserva la vista del mismo usuario al renovarse el token', () => {
+    const authService = TestBed.inject(AuthService);
+    authService['accessToken'].set(sampleToken('user-1', ['EMPLOYEE', 'TENANT_ADMIN']));
+    const service = TestBed.inject(ViewModeService);
+
+    service.switchTo('EMPLOYEE');
+    // Un refresh cambia el token, no la persona.
+    authService['accessToken'].set(sampleToken('user-1', ['EMPLOYEE', 'TENANT_ADMIN']));
+
+    expect(service.active()).toBe('EMPLOYEE');
+  });
+
   it('da la ruta de inicio de la vista activa', () => {
     const service = serviceWithRoles(['EMPLOYEE', 'TENANT_ADMIN']);
 
@@ -150,3 +180,13 @@ describe('ViewModeService', () => {
     expect(service.homeRouteFor('PLATFORM')).toBe('/platform/tenants');
   });
 });
+
+function sampleToken(sub: string, roles: string[]): string {
+  const payload = btoa(
+    JSON.stringify({ sub, tenantId: 'tenant-id', roles, exp: Math.floor(Date.now() / 1000) + 3600 })
+  )
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+  return `header.${payload}.signature`;
+}
