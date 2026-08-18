@@ -1,11 +1,18 @@
 import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
-import { ApplicationConfig, LOCALE_ID, provideZoneChangeDetection } from '@angular/core';
+import {
+  ApplicationConfig,
+  LOCALE_ID,
+  inject,
+  provideAppInitializer,
+  provideZoneChangeDetection
+} from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { AuthService } from './core/services/auth.service';
 
 /* Toda la interfaz está en español, pero sin registrar el locale Angular
    formatea con `en-US`: horas en 12 h con AM/PM y fechas mes/día. Con `es`,
@@ -18,6 +25,12 @@ export const appConfig: ApplicationConfig = {
     { provide: LOCALE_ID, useValue: 'es' },
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([authInterceptor]))
+    provideHttpClient(withInterceptors([authInterceptor])),
+    /* El arranque espera a recuperar la sesión de la cookie de refresh. Tiene
+       que resolverse antes de que el router evalúe los guards: si no, una
+       recarga con sesión válida acaba redirigida al login por no haber token
+       todavía en memoria. Nunca falla, así que no bloquea el arranque de quien
+       entra sin sesión. */
+    provideAppInitializer(() => inject(AuthService).restoreSession())
   ]
 };
