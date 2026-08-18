@@ -14,6 +14,21 @@ import { Role, VIEW_HOME_ROUTE, VIEW_PRIORITY, VIEW_ROLE, ViewMode } from '../mo
 const VIEW_KEY = 'tfp.view';
 
 /**
+ * Primer segmento de las rutas propias del empleado (ver `app.routes.ts`).
+ *
+ * <p>Las transversales —`notifications`, `auth`— quedan fuera a propósito: no
+ * pertenecen a ninguna zona y visitarlas no debe cambiar de vista.
+ */
+const EMPLOYEE_SEGMENTS = new Set([
+  'employee-dashboard',
+  'workdays',
+  'corrections',
+  'absences',
+  'shifts',
+  'reports'
+]);
+
+/**
  * Decide qué zona de la aplicación se está usando: la de empleado o la de
  * administración.
  *
@@ -85,13 +100,22 @@ export class ViewModeService {
   }
 
   private static viewOfUrl(url: string): ViewMode | null {
-    if (url.startsWith('/platform')) {
+    // Por segmento y no por prefijo: `/shifts` y `/shiftsfoo` no son la misma
+    // zona, y así los parámetros de consulta no estorban.
+    const [firstSegment] = url.split(/[?#]/, 1)[0].split('/').filter(Boolean);
+    if (!firstSegment) {
+      return null;
+    }
+    if (firstSegment === 'platform') {
       return 'PLATFORM';
     }
-    if (url.startsWith('/admin')) {
+    if (firstSegment === 'admin') {
       return 'ADMIN';
     }
-    return null;
+    // Las rutas de empleado también cuentan: sin esto, ir desde la zona de
+    // administración a un enlace guardado como `/workdays` dejaba el menú
+    // mostrando Administración sobre una pantalla de empleado.
+    return EMPLOYEE_SEGMENTS.has(firstSegment) ? 'EMPLOYEE' : null;
   }
 
   /*

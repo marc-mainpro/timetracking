@@ -94,6 +94,44 @@ describe('ViewModeService', () => {
     expect(service.active()).toBe('ADMIN');
   });
 
+  it('vuelve a la vista de empleado al visitar una ruta suya', () => {
+    const service = serviceWithRoles(['EMPLOYEE', 'TENANT_ADMIN']);
+    expect(service.active()).toBe('ADMIN');
+
+    // Un enlace guardado a una pantalla de empleado no puede dejar el menú
+    // mostrando Administración.
+    service.syncWithUrl('/workdays');
+
+    expect(service.active()).toBe('EMPLOYEE');
+  });
+
+  it('reconoce la zona pese a los parámetros de consulta', () => {
+    const service = serviceWithRoles(['EMPLOYEE', 'TENANT_ADMIN']);
+
+    service.syncWithUrl('/employee-dashboard?tab=hoy');
+
+    expect(service.active()).toBe('EMPLOYEE');
+  });
+
+  it('no confunde una ruta que solo empieza igual', () => {
+    const service = serviceWithRoles(['EMPLOYEE', 'TENANT_ADMIN']);
+    service.switchTo('EMPLOYEE');
+
+    service.syncWithUrl('/administracion-externa');
+
+    expect(service.active()).toBe('EMPLOYEE');
+  });
+
+  it('mantiene la zona de administración en sus propias rutas', () => {
+    const service = serviceWithRoles(['EMPLOYEE', 'TENANT_ADMIN']);
+    service.switchTo('EMPLOYEE');
+
+    // `/admin/shifts` es de administración aunque `shifts` sea de empleado.
+    service.syncWithUrl('/admin/shifts');
+
+    expect(service.active()).toBe('ADMIN');
+  });
+
   it('no cambia de vista en una ruta transversal', () => {
     const service = serviceWithRoles(['EMPLOYEE', 'TENANT_ADMIN']);
     service.switchTo('EMPLOYEE');
