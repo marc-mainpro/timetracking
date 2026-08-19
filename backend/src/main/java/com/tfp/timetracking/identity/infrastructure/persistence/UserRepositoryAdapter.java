@@ -67,26 +67,20 @@ public class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
-    public PagedResult<User> findByTenant(UUID tenantId, UserStatus status, Role role, int page, int size) {
+    public PagedResult<User> findByTenant(UUID tenantId, UserStatus status, Role role, String query, int page, int size) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "email"));
-        Page<UserJpaEntity> result = findPage(tenantId, status, role, pageRequest);
+        Page<UserJpaEntity> result = jpaRepository.findByTenantAndFilters(
+                tenantId,
+                status != null ? status.name() : null,
+                role != null ? role.name() : null,
+                query != null ? query : "",
+                pageRequest);
         return new PagedResult<>(
                 result.getContent().stream().map(UserMapper::toDomain).toList(),
                 result.getNumber(),
                 result.getSize(),
                 result.getTotalElements(),
                 result.getTotalPages());
-    }
-
-    private Page<UserJpaEntity> findPage(UUID tenantId, UserStatus status, Role role, PageRequest pageRequest) {
-        if (role == null) {
-            return status == null
-                    ? jpaRepository.findByTenantId(tenantId, pageRequest)
-                    : jpaRepository.findByTenantIdAndStatus(tenantId, status.name(), pageRequest);
-        }
-        return status == null
-                ? jpaRepository.findByTenantIdAndRole(tenantId, role.name(), pageRequest)
-                : jpaRepository.findByTenantIdAndStatusAndRole(tenantId, status.name(), role.name(), pageRequest);
     }
 
     @Override

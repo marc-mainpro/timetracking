@@ -52,8 +52,10 @@ public interface UserRepository {
      *     El filtro se resuelve en la consulta y no en memoria: hacerlo despues
      *     de paginar daria paginas de tamano variable y un {@code totalElements}
      *     que no corresponde a lo que se devuelve.
+     * @param query texto libre para buscar por correo o nombre completo, o
+     *     {@code null} para no acotar.
      */
-    PagedResult<User> findByTenant(UUID tenantId, UserStatus status, Role role, int page, int size);
+    PagedResult<User> findByTenant(UUID tenantId, UserStatus status, Role role, String query, int page, int size);
 
     void lockActiveAdmins(UUID tenantId);
 

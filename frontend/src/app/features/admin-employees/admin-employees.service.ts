@@ -40,13 +40,16 @@ export interface UpdateEmployeePayload {
 export class AdminEmployeesService {
   private readonly http = inject(HttpClient);
 
-  list(page: number, size: number, status?: string, role?: Role): Observable<PagedEmployees> {
+  list(page: number, size: number, status?: string, role?: Role, query?: string): Observable<PagedEmployees> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (status) {
       params = params.set('status', status);
     }
     if (role) {
       params = params.set('role', role);
+    }
+    if (query?.trim()) {
+      params = params.set('query', query.trim());
     }
     return this.http.get<PagedEmployees>('/api/v1/employees', { params });
   }

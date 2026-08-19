@@ -121,6 +121,7 @@ class RegisterTenantUseCaseAtomicityIntegrationTest {
                         UUID tenantId,
                         UserStatus status,
                         com.tfp.timetracking.identity.domain.Role role,
+                        String query,
                         int page,
                         int size) {
                     return new PagedResult<>(List.of(), page, size, 0, 0);

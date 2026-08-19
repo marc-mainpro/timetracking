@@ -195,6 +195,46 @@ class EmployeeControllerIntegrationTest {
     }
 
     @Test
+    void searchFilterFindsByEmailOrFullNameWithoutCrossingTenants() throws Exception {
+        TestTenantFactory.TenantActors first = testTenantFactory.createTenantActors("employees-search-tenant-a");
+        TestTenantFactory.TenantActors second = testTenantFactory.createTenantActors("employees-search-tenant-b");
+        CreateEmployeeRequest createRequest = new CreateEmployeeRequest(
+                "luis.search." + UUID.randomUUID() + "@acme.test",
+                "supersecretpwd",
+                "Luis",
+                "Soto",
+                Set.of("EMPLOYEE"));
+
+        MvcResult created = mockMvc.perform(post("/api/v1/employees")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + first.admin().token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String createdId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(get("/api/v1/employees")
+                        .param("query", "luis")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + first.admin().token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].id").value(createdId));
+
+        mockMvc.perform(get("/api/v1/employees")
+                        .param("query", "luis soto")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + first.admin().token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].id").value(createdId));
+
+        mockMvc.perform(get("/api/v1/employees")
+                        .param("query", second.employee().email())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + first.admin().token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(0)));
+    }
+
+    @Test
     void employeeCannotAccessAdminEndpoints() throws Exception {
         TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("employees-forbidden");
 

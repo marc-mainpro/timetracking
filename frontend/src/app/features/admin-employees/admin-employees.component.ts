@@ -1,4 +1,4 @@
-import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ErrorMessagesService } from '../../core/services/error-messages.service';
@@ -60,24 +60,6 @@ export class AdminEmployeesComponent {
     employee: [true]
   });
 
-  /**
-   * Filtro en cliente sobre la página cargada. El endpoint no acepta búsqueda,
-   * así que esto acota lo que ya está en pantalla; el campo lo dice para no
-   * prometer una búsqueda sobre toda la plantilla.
-   */
-  readonly visibleEmployees = computed(() => {
-    const query = this.search().trim().toLowerCase();
-    const employees = this.result()?.content ?? [];
-    if (!query) {
-      return employees;
-    }
-    return employees.filter(
-      (employee) =>
-        employee.email.toLowerCase().includes(query) ||
-        `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(query)
-    );
-  });
-
   constructor() {
     this.load();
   }
@@ -85,7 +67,7 @@ export class AdminEmployeesComponent {
   load(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.employeesService.list(this.page(), 20, this.selectedStatus() || undefined).subscribe({
+    this.employeesService.list(this.page(), 20, this.selectedStatus() || undefined, undefined, this.search()).subscribe({
       next: (result) => {
         this.result.set(result);
         this.loading.set(false);
@@ -99,6 +81,12 @@ export class AdminEmployeesComponent {
 
   applyStatus(status: string): void {
     this.selectedStatus.set(status);
+    this.page.set(0);
+    this.load();
+  }
+
+  applySearch(query: string): void {
+    this.search.set(query);
     this.page.set(0);
     this.load();
   }

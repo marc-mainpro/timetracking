@@ -145,13 +145,22 @@ describe('AdminEmployeesComponent', () => {
     expect(component.pendingToggle()).toBeNull();
   });
 
-  it('filtra la página cargada por nombre o correo', () => {
+  it('busca en backend por nombre o correo y reinicia la paginación', () => {
     flushList([activeEmployee, { ...activeEmployee, id: 'e-2', firstName: 'Luis', lastName: 'Soto', email: 'luis@acme.test' }]);
+    component.page.set(2);
 
-    component.search.set('luis');
-    expect(component.visibleEmployees().length).toBe(1);
+    component.applySearch('luis');
 
-    component.search.set('ana@acme');
-    expect(component.visibleEmployees()[0].id).toBe('e-1');
+    const request = httpMock.expectOne('/api/v1/employees?page=0&size=20&query=luis');
+    request.flush({
+      content: [{ ...activeEmployee, id: 'e-2', firstName: 'Luis', lastName: 'Soto', email: 'luis@acme.test' }],
+      page: 0,
+      size: 20,
+      totalElements: 1,
+      totalPages: 1
+    });
+
+    expect(component.page()).toBe(0);
+    expect(component.result()?.content[0].id).toBe('e-2');
   });
 });

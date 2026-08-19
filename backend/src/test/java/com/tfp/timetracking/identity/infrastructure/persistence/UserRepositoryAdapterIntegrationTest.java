@@ -153,8 +153,8 @@ class UserRepositoryAdapterIntegrationTest {
         inactive.deactivate(() -> Instant.now(), UUID::randomUUID);
         userRepository.save(inactive);
 
-        PagedResult<User> all = userRepository.findByTenant(tenantId, null, null, 0, 10);
-        PagedResult<User> inactiveOnly = userRepository.findByTenant(tenantId, UserStatus.INACTIVE, null, 0, 10);
+        PagedResult<User> all = userRepository.findByTenant(tenantId, null, null, null, 0, 10);
+        PagedResult<User> inactiveOnly = userRepository.findByTenant(tenantId, UserStatus.INACTIVE, null, null, 0, 10);
 
         assertThat(all.content()).hasSize(2);
         assertThat(inactiveOnly.content()).hasSize(1);
@@ -168,7 +168,7 @@ class UserRepositoryAdapterIntegrationTest {
         userRepository.save(withRoles(tenantId, "mixto@example.com", Set.of(Role.TENANT_ADMIN, Role.EMPLOYEE)));
         userRepository.save(withRoles(tenantId, "solo-admin@example.com", Set.of(Role.TENANT_ADMIN)));
 
-        PagedResult<User> employees = userRepository.findByTenant(tenantId, null, Role.EMPLOYEE, 0, 10);
+        PagedResult<User> employees = userRepository.findByTenant(tenantId, null, Role.EMPLOYEE, null, 0, 10);
 
         assertThat(employees.content()).extracting(user -> user.email().toString())
                 .containsExactly("empleado@example.com", "mixto@example.com");
@@ -177,7 +177,7 @@ class UserRepositoryAdapterIntegrationTest {
         assertThat(employees.totalElements()).isEqualTo(2);
         assertThat(employees.totalPages()).isEqualTo(1);
 
-        PagedResult<User> firstPage = userRepository.findByTenant(tenantId, null, Role.EMPLOYEE, 0, 1);
+        PagedResult<User> firstPage = userRepository.findByTenant(tenantId, null, Role.EMPLOYEE, null, 0, 1);
         assertThat(firstPage.content()).hasSize(1);
         assertThat(firstPage.totalElements()).isEqualTo(2);
         assertThat(firstPage.totalPages()).isEqualTo(2);
@@ -193,7 +193,7 @@ class UserRepositoryAdapterIntegrationTest {
         userRepository.save(withRoles(tenantId, "admin@example.com", Set.of(Role.TENANT_ADMIN)));
 
         PagedResult<User> activeEmployees =
-                userRepository.findByTenant(tenantId, UserStatus.ACTIVE, Role.EMPLOYEE, 0, 10);
+                userRepository.findByTenant(tenantId, UserStatus.ACTIVE, Role.EMPLOYEE, null, 0, 10);
 
         assertThat(activeEmployees.content()).extracting(user -> user.email().toString())
                 .containsExactly("activo@example.com");
@@ -206,7 +206,7 @@ class UserRepositoryAdapterIntegrationTest {
         userRepository.save(newUser(tenantId, "propio@example.com"));
         userRepository.save(newUser(otherTenantId, "ajeno@example.com"));
 
-        PagedResult<User> employees = userRepository.findByTenant(tenantId, null, Role.EMPLOYEE, 0, 10);
+        PagedResult<User> employees = userRepository.findByTenant(tenantId, null, Role.EMPLOYEE, null, 0, 10);
 
         assertThat(employees.content()).extracting(user -> user.email().toString())
                 .containsExactly("propio@example.com");
@@ -233,6 +233,35 @@ class UserRepositoryAdapterIntegrationTest {
         assertThat(userRepository.countActiveAdminsExcludingUser(tenantId, admin.id())).isZero();
     }
 
+    @Test
+    void listByTenantFiltersByQueryAgainstEmailAndFullName() {
+        UUID tenantId = insertTenant();
+        userRepository.save(withIdentity(tenantId, "ana.ruiz@example.com", "Ana", "Ruiz", Set.of(Role.EMPLOYEE)));
+        userRepository.save(withIdentity(tenantId, "luis.soto@example.com", "Luis", "Soto", Set.of(Role.EMPLOYEE)));
+
+        PagedResult<User> byEmail = userRepository.findByTenant(tenantId, null, null, "luis.soto", 0, 10);
+        PagedResult<User> byName = userRepository.findByTenant(tenantId, null, null, "ana ruiz", 0, 10);
+        PagedResult<User> blank = userRepository.findByTenant(tenantId, null, null, "", 0, 10);
+
+        assertThat(byEmail.content()).extracting(user -> user.email().toString()).containsExactly("luis.soto@example.com");
+        assertThat(byName.content()).extracting(user -> user.email().toString()).containsExactly("ana.ruiz@example.com");
+        assertThat(blank.content()).hasSize(2);
+    }
+
+    @Test
+    void listByTenantCombinesQueryRoleAndTenantFilters() {
+        UUID tenantId = insertTenant();
+        UUID otherTenantId = insertTenant();
+        userRepository.save(withIdentity(tenantId, "luis.employee@example.com", "Luis", "Empleado", Set.of(Role.EMPLOYEE)));
+        userRepository.save(withIdentity(tenantId, "luis.admin@example.com", "Luis", "Admin", Set.of(Role.TENANT_ADMIN)));
+        userRepository.save(withIdentity(otherTenantId, "luis.other@example.com", "Luis", "Otro", Set.of(Role.EMPLOYEE)));
+
+        PagedResult<User> employees = userRepository.findByTenant(tenantId, null, Role.EMPLOYEE, "luis", 0, 10);
+
+        assertThat(employees.content()).extracting(user -> user.email().toString())
+                .containsExactly("luis.employee@example.com");
+    }
+
     private User newUser(UUID tenantId, String email) {
         Instant now = Instant.now();
         return User.reconstitute(
@@ -249,9 +278,12 @@ class UserRepositoryAdapterIntegrationTest {
     }
 
     private User withRoles(UUID tenantId, String email, Set<Role> roles) {
+        return withIdentity(tenantId, email, "First", "Last", roles);
+    }
+
+    private User withIdentity(UUID tenantId, String email, String firstName, String lastName, Set<Role> roles) {
         Instant now = Instant.now();
-        return User.reconstitute(
-                UUID.randomUUID(), tenantId, email, "hash", "First", "Last", UserStatus.ACTIVE, roles, now, now);
+        return User.reconstitute(UUID.randomUUID(), tenantId, email, "hash", firstName, lastName, UserStatus.ACTIVE, roles, now, now);
     }
 
     private UUID insertTenant() {

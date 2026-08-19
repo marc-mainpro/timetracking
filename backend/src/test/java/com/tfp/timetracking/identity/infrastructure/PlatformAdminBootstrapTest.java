@@ -117,6 +117,7 @@ class PlatformAdminBootstrapTest {
                 UUID tenantId,
                 com.tfp.timetracking.identity.domain.UserStatus status,
                 com.tfp.timetracking.identity.domain.Role role,
+                String query,
                 int page,
                 int size) {
             return null;

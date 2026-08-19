@@ -26,13 +26,16 @@ public class ListEmployeesUseCase {
      *     que consume la gestion de usuarios; el filtro por {@code EMPLOYEE} es
      *     lo que consumen los desplegables de asignacion, que no deben ofrecer
      *     a un administrador que no ficha.
+     * @param query texto libre para buscar por correo o nombre completo, o
+     *     {@code null} para no acotar.
      * @throws IllegalArgumentException si el rol no existe o no es asignable
      *     dentro de un tenant: filtrar por un rol de plataforma no tiene
      *     significado aqui y no debe parecer una consulta valida que no
      *     encuentra a nadie.
      */
-    public PagedResult<User> list(int page, int size, UserStatus status, String role) {
-        return userRepository.findByTenant(tenantContext.currentTenantId(), status, parseRole(role), page, size);
+    public PagedResult<User> list(int page, int size, UserStatus status, String role, String query) {
+        return userRepository.findByTenant(
+                tenantContext.currentTenantId(), status, parseRole(role), normalizeQuery(query), page, size);
     }
 
     private static Role parseRole(String role) {
@@ -44,5 +47,13 @@ public class ListEmployeesUseCase {
             throw new IllegalArgumentException("Rol no filtrable dentro de un tenant: " + role);
         }
         return parsed;
+    }
+
+    private static String normalizeQuery(String query) {
+        if (query == null) {
+            return null;
+        }
+        String normalized = query.trim().toLowerCase();
+        return normalized.isEmpty() ? null : normalized;
     }
 }

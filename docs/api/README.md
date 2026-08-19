@@ -184,10 +184,11 @@ plantilla aplicada, si cruza medianoche, la pausa prevista y la vigencia de la
 asignación.
 
 `GET /api/v1/employees`: listado paginado de empleados del tenant del admin,
-con filtros opcionales `status` y `role`. Sin `role` devuelve todos los usuarios
-del tenant, que es lo que necesita la gestión de usuarios; los desplegables de
-asignación piden `?role=EMPLOYEE&status=ACTIVE`. Filtrar por un rol de
-plataforma responde `400` (ADR-0019).
+con filtros opcionales `status`, `role` y `query`. `query` busca por correo o
+por nombre completo sin salir del tenant. Sin `role` devuelve todos los
+usuarios del tenant, que es lo que necesita la gestión de usuarios; los
+desplegables de asignación piden `?role=EMPLOYEE&status=ACTIVE`. Filtrar por un
+rol de plataforma responde `400` (ADR-0019).
 
 `POST /api/v1/employees`: crea un empleado del tenant autenticado con password
 inicial hasheada y roles explícitos.
