@@ -131,6 +131,8 @@ stateDiagram-v2
         PROCESSING --> PUBLISHED: entrega correcta
         PROCESSING --> PENDING: fallo, quedan intentos<br/>(backoff + jitter)
         PROCESSING --> FAILED: se agotan los intentos
+        FAILED --> PENDING: reintento manual<br/>(intentos a cero)
+        FAILED --> DISCARDED: descarte manual<br/>(se conserva la fila)
         PUBLISHED --> [*]: lo borra el archivador<br/>tras la retención
     }
 ```
@@ -142,6 +144,8 @@ stateDiagram-v2
         PENDING --> SENT: correo entregado
         PENDING --> FAILED: agotados los reintentos<br/>(sigue visible en la app)
         PENDING --> CANCELLED: el hecho que la motivó<br/>dejó de ser relevante
+        FAILED --> PENDING: reintento manual<br/>(intentos a cero)
+        FAILED --> DISCARDED: descarte manual<br/>(sigue visible en la app)
     }
 ```
 
@@ -193,12 +197,41 @@ da el tenant y el usuario del principal, no el rol.
 El panel de estado es de `PLATFORM_ADMIN` porque informa del estado de **todos**
 los tenants; no es tenant-scoped y no debe verlo un administrador de tenant.
 
-## Reintento manual
+## Intervención manual sobre lo fallido
 
-Existe un caso de uso para devolver un mensaje `FAILED` a `PENDING` con el
-contador de intentos a cero. **No está expuesto por REST**: es una herramienta
-operativa, invocable desde código. Si el mensaje no está `FAILED`, la operación
-se rechaza.
+Lo que agota sus reintentos no se recupera solo. Desde el panel de estado, un
+`PLATFORM_ADMIN` puede desplegar cualquier cola con fallos y actuar sobre cada
+elemento:
+
+- **Reintentar**: devuelve el elemento a `PENDING` con el contador de intentos a
+  cero, elegible en la siguiente pasada del job.
+- **Descartar**: lo pasa a `DISCARDED`. La fila **no se borra** y conserva su
+  `last_error`; deja de contar como incidencia pendiente. El motivo es
+  obligatorio y queda en la auditoría de plataforma junto con el actor, porque es
+  la única explicación que quedará de por qué se abandonó.
+
+Ambas exigen que el elemento esté en `FAILED` y se rechazan con 409 en caso
+contrario. La escritura filtra por estado en la propia sentencia SQL: entre la
+comprobación y el `UPDATE`, otro administrador puede haber reintentado el mensaje
+y el publicador haberlo reclamado, y reencolarlo entonces lo publicaría dos veces.
+
+Descartar una **notificación** significa renunciar a su envío por correo, no
+ocultar el aviso: como toda notificación fallida, una descartada sigue visible en
+la aplicación para su destinatario.
+
+Los `DISCARDED` se conservan indefinidamente. El archivador solo purga los
+`PUBLISHED`, así que su volumen crece sin techo; es el precio de conservar la
+traza y conviene vigilarlo si alguna vez se descartan lotes grandes.
+
+| Operación | Endpoint (solo `PLATFORM_ADMIN`) |
+|---|---|
+| Listar fallidos | `GET /api/v1/platform/queues/{queue}/failed` |
+| Reintentar | `POST /api/v1/platform/queues/{queue}/failed/{id}/retry` |
+| Descartar | `POST /api/v1/platform/queues/{queue}/failed/{id}/discard` |
+
+`{queue}` es el mismo nombre que muestra el panel (`outbox`, `notifications`).
+Una cola nueva gana estas tres operaciones implementando `FailedQueueMaintenance`,
+sin tocar el controlador.
 
 ## Envío de correo
 
@@ -215,6 +248,9 @@ contador de no leídas alimenta el badge del menú lateral, visible desde
 cualquier pantalla.
 
 Pantalla `/platform/system-status`: estado de las colas para `PLATFORM_ADMIN`.
+Cada cola con fallos se despliega para ver sus elementos —tipo, referencia,
+intentos y último error— y reintentarlos o descartarlos
+(`features/platform/failed-queue.component.ts`).
 
 ## Referencias
 
@@ -230,6 +266,10 @@ Pantalla `/platform/system-status`: estado de las colas para `PLATFORM_ADMIN`.
   `outbox/infrastructure/OutboxPublisherJob.java`,
   `outbox/application/ArchivePublishedOutboxMessages.java`,
   `outbox/application/RetryFailedOutboxMessage.java`,
+  `outbox/application/DiscardFailedOutboxMessage.java`,
+  `outbox/application/FailedQueueMaintenance.java`,
+  `outbox/application/ManageFailedQueueEntriesUseCase.java`,
+  `outbox/interfaces/rest/FailedQueueController.java`,
   `notification/application/NotificationEventListener.java`,
   `SendPendingNotifications.java`, `NotificationSender.java`,
   `notification/infrastructure/NotificationDeliveryJob.java`,

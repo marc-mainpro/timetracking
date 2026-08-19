@@ -2,6 +2,8 @@ package com.tfp.timetracking;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.tfp.timetracking.outbox.application.FailedQueueMaintenance;
+import com.tfp.timetracking.outbox.application.QueueStatusContributor;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
@@ -40,5 +42,26 @@ class ApplicationSmokeTest {
     void contextLoads(ApplicationContext context) {
         assertThat(context).isNotNull();
         assertThat(context.containsBean("securityFilterChain")).isTrue();
+    }
+
+    /**
+     * Cada cola que el panel muestra debe poder intervenirse.
+     *
+     * <p>La correspondencia entre {@code QueueStatusContributor} y {@code
+     * FailedQueueMaintenance} es por nombre de cola, es decir por convencion de
+     * cadenas: si alguien añade una cola nueva y solo implementa la primera, el
+     * panel mostrara fallos sin ofrecer forma de resolverlos y nadie se
+     * enterara. Se comprueba aqui, sobre el contexto que este test ya levanta,
+     * para no pagar un arranque de Spring adicional.
+     */
+    @Test
+    void everyReportedQueueCanBeMaintained(ApplicationContext context) {
+        assertThat(context.getBeansOfType(QueueStatusContributor.class).values().stream()
+                        .map(contributor -> contributor.status().name()))
+                .isNotEmpty()
+                .allSatisfy(queue -> assertThat(context.getBeansOfType(FailedQueueMaintenance.class).values())
+                        .as("la cola '%s' aparece en el panel pero no admite intervencion manual", queue)
+                        .anySatisfy(maintenance ->
+                                assertThat(maintenance.queueName()).isEqualTo(queue)));
     }
 }

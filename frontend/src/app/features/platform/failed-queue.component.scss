@@ -1,0 +1,99 @@
+/* Detalle de una cola fallida, desplegado bajo su fila en el panel de estado.
+   Color y tipografía vienen de `styles.scss`; aquí solo estructura, con las
+   mismas hairlines que el resto de plataforma.
+
+   Va sangrado y sobre un fondo apenas distinto: es el detalle de la fila de
+   arriba, no otra sección. */
+
+.failed {
+  padding: 0.25rem 0 1rem 1.25rem;
+  border-left: 2px solid var(--border);
+  margin-left: 0.5rem;
+}
+
+.entries {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto;
+  align-items: start;
+  gap: 0.5rem 1.5rem;
+  padding: 0.85rem 0;
+}
+
+.entry + .entry {
+  border-top: 1px solid var(--border);
+}
+
+.entry__what,
+.entry__why {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.entry__what strong {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.entry__what small {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.entry__tenant {
+  opacity: 0.75;
+}
+
+/* El error es el dato por el que se abre este panel, pero puede ser una traza
+   larga: se limita a tres líneas para que una entrada ruidosa no empuje al
+   resto fuera de la pantalla. */
+.entry__error {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.entry__why small {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.entry__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.entry__actions button {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.7rem;
+}
+
+.list-empty {
+  padding: 1rem 0;
+}
+
+/* El elemento sobre el que se va a actuar, dentro del diálogo. */
+.target {
+  margin: 0 0 0.85rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .entry {
+    grid-template-columns: 1fr;
+  }
+}

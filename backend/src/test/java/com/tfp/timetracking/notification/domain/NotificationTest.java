@@ -136,6 +136,66 @@ class NotificationTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Test
+    void requeueingAFailedDeliveryStartsTheAttemptsOver() {
+        Notification notification = failed();
+
+        notification.requeueDelivery();
+
+        assertThat(notification.status()).isEqualTo(NotificationStatus.PENDING);
+        assertThat(notification.attempts()).isZero();
+        assertThat(notification.lastError()).isNull();
+        // Vuelve a ser trabajo de la cola de envio, no solo un cambio de estado.
+        assertThat(notification.isDeliverable()).isTrue();
+    }
+
+    @Test
+    void discardingAFailedDeliveryKeepsTheTrace() {
+        Notification notification = failed();
+
+        notification.discardDelivery();
+
+        assertThat(notification.status()).isEqualTo(NotificationStatus.DISCARDED);
+        // El error se conserva: es la evidencia de por que hubo que descartarla.
+        assertThat(notification.lastError()).isEqualTo("SMTP caido");
+        // Y deja de ser trabajo pendiente para el emisor.
+        assertThat(notification.isDeliverable()).isFalse();
+    }
+
+    @Test
+    void onlyFailedDeliveriesCanBeRequeuedOrDiscarded() {
+        Notification pending = sample("empleado@acme.test");
+        assertThatThrownBy(pending::requeueDelivery).isInstanceOf(NotificationNotFailedException.class);
+        assertThatThrownBy(pending::discardDelivery).isInstanceOf(NotificationNotFailedException.class);
+
+        Notification sent = sample("empleado@acme.test");
+        sent.markSent(NOW);
+        assertThatThrownBy(sent::requeueDelivery).isInstanceOf(NotificationNotFailedException.class);
+
+        // Descartar dos veces tampoco: la segunda ya no encuentra un fallo que
+        // abandonar, y silenciarlo ocultaria que otro admin se adelanto.
+        Notification discarded = failed();
+        discarded.discardDelivery();
+        assertThatThrownBy(discarded::discardDelivery).isInstanceOf(NotificationNotFailedException.class);
+    }
+
+    @Test
+    void notFailedExceptionCarriesTheStableErrorCode() {
+        Notification pending = sample("empleado@acme.test");
+
+        assertThatThrownBy(pending::discardDelivery)
+                .isInstanceOf(NotificationNotFailedException.class)
+                .extracting(error -> ((NotificationNotFailedException) error).errorCode())
+                .isEqualTo("NOTIFICATION_NOT_FAILED");
+    }
+
+    /** Una notificacion que ya agoto sus reintentos de envio. */
+    private Notification failed() {
+        Notification notification = sample("empleado@acme.test");
+        notification.markAttemptFailed("SMTP caido", 1, NOW);
+        return notification;
+    }
+
     private Notification sample(String email) {
         return Notification.create(
                 UUID.randomUUID(),

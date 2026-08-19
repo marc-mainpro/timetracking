@@ -1,5 +1,6 @@
 package com.tfp.timetracking.outbox.domain;
 
+import com.tfp.timetracking.shared.domain.PagedResult;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +42,39 @@ public interface OutboxMessageRepository {
      * observabilidad/soporte.
      */
     void markFailed(UUID id, int attempts, String lastError);
+
+    /**
+     * Mensajes en un estado, del mas antiguo al mas reciente, paginados.
+     *
+     * <p>No lleva {@code tenantId}: la consume el panel tecnico de plataforma,
+     * que vigila las colas del sistema entero. Es la misma excepcion justificada
+     * que ya aplican {@link #countPending()} y {@link #countFailed()}, y no debe
+     * reutilizarse desde ningun flujo de usuario.
+     */
+    PagedResult<OutboxMessage> findByStatus(OutboxMessageStatus status, int page, int size);
+
+    /**
+     * Devuelve a {@code PENDING} un mensaje {@code FAILED} (reintento manual),
+     * con los intentos a cero y sin error previo ni {@code nextAttemptAt}.
+     *
+     * <p>Filtra por estado <b>en la propia sentencia</b>: entre la comprobacion
+     * del caso de uso y la escritura, otro administrador puede haber reintentado
+     * el mensaje y el publicador haberlo reclamado ya. Escribir sin la guarda
+     * devolveria a la cola un mensaje en vuelo y lo publicaria dos veces.
+     *
+     * @return {@code true} si el mensaje seguia {@code FAILED} y se actualizo
+     */
+    boolean requeueFailed(UUID id);
+
+    /**
+     * Marca {@code DISCARDED} un mensaje {@code FAILED}: se renuncia a
+     * publicarlo. Conserva la fila y su {@code lastError} como traza; el motivo
+     * y el actor quedan en auditoria. Misma guarda por estado que {@link
+     * #requeueFailed(UUID)}.
+     *
+     * @return {@code true} si el mensaje seguia {@code FAILED} y se actualizo
+     */
+    boolean discardFailed(UUID id);
 
     /** Purga los mensajes ya publicados antes de {@code before}. Devuelve cuantos se eliminaron. */
     int archivePublishedBefore(Instant before);

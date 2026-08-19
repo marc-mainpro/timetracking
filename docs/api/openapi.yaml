@@ -1223,6 +1223,90 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/SystemStatusResponse'
+  /api/v1/platform/queues/{queue}/failed:
+    get:
+      tags:
+      - Platform - Failed queues
+      summary: Lista los elementos de una cola que agotaron sus reintentos
+      operationId: listFailed
+      parameters:
+      - name: queue
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PagedFailedQueueEntriesResponse'
+  /api/v1/platform/queues/{queue}/failed/{entryId}/retry:
+    post:
+      tags:
+      - Platform - Failed queues
+      summary: Devuelve a la cola un elemento fallido
+      operationId: retryFailedQueueEntry
+      parameters:
+      - name: queue
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: No Content
+  /api/v1/platform/queues/{queue}/failed/{entryId}/discard:
+    post:
+      tags:
+      - Platform - Failed queues
+      summary: Descarta un elemento fallido conservando su traza
+      operationId: discardFailedQueueEntry
+      parameters:
+      - name: queue
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscardQueueEntryRequest'
+        required: true
+      responses:
+        '204':
+          description: No Content
   /api/v1/platform/registrations:
     get:
       tags:
@@ -2558,6 +2642,55 @@ components:
         evaluatedWorkdayCount:
           type: integer
           format: int32
+    PagedFailedQueueEntriesResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/FailedQueueEntryResponse'
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    FailedQueueEntryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        type:
+          type: string
+        reference:
+          type: string
+        attempts:
+          type: integer
+          format: int32
+        lastError:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+    DiscardQueueEntryRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+          minLength: 1
+      required:
+      - reason
     PagedPlatformTenantsResponse:
       type: object
       properties:

@@ -1,0 +1,83 @@
+<div class="failed">
+  @if (message(); as msg) {
+    <p class="info" role="status">{{ msg }}</p>
+  }
+  @if (error(); as err) {
+    <p class="error error--block">{{ err }}</p>
+  }
+
+  <ul class="entries">
+    @for (entry of result()?.content ?? []; track entry.id) {
+      <li class="entry">
+        <div class="entry__what">
+          <strong class="mono">{{ entry.type }}</strong>
+          <small class="mono">{{ entry.reference }}</small>
+          @if (entry.tenantId) {
+            <small class="mono entry__tenant">Tenant {{ entry.tenantId }}</small>
+          }
+        </div>
+
+        <div class="entry__why">
+          <p class="entry__error">{{ entry.lastError ?? 'Sin detalle del error.' }}</p>
+          <small>{{ entry.attempts }} intentos · falló {{ age(entry) }}</small>
+        </div>
+
+        <div class="entry__actions">
+          <button type="button" [disabled]="acting()" (click)="askRetry(entry)">Reintentar</button>
+          <button type="button" class="danger" [disabled]="acting()" (click)="askDiscard(entry)">
+            Descartar
+          </button>
+        </div>
+      </li>
+    } @empty {
+      @if (!loading()) {
+        <li class="list-empty">
+          <p class="info">No queda nada fallido en esta cola.</p>
+        </li>
+      }
+    }
+  </ul>
+
+  @if (result(); as result) {
+    @if (result.totalPages > 1) {
+      <nav class="pager" aria-label="Paginación">
+        <button type="button" class="ghost" (click)="previousPage()" [disabled]="page() === 0 || loading()">
+          Anterior
+        </button>
+        <p class="pager__position mono">Página {{ result.page + 1 }} de {{ result.totalPages }}</p>
+        <button
+          type="button"
+          class="ghost"
+          (click)="nextPage()"
+          [disabled]="result.page + 1 >= result.totalPages || loading()">
+          Siguiente
+        </button>
+      </nav>
+    }
+  }
+</div>
+
+<dialog #confirmDialog class="panel">
+  @if (pendingAction(); as action) {
+    <h2>{{ action.title }}</h2>
+    <p class="consequence">{{ action.consequence }}</p>
+    <p class="mono target">{{ action.entry.type }}</p>
+
+    @if (action.reason === 'required') {
+      <label>
+        <span>Motivo</span>
+        <textarea [formControl]="reasonControl" rows="2"></textarea>
+      </label>
+      @if (reasonControl.invalid && reasonControl.touched) {
+        <p class="validation">Escribe el motivo: es la única explicación que quedará.</p>
+      }
+    }
+
+    <footer class="panel__foot">
+      <button type="button" [class.danger]="action.danger" [disabled]="acting()" (click)="confirmAction()">
+        {{ acting() ? 'Aplicando…' : action.confirmLabel }}
+      </button>
+      <button type="button" class="ghost" (click)="cancelAction()">Cancelar</button>
+    </footer>
+  }
+</dialog>

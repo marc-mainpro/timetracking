@@ -40,27 +40,63 @@
 
     <ul class="queues">
       @for (queue of status.queues; track queue.name) {
-        <li class="queue">
-          <span class="queue__name">
-            <strong>{{ queueLabel(queue.name) }}</strong>
-            @if (queueHint(queue.name); as hint) {
-              <small>{{ hint }}</small>
+        <li class="queue-item">
+          <!-- Solo es pulsable si hay algo que resolver: en una cola sana no
+               hay nada que desplegar, y ofrecerlo sería una promesa vacía. -->
+          @if (queue.failed > 0) {
+            <button
+              type="button"
+              class="queue queue--actionable"
+              [attr.aria-expanded]="expandedQueue() === queue.name"
+              (click)="toggleQueue(queue.name)">
+              <span class="queue__name">
+                <strong>{{ queueLabel(queue.name) }}</strong>
+                @if (queueHint(queue.name); as hint) {
+                  <small>{{ hint }}</small>
+                }
+              </span>
+              <span class="queue__figure">
+                <span class="queue__value mono">{{ queue.pending }}</span>
+                <small>en cola</small>
+              </span>
+              <span class="queue__figure queue__figure--failed">
+                <span class="queue__value mono">{{ queue.failed }}</span>
+                <small>fallidos</small>
+              </span>
+              <span class="queue__toggle" aria-hidden="true">
+                {{ expandedQueue() === queue.name ? '−' : '+' }}
+              </span>
+            </button>
+
+            @if (expandedQueue() === queue.name) {
+              <app-failed-queue [queue]="queue.name" (changed)="onQueueChanged()" />
             }
-          </span>
-          <span class="queue__figure">
-            <span class="queue__value mono">{{ queue.pending }}</span>
-            <small>en cola</small>
-          </span>
-          <span class="queue__figure" [class.queue__figure--failed]="queue.failed > 0">
-            <span class="queue__value mono">{{ queue.failed }}</span>
-            <small>fallidos</small>
-          </span>
+          } @else {
+            <div class="queue">
+              <span class="queue__name">
+                <strong>{{ queueLabel(queue.name) }}</strong>
+                @if (queueHint(queue.name); as hint) {
+                  <small>{{ hint }}</small>
+                }
+              </span>
+              <span class="queue__figure">
+                <span class="queue__value mono">{{ queue.pending }}</span>
+                <small>en cola</small>
+              </span>
+              <span class="queue__figure">
+                <span class="queue__value mono">{{ queue.failed }}</span>
+                <small>fallidos</small>
+              </span>
+              <span class="queue__toggle" aria-hidden="true"></span>
+            </div>
+          }
         </li>
       }
     </ul>
 
     <p class="footnote">
-      Lo que está en cola se procesa solo en la siguiente pasada. Solo lo fallido pide intervención.
+      Lo que está en cola se procesa solo en la siguiente pasada. Solo lo fallido pide intervención:
+      abre la cola para reintentarlo o descartarlo.
     </p>
   }
 </section>

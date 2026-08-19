@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class NotificationRepositoryAdapter implements NotificationRepository {
@@ -50,6 +51,36 @@ public class NotificationRepositoryAdapter implements NotificationRepository {
     @Override
     public long countByStatus(com.tfp.timetracking.notification.domain.NotificationStatus status) {
         return jpaRepository.countByStatus(status.name());
+    }
+
+    @Override
+    public PagedResult<Notification> findByStatus(
+            com.tfp.timetracking.notification.domain.NotificationStatus status, int page, int size) {
+        Page<NotificationJpaEntity> result =
+                jpaRepository.findByStatusOrderByCreatedAtAsc(status.name(), PageRequest.of(page, size));
+        return new PagedResult<>(
+                result.getContent().stream().map(NotificationMapper::toDomain).toList(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages());
+    }
+
+    @Override
+    public Optional<Notification> findByIdForPlatform(UUID id) {
+        return jpaRepository.findById(id).map(NotificationMapper::toDomain);
+    }
+
+    @Override
+    @Transactional
+    public boolean requeueFailed(UUID id) {
+        return jpaRepository.requeueFailed(id) == 1;
+    }
+
+    @Override
+    @Transactional
+    public boolean discardFailed(UUID id) {
+        return jpaRepository.discardFailed(id) == 1;
     }
 
     @Override

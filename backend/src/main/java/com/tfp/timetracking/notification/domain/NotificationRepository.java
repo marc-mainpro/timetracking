@@ -34,6 +34,49 @@ public interface NotificationRepository {
     long countByStatus(NotificationStatus status);
 
     /**
+     * Notificaciones en un estado de entrega, de la mas antigua a la mas
+     * reciente, en todos los tenants.
+     *
+     * <p>No lleva {@code tenantId} por la misma razon que {@link
+     * #countByStatus(NotificationStatus)}: la consume el panel de plataforma,
+     * que vigila el envio del sistema entero. No debe reutilizarse desde ningun
+     * flujo de usuario.
+     */
+    PagedResult<Notification> findByStatus(NotificationStatus status, int page, int size);
+
+    /**
+     * Busca una notificacion por id sin acotar por tenant.
+     *
+     * <p>Existe solo para las operaciones manuales del panel de plataforma, que
+     * actuan sobre elementos de cualquier tenant y por tanto no tienen un
+     * {@code tenantId} propio del que partir. Se declara explicitamente en vez
+     * de dejar que el llamante aporte un {@code tenantId} recibido del cliente,
+     * que es justo lo que la multitenancy prohibe.
+     */
+    Optional<Notification> findByIdForPlatform(UUID id);
+
+    /**
+     * Devuelve a {@code PENDING} una notificacion {@code FAILED} (reintento
+     * manual), reiniciando intentos y error previo.
+     *
+     * <p>Filtra por estado en la propia sentencia para cerrar la carrera entre
+     * dos administradores concurrentes.
+     *
+     * @return {@code true} si la notificacion seguia {@code FAILED} y se actualizo
+     */
+    boolean requeueFailed(UUID id);
+
+    /**
+     * Marca {@code DISCARDED} una notificacion {@code FAILED} sin borrar la
+     * fila ni su ultimo error.
+     *
+     * <p>Misma guarda por estado que {@link #requeueFailed(UUID)}.
+     *
+     * @return {@code true} si la notificacion seguia {@code FAILED} y se actualizo
+     */
+    boolean discardFailed(UUID id);
+
+    /**
      * Cuenta el trabajo realmente encolado para envío: mismo filtro que
      * {@link #findPendingForDelivery(int)}.
      *

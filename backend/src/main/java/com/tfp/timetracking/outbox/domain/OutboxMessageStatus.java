@@ -8,5 +8,11 @@ public enum OutboxMessageStatus {
     PENDING,
     PROCESSING,
     PUBLISHED,
-    FAILED
+    FAILED,
+    /**
+     * Descartado manualmente desde el panel de plataforma: alguien decidio que
+     * este evento ya no se va a publicar. La fila se conserva con su {@code
+     * lastError} como traza; el motivo y el actor quedan en auditoria.
+     */
+    DISCARDED
 }

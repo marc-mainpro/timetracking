@@ -162,6 +162,79 @@ class OutboxMessageRepositoryAdapterIntegrationTest {
         assertThat(keptCount).isEqualTo(1);
     }
 
+    @Test
+    void requeueAndDiscardOnlyTouchFailedMessages() {
+        OutboxMessage claimed = outboxMessageRepository.save(newPendingMessage());
+        outboxMessageRepository.markRetry(claimed.id(), 1, null, "boom");
+        jdbcTemplate.update(
+                "update outbox_message set status = 'PROCESSING' where id = ?::uuid",
+                claimed.id().toString());
+
+        // Es la carrera que importa: el publicador ya reclamo el mensaje, asi
+        // que reencolarlo ahora lo publicaria dos veces.
+        assertThat(outboxMessageRepository.requeueFailed(claimed.id())).isFalse();
+        assertThat(outboxMessageRepository.discardFailed(claimed.id())).isFalse();
+        assertThat(statusOf(claimed)).isEqualTo("PROCESSING");
+    }
+
+    @Test
+    void requeueingAFailedMessageResetsItsAttempts() {
+        OutboxMessage failed = outboxMessageRepository.save(newPendingMessage());
+        outboxMessageRepository.markFailed(failed.id(), 8, "SMTP caido");
+
+        assertThat(outboxMessageRepository.requeueFailed(failed.id())).isTrue();
+
+        OutboxMessage requeued = outboxMessageRepository.findById(failed.id()).orElseThrow();
+        assertThat(requeued.status()).isEqualTo(OutboxMessageStatus.PENDING);
+        assertThat(requeued.attempts()).isZero();
+        assertThat(requeued.lastError()).isNull();
+        assertThat(requeued.nextAttemptAt()).isNull();
+    }
+
+    @Test
+    void discardingAFailedMessageKeepsItsError() {
+        // Cuenta el total de fallidos, asi que parte de una tabla limpia: los
+        // demas tests de la clase dejan mensajes en otros estados.
+        jdbcTemplate.update("delete from outbox_message");
+        OutboxMessage failed = outboxMessageRepository.save(newPendingMessage());
+        outboxMessageRepository.markFailed(failed.id(), 8, "SMTP caido");
+
+        assertThat(outboxMessageRepository.discardFailed(failed.id())).isTrue();
+
+        OutboxMessage discarded = outboxMessageRepository.findById(failed.id()).orElseThrow();
+        assertThat(discarded.status()).isEqualTo(OutboxMessageStatus.DISCARDED);
+        // La fila sobrevive con su error: es la traza que justifica conservarla.
+        assertThat(discarded.lastError()).isEqualTo("SMTP caido");
+        // Y deja de contar como incidencia que reclama atencion.
+        assertThat(outboxMessageRepository.countFailed()).isZero();
+    }
+
+    @Test
+    void failedMessagesAreListedOldestFirstAndPaginated() {
+        jdbcTemplate.update("delete from outbox_message");
+        OutboxMessage older = outboxMessageRepository.save(newPendingMessage());
+        OutboxMessage newer = outboxMessageRepository.save(newPendingMessage());
+        jdbcTemplate.update(
+                "update outbox_message set created_at = NOW() - interval '1 day' where id = ?::uuid",
+                older.id().toString());
+        outboxMessageRepository.markFailed(older.id(), 8, "primero");
+        outboxMessageRepository.markFailed(newer.id(), 8, "segundo");
+
+        var firstPage = outboxMessageRepository.findByStatus(OutboxMessageStatus.FAILED, 0, 1);
+
+        // Lo mas antiguo primero: es lo que lleva mas tiempo sin atenderse.
+        assertThat(firstPage.content()).extracting(OutboxMessage::id).containsExactly(older.id());
+        assertThat(firstPage.totalElements()).isEqualTo(2);
+        assertThat(firstPage.totalPages()).isEqualTo(2);
+    }
+
+    private String statusOf(OutboxMessage message) {
+        return jdbcTemplate.queryForObject(
+                "select status from outbox_message where id = ?::uuid",
+                String.class,
+                message.id().toString());
+    }
+
     private static OutboxMessage newPendingMessage() {
         return newPendingMessageWithNextAttemptAt(null);
     }
