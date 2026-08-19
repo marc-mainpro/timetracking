@@ -5,11 +5,12 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { authGuard } from './auth.guard';
+import { guestGuard } from './guest.guard';
 import { roleGuard } from './role.guard';
 import { AuthService } from '../services/auth.service';
 import { ViewModeService } from '../services/view-mode.service';
 
-describe('authGuard and roleGuard', () => {
+describe('authGuard, roleGuard and guestGuard', () => {
   let authService: AuthService;
   let router: Router;
 
@@ -93,6 +94,33 @@ describe('authGuard and roleGuard', () => {
     authService['accessToken'].set(sampleToken(['PLATFORM_ADMIN']));
     const result = TestBed.runInInjectionContext(() => roleGuard(['PLATFORM_ADMIN'])({} as never, {} as never));
     expect(result).toBeTrue();
+  });
+
+  it('lets users without a session reach the login', () => {
+    const result = TestBed.runInInjectionContext(() => guestGuard({} as never, {} as never));
+    expect(result).toBeTrue();
+  });
+
+  it('sends an authenticated employee away from the login', () => {
+    authService['accessToken'].set(sampleToken(['EMPLOYEE']));
+    const result = TestBed.runInInjectionContext(() => guestGuard({} as never, {} as never));
+    expect(result).toEqual(router.createUrlTree(['/employee-dashboard']));
+  });
+
+  it('sends an authenticated admin away from the login', () => {
+    authService['accessToken'].set(sampleToken(['TENANT_ADMIN']));
+    const result = TestBed.runInInjectionContext(() => guestGuard({} as never, {} as never));
+    expect(result).toEqual(router.createUrlTree(['/admin/employees']));
+  });
+
+  // El destino sale de la vista elegida, no de la prioridad de rol: quien
+  // administra pero estaba fichando vuelve a la zona de empleado.
+  it('honours the active view when bouncing off the login', () => {
+    authService['accessToken'].set(sampleToken(['EMPLOYEE', 'TENANT_ADMIN']));
+    TestBed.inject(ViewModeService).switchTo('EMPLOYEE');
+
+    const result = TestBed.runInInjectionContext(() => guestGuard({} as never, {} as never));
+    expect(result).toEqual(router.createUrlTree(['/employee-dashboard']));
   });
 });
 
