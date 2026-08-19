@@ -150,6 +150,41 @@ class NotificationRepositoryAdapterIntegrationTest {
                 .isEqualTo(1);
     }
 
+    @Test
+    void requeueFailedOnlyUpdatesRowsThatAreStillFailed() {
+        jdbcTemplate.update("DELETE FROM notification");
+        UUID tenantId = insertTenant();
+        Notification failed = failed(tenantId);
+        Notification pending = save(tenantId, NotificationType.CORRECTION_APPROVED, true, "/corrections");
+
+        assertThat(notificationRepository.requeueFailed(failed.id())).isTrue();
+        assertThat(notificationRepository.requeueFailed(pending.id())).isFalse();
+        assertThat(notificationRepository.findByIdForPlatform(failed.id()))
+                .get()
+                .extracting(Notification::status, Notification::attempts, Notification::lastError)
+                .containsExactly(
+                        com.tfp.timetracking.notification.domain.NotificationStatus.PENDING,
+                        0,
+                        null);
+    }
+
+    @Test
+    void discardFailedOnlyUpdatesRowsThatAreStillFailed() {
+        jdbcTemplate.update("DELETE FROM notification");
+        UUID tenantId = insertTenant();
+        Notification failed = failed(tenantId);
+        Notification pending = save(tenantId, NotificationType.CORRECTION_APPROVED, true, "/corrections");
+
+        assertThat(notificationRepository.discardFailed(failed.id())).isTrue();
+        assertThat(notificationRepository.discardFailed(pending.id())).isFalse();
+        assertThat(notificationRepository.findByIdForPlatform(failed.id()))
+                .get()
+                .extracting(Notification::status, Notification::lastError)
+                .containsExactly(
+                        com.tfp.timetracking.notification.domain.NotificationStatus.DISCARDED,
+                        "SMTP caido");
+    }
+
     /** Una notificacion que ya agoto sus reintentos de envio, ya persistida. */
     private Notification failed(UUID tenantId) {
         Notification notification = save(tenantId, NotificationType.ABSENCE_APPROVED, true, "/absences");

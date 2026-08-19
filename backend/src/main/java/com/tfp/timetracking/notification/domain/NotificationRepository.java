@@ -56,6 +56,27 @@ public interface NotificationRepository {
     Optional<Notification> findByIdForPlatform(UUID id);
 
     /**
+     * Devuelve a {@code PENDING} una notificacion {@code FAILED} (reintento
+     * manual), reiniciando intentos y error previo.
+     *
+     * <p>Filtra por estado en la propia sentencia para cerrar la carrera entre
+     * dos administradores concurrentes.
+     *
+     * @return {@code true} si la notificacion seguia {@code FAILED} y se actualizo
+     */
+    boolean requeueFailed(UUID id);
+
+    /**
+     * Marca {@code DISCARDED} una notificacion {@code FAILED} sin borrar la
+     * fila ni su ultimo error.
+     *
+     * <p>Misma guarda por estado que {@link #requeueFailed(UUID)}.
+     *
+     * @return {@code true} si la notificacion seguia {@code FAILED} y se actualizo
+     */
+    boolean discardFailed(UUID id);
+
+    /**
      * Cuenta el trabajo realmente encolado para envío: mismo filtro que
      * {@link #findPendingForDelivery(int)}.
      *

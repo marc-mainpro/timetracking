@@ -1,6 +1,7 @@
 package com.tfp.timetracking.notification.application;
 
 import com.tfp.timetracking.notification.domain.Notification;
+import com.tfp.timetracking.notification.domain.NotificationNotFailedException;
 import com.tfp.timetracking.notification.domain.NotificationRepository;
 import com.tfp.timetracking.notification.domain.NotificationStatus;
 import com.tfp.timetracking.outbox.application.FailedQueueMaintenance;
@@ -50,8 +51,10 @@ public class NotificationFailedQueueMaintenance implements FailedQueueMaintenanc
     public FailedQueueEntry retry(UUID id) {
         Notification notification = load(id);
         FailedQueueEntry previous = toEntry(notification);
-        notification.requeueDelivery();
-        repository.save(notification);
+        requireFailed(notification, "reintentar el envio de");
+        if (!repository.requeueFailed(id)) {
+            throw new NotificationNotFailedException("reintentar el envio de", currentStatus(id));
+        }
         return previous;
     }
 
@@ -60,8 +63,10 @@ public class NotificationFailedQueueMaintenance implements FailedQueueMaintenanc
     public FailedQueueEntry discard(UUID id) {
         Notification notification = load(id);
         FailedQueueEntry previous = toEntry(notification);
-        notification.discardDelivery();
-        repository.save(notification);
+        requireFailed(notification, "descartar");
+        if (!repository.discardFailed(id)) {
+            throw new NotificationNotFailedException("descartar", currentStatus(id));
+        }
         return previous;
     }
 
@@ -69,6 +74,16 @@ public class NotificationFailedQueueMaintenance implements FailedQueueMaintenanc
         return repository
                 .findByIdForPlatform(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Notificacion no encontrada: " + id));
+    }
+
+    private void requireFailed(Notification notification, String action) {
+        if (notification.status() != NotificationStatus.FAILED) {
+            throw new NotificationNotFailedException(action, notification.status());
+        }
+    }
+
+    private NotificationStatus currentStatus(UUID id) {
+        return load(id).status();
     }
 
     /**

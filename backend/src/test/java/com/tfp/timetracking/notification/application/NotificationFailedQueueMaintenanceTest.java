@@ -59,14 +59,14 @@ class NotificationFailedQueueMaintenanceTest {
         NotificationFailedQueueMaintenance maintenance = new NotificationFailedQueueMaintenance(repository);
         Notification failed = failed();
         when(repository.findByIdForPlatform(failed.id())).thenReturn(Optional.of(failed));
+        when(repository.requeueFailed(failed.id())).thenReturn(true);
 
         FailedQueueEntry previous = maintenance.retry(failed.id());
 
-        // Devuelve la foto previa (con el error) y deja el agregado reencolado.
+        // Devuelve la foto previa (con el error) y reencola sin pisar estados
+        // nuevos si otra transaccion ya ganó la carrera.
         assertThat(previous.lastError()).isEqualTo("SMTP caido");
-        assertThat(failed.status()).isEqualTo(NotificationStatus.PENDING);
-        assertThat(failed.isDeliverable()).isTrue();
-        verify(repository).save(failed);
+        verify(repository).requeueFailed(failed.id());
     }
 
     @Test
@@ -74,14 +74,11 @@ class NotificationFailedQueueMaintenanceTest {
         NotificationFailedQueueMaintenance maintenance = new NotificationFailedQueueMaintenance(repository);
         Notification failed = failed();
         when(repository.findByIdForPlatform(failed.id())).thenReturn(Optional.of(failed));
+        when(repository.discardFailed(failed.id())).thenReturn(true);
 
         maintenance.discard(failed.id());
 
-        assertThat(failed.status()).isEqualTo(NotificationStatus.DISCARDED);
-        // El aviso sigue existiendo para su destinatario: lo que se abandona es
-        // el envio por correo, no el hecho que lo motivo.
-        assertThat(failed.lastError()).isEqualTo("SMTP caido");
-        verify(repository).save(failed);
+        verify(repository).discardFailed(failed.id());
     }
 
     @Test
@@ -91,7 +88,7 @@ class NotificationFailedQueueMaintenanceTest {
         when(repository.findByIdForPlatform(id)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> maintenance.retry(id)).isInstanceOf(ResourceNotFoundException.class);
-        verify(repository, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(repository, never()).requeueFailed(id);
     }
 
     @Test
@@ -102,7 +99,35 @@ class NotificationFailedQueueMaintenanceTest {
 
         assertThatThrownBy(() -> maintenance.discard(pending.id()))
                 .isInstanceOf(NotificationNotFailedException.class);
-        verify(repository, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(repository, never()).discardFailed(pending.id());
+    }
+
+    @Test
+    void retryingReturnsConflictIfAnotherActionChangedTheStateFirst() {
+        NotificationFailedQueueMaintenance maintenance = new NotificationFailedQueueMaintenance(repository);
+        Notification failed = failed();
+        Notification sent = sentCopyOf(failed);
+        when(repository.findByIdForPlatform(failed.id())).thenReturn(Optional.of(failed), Optional.of(sent));
+        when(repository.requeueFailed(failed.id())).thenReturn(false);
+
+        assertThatThrownBy(() -> maintenance.retry(failed.id()))
+                .isInstanceOf(NotificationNotFailedException.class)
+                .hasMessageContaining("actual: SENT");
+        verify(repository).requeueFailed(failed.id());
+    }
+
+    @Test
+    void discardingReturnsConflictIfAnotherActionChangedTheStateFirst() {
+        NotificationFailedQueueMaintenance maintenance = new NotificationFailedQueueMaintenance(repository);
+        Notification failed = failed();
+        Notification pending = pendingCopyOf(failed);
+        when(repository.findByIdForPlatform(failed.id())).thenReturn(Optional.of(failed), Optional.of(pending));
+        when(repository.discardFailed(failed.id())).thenReturn(false);
+
+        assertThatThrownBy(() -> maintenance.discard(failed.id()))
+                .isInstanceOf(NotificationNotFailedException.class)
+                .hasMessageContaining("actual: PENDING");
+        verify(repository).discardFailed(failed.id());
     }
 
     @Test
@@ -135,5 +160,45 @@ class NotificationFailedQueueMaintenanceTest {
                 "/corrections",
                 NOW,
                 UUID::randomUUID);
+    }
+
+    private Notification sentCopyOf(Notification notification) {
+        Notification copy = Notification.reconstitute(
+                notification.id(),
+                notification.tenantId(),
+                notification.recipientUserId(),
+                notification.recipientEmail(),
+                notification.type(),
+                notification.title(),
+                notification.body(),
+                notification.emailRequired(),
+                notification.actionPath(),
+                NotificationStatus.PENDING,
+                0,
+                null,
+                notification.createdAt(),
+                null,
+                notification.readAt());
+        copy.markSent(NOW);
+        return copy;
+    }
+
+    private Notification pendingCopyOf(Notification notification) {
+        return Notification.reconstitute(
+                notification.id(),
+                notification.tenantId(),
+                notification.recipientUserId(),
+                notification.recipientEmail(),
+                notification.type(),
+                notification.title(),
+                notification.body(),
+                notification.emailRequired(),
+                notification.actionPath(),
+                NotificationStatus.PENDING,
+                0,
+                null,
+                notification.createdAt(),
+                null,
+                notification.readAt());
     }
 }
