@@ -75,7 +75,17 @@ un test unitario asociado.
 `CORRECTION_ALREADY_PENDING`, `CORRECTION_ALREADY_RESOLVED`,
 `CONCURRENT_MODIFICATION`, `CALENDAR_ARCHIVED`,
 `CALENDAR_NAME_ALREADY_EXISTS`, `CALENDAR_DUPLICATE_DAY_RULE`,
-`CALENDAR_DUPLICATE_DATE`, `CALENDAR_ASSIGNMENT_ALREADY_EXISTS`.
+`CALENDAR_DUPLICATE_DATE`, `CALENDAR_ASSIGNMENT_ALREADY_EXISTS`,
+`OUTBOX_MESSAGE_NOT_FAILED`, `NOTIFICATION_NOT_FAILED`.
+
+**Mantenimiento manual de colas (ADR-0020):** un elemento de outbox o una
+notificación solo pueden reintentarse o descartarse manualmente si están en
+`FAILED`; en cualquier otro estado la operación se rechaza con 409
+(`OUTBOX_MESSAGE_NOT_FAILED` / `NOTIFICATION_NOT_FAILED`), incluido el caso en
+que otro administrador se haya adelantado. Descartar no borra la fila: pasa a
+`DISCARDED` conservando su último error, y en el caso de una notificación el
+aviso sigue siendo visible para su destinatario —lo que se abandona es el envío
+por correo, no el hecho que lo motivó—.
 
 ## Gestión temporal
 

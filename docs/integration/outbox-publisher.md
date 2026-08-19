@@ -40,6 +40,7 @@ PENDING --claimBatch--> PROCESSING --publish OK--> PUBLISHED
                              | publish falla, intentos >= max
                              v
                            FAILED --retry manual--> PENDING (attempts=0)
+                           FAILED --descarte manual--> DISCARDED (fila conservada)
 ```
 
 - **Reclamación** (`OutboxMessageRepository#claimBatch`, T701): usa
@@ -76,6 +77,13 @@ puede demorarse hasta ~2 horas desde el primer fallo.
 - **`RetryFailedOutboxMessage(id)`**: reintento manual de un mensaje
   `FAILED`. Lanza `ResourceNotFoundException` si el id no existe, o
   `OutboxMessageNotFailedException` si el mensaje no está en `FAILED`.
+- **`DiscardFailedOutboxMessage(id)`**: descarte manual de un mensaje `FAILED`;
+  pasa a `DISCARDED` conservando la fila y su `last_error`. Mismas excepciones.
+- Ambas se exponen bajo `/api/v1/platform/queues/outbox/failed/...` para
+  `PLATFORM_ADMIN` y quedan auditadas. La escritura filtra por estado en la
+  propia sentencia (`AND status = 'FAILED'`): sin esa guarda, dos operadores
+  concurrentes podrían reencolar un mensaje que el publicador ya reclamó y
+  publicarlo dos veces.
 - **`ArchivePublishedOutboxMessages`**: purga físicamente los mensajes
   `PUBLISHED` con `published_at` anterior a `outbox.archive-retention` (30
   días por defecto). Nunca toca `PENDING`/`PROCESSING`/`FAILED`.

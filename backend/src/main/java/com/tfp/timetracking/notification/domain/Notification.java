@@ -177,6 +177,31 @@ public final class Notification {
         this.status = NotificationStatus.CANCELLED;
     }
 
+    /**
+     * Devuelve a la cola de envio una notificacion que agoto sus reintentos
+     * (operacion manual de plataforma). Pone el contador a cero y limpia el
+     * ultimo error: el envio empieza de nuevo, no continua donde se quedo.
+     */
+    public void requeueDelivery() {
+        requireFailed("reintentar el envio de");
+        this.status = NotificationStatus.PENDING;
+        this.attempts = 0;
+        this.lastError = null;
+    }
+
+    /**
+     * Abandona el envio por correo de una notificacion que agoto sus
+     * reintentos (operacion manual de plataforma).
+     *
+     * <p><b>No borra el aviso</b>: conserva {@code lastError} como traza y la
+     * notificacion sigue visible en la aplicacion para su destinatario. Lo que
+     * se descarta es el intento de entrega, no el hecho que la motivo.
+     */
+    public void discardDelivery() {
+        requireFailed("descartar");
+        this.status = NotificationStatus.DISCARDED;
+    }
+
     /** Marca como leida. Es idempotente: releer no cambia la fecha original. */
     public void markRead(Instant now) {
         if (readAt == null) {
@@ -203,6 +228,20 @@ public final class Notification {
         if (status != NotificationStatus.PENDING) {
             throw new IllegalStateException(
                     "No se puede " + action + " una notificacion en estado " + status);
+        }
+    }
+
+    /**
+     * Las operaciones manuales de plataforma solo tienen sentido sobre un envio
+     * que ya agoto sus reintentos automaticos. A diferencia de {@link
+     * #requirePending}, falla con una excepcion de dominio y no con {@code
+     * IllegalStateException}: aqui el estado de origen lo decide un humano
+     * desde el panel, asi que es un conflicto de negocio (409) y no un error de
+     * programacion.
+     */
+    private void requireFailed(String action) {
+        if (status != NotificationStatus.FAILED) {
+            throw new NotificationNotFailedException(action, status);
         }
     }
 

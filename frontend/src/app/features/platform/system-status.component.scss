@@ -68,14 +68,38 @@
 
 .queue {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto auto 1.25rem;
   align-items: center;
   gap: 0.75rem 1.75rem;
   padding: 1rem 0.5rem;
+  width: 100%;
+  text-align: left;
 }
 
-.queue + .queue {
+.queue-item + .queue-item {
   border-top: 1px solid var(--border);
+}
+
+/* La fila con fallos es un botón: hay que deshacer los estilos de botón para
+   que siga leyéndose como una fila de la lista, no como un control suelto. */
+.queue--actionable {
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  border-radius: var(--radius);
+}
+
+.queue--actionable:hover,
+.queue--actionable:focus-visible {
+  background: var(--surface-alt, rgba(127, 127, 127, 0.08));
+}
+
+.queue__toggle {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  text-align: center;
 }
 
 .queue__name {

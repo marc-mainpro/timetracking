@@ -46,7 +46,17 @@ export class ErrorMessagesService {
     ['RESOURCE_NOT_FOUND', 'No se encontró el recurso solicitado.'],
     ['ABSENCE_TYPE_INACTIVE', 'El tipo de ausencia seleccionado ya no está disponible.'],
     ['ABSENCE_REQUEST_ALREADY_RESOLVED', 'La solicitud de ausencia ya fue resuelta por otra persona.'],
-    ['UNAUTHORIZED', 'Necesitas iniciar sesión para continuar.']
+    ['UNAUTHORIZED', 'Necesitas iniciar sesión para continuar.'],
+    // Los dos llegan del panel de colas y significan lo mismo para quien mira:
+    // otra persona reintentó o descartó ese elemento antes que tú.
+    [
+      'OUTBOX_MESSAGE_NOT_FAILED',
+      'Ese elemento ya no está fallido: alguien lo reintentó o lo descartó antes. Actualizamos la lista.'
+    ],
+    [
+      'NOTIFICATION_NOT_FAILED',
+      'Ese elemento ya no está fallido: alguien lo reintentó o lo descartó antes. Actualizamos la lista.'
+    ]
   ]);
 
   fromProblem(problem: ProblemDetail | null | undefined): string {

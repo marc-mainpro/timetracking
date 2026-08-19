@@ -34,6 +34,28 @@ public interface NotificationRepository {
     long countByStatus(NotificationStatus status);
 
     /**
+     * Notificaciones en un estado de entrega, de la mas antigua a la mas
+     * reciente, en todos los tenants.
+     *
+     * <p>No lleva {@code tenantId} por la misma razon que {@link
+     * #countByStatus(NotificationStatus)}: la consume el panel de plataforma,
+     * que vigila el envio del sistema entero. No debe reutilizarse desde ningun
+     * flujo de usuario.
+     */
+    PagedResult<Notification> findByStatus(NotificationStatus status, int page, int size);
+
+    /**
+     * Busca una notificacion por id sin acotar por tenant.
+     *
+     * <p>Existe solo para las operaciones manuales del panel de plataforma, que
+     * actuan sobre elementos de cualquier tenant y por tanto no tienen un
+     * {@code tenantId} propio del que partir. Se declara explicitamente en vez
+     * de dejar que el llamante aporte un {@code tenantId} recibido del cliente,
+     * que es justo lo que la multitenancy prohibe.
+     */
+    Optional<Notification> findByIdForPlatform(UUID id);
+
+    /**
      * Cuenta el trabajo realmente encolado para envío: mismo filtro que
      * {@link #findPendingForDelivery(int)}.
      *

@@ -3,10 +3,14 @@ package com.tfp.timetracking.outbox.infrastructure.persistence;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tfp.timetracking.outbox.domain.OutboxMessage;
 import com.tfp.timetracking.outbox.domain.OutboxMessageRepository;
+import com.tfp.timetracking.outbox.domain.OutboxMessageStatus;
+import com.tfp.timetracking.shared.domain.PagedResult;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,6 +66,32 @@ public class OutboxMessageRepositoryAdapter implements OutboxMessageRepository {
     @Transactional
     public int archivePublishedBefore(Instant before) {
         return jpaRepository.archivePublishedBefore(before);
+    }
+
+    @Override
+    public PagedResult<OutboxMessage> findByStatus(OutboxMessageStatus status, int page, int size) {
+        Page<OutboxMessageJpaEntity> found =
+                jpaRepository.findByStatusOrderByCreatedAtAsc(status.name(), PageRequest.of(page, size));
+        return new PagedResult<>(
+                found.getContent().stream()
+                        .map(entity -> OutboxMessageMapper.toDomain(entity, objectMapper))
+                        .toList(),
+                found.getNumber(),
+                found.getSize(),
+                found.getTotalElements(),
+                found.getTotalPages());
+    }
+
+    @Override
+    @Transactional
+    public boolean requeueFailed(UUID id) {
+        return jpaRepository.requeueFailed(id) > 0;
+    }
+
+    @Override
+    @Transactional
+    public boolean discardFailed(UUID id) {
+        return jpaRepository.discardFailed(id) > 0;
     }
 
     @Override

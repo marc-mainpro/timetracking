@@ -9,5 +9,14 @@ public enum NotificationStatus {
     /** Agotados los reintentos de envio. Sigue visible en la aplicacion. */
     FAILED,
     /** Anulada antes de enviarse: el hecho que la motivo dejo de ser relevante. */
-    CANCELLED
+    CANCELLED,
+    /**
+     * Envio por correo abandonado manualmente desde el panel de plataforma tras
+     * agotar los reintentos. No es {@link #CANCELLED}: el hecho sigue siendo
+     * relevante, lo que se abandona es el intento de entrega.
+     *
+     * <p>Como toda notificacion {@code FAILED}, <b>sigue visible en la
+     * aplicacion</b>: renunciar al correo no significa ocultar el aviso.
+     */
+    DISCARDED
 }

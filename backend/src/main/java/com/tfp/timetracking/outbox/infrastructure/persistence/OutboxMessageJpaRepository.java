@@ -3,6 +3,8 @@ package com.tfp.timetracking.outbox.infrastructure.persistence;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -70,6 +72,32 @@ interface OutboxMessageJpaRepository extends JpaRepository<OutboxMessageJpaEntit
     @Modifying
     @Query(value = "DELETE FROM outbox_message WHERE status = 'PUBLISHED' AND published_at < :before", nativeQuery = true)
     int archivePublishedBefore(@Param("before") Instant before);
+
+    /**
+     * Reintento manual: solo actua si el mensaje sigue {@code FAILED}. La
+     * guarda no es redundante con la comprobacion del caso de uso, es lo que
+     * evita que dos administradores concurrentes devuelvan a la cola un mensaje
+     * que el publicador ya reclamo, publicandolo dos veces.
+     */
+    @Modifying
+    @Query(
+            value =
+                    """
+                    UPDATE outbox_message
+                    SET status = 'PENDING', attempts = 0, next_attempt_at = NULL, last_error = NULL
+                    WHERE id = :id AND status = 'FAILED'
+                    """,
+            nativeQuery = true)
+    int requeueFailed(@Param("id") UUID id);
+
+    /** Descarte manual. Misma guarda por estado, y conserva {@code last_error}. */
+    @Modifying
+    @Query(
+            value = "UPDATE outbox_message SET status = 'DISCARDED' WHERE id = :id AND status = 'FAILED'",
+            nativeQuery = true)
+    int discardFailed(@Param("id") UUID id);
+
+    Page<OutboxMessageJpaEntity> findByStatusOrderByCreatedAtAsc(String status, Pageable pageable);
 
     @Query("SELECT COUNT(m) FROM OutboxMessageJpaEntity m WHERE m.status IN ('PENDING', 'PROCESSING')")
     long countPending();

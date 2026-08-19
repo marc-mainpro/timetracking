@@ -80,6 +80,58 @@ describe('SystemStatusComponent', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Envío de notificaciones');
   });
 
+  it('solo deja abrir el detalle de una cola con fallos', () => {
+    flush({
+      queues: [
+        { name: 'outbox', pending: 0, failed: 2 },
+        { name: 'notifications', pending: 3, failed: 0 }
+      ],
+      totalFailed: 2,
+      needsAttention: true
+    });
+
+    // En una cola sana no hay nada que resolver: ofrecer un desplegable vacío
+    // sería una promesa que la pantalla no puede cumplir.
+    const buttons = (fixture.nativeElement as HTMLElement).querySelectorAll('button.queue--actionable');
+    expect(buttons.length).toBe(1);
+  });
+
+  it('despliega el detalle de la cola al pulsarla y lo pliega al repetir', () => {
+    flush({ queues: [{ name: 'outbox', pending: 0, failed: 2 }], totalFailed: 2, needsAttention: true });
+
+    component.toggleQueue('outbox');
+    fixture.detectChanges();
+    // El hijo pide sus elementos en cuanto aparece.
+    httpMock.expectOne((r) => r.url === '/api/v1/platform/queues/outbox/failed').flush({
+      content: [],
+      page: 0,
+      size: 10,
+      totalElements: 0,
+      totalPages: 0
+    });
+    expect(component.expandedQueue()).toBe('outbox');
+
+    component.toggleQueue('outbox');
+    fixture.detectChanges();
+    expect(component.expandedQueue()).toBeNull();
+  });
+
+  it('vuelve a consultar el estado cuando el detalle avisa de un cambio', () => {
+    flush({ queues: [{ name: 'outbox', pending: 0, failed: 1 }], totalFailed: 1, needsAttention: true });
+
+    component.onQueueChanged();
+
+    // Sin esto el veredicto seguiría anunciando una incidencia ya resuelta.
+    httpMock.expectOne('/api/v1/platform/system-status').flush({
+      queues: [{ name: 'outbox', pending: 0, failed: 0 }],
+      totalFailed: 0,
+      needsAttention: false
+    });
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Sin incidencias');
+  });
+
   it('muestra el error traducido si la consulta falla', () => {
     fixture.detectChanges();
     httpMock

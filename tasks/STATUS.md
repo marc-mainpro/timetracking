@@ -38,3 +38,4 @@
 | T903 | Cobertura + docs finales | hecha | validada: backend `mvn -B verify`, frontend `npm run test:coverage`; `docs/acceptance-checklist.md`, `docs/testing/coverage-report.md`, OpenAPI exportada y README/docs sincronizados |
 | T1001 | Dockerización final | hecha | validada: `docker-compose.yml` completo con frontend+backend+postgres, `frontend/Dockerfile`+nginx, CI con build de imágenes y `scripts/smoke.sh` |
 | T1002 | Manuales + demo | hecha | validada: manuales, guion de demo, `scripts/seed-demo.sh` y README final actualizados |
+| T1101 | Gestión de errores en el panel de estado | hecha | validada: `mvn -B verify` verde (625 unitarias + 293 de integración) y `npm run test:coverage`/`lint`/`build` verdes; listado, reintento y descarte (`DISCARDED`, supresión lógica) de los elementos fallidos de outbox y notificaciones desde `/platform/system-status`, vía puerto `FailedQueueMaintenance` + `V27__queue_discard.sql` + auditoría de plataforma; ADR-0020 |

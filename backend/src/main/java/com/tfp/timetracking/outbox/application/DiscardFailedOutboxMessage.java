@@ -10,38 +10,35 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Caso de uso operativo (T703): reintento manual de un mensaje de outbox
- * que ya agoto sus intentos automaticos y quedo {@code FAILED}. Pensado
- * para uso humano (operacion/soporte), no lo invoca el publicador
- * automatico.
+ * Descarte manual de un mensaje de outbox que agoto sus intentos: se renuncia
+ * a publicarlo. Simetrico a {@link RetryFailedOutboxMessage}, y como el, es una
+ * operacion humana de operacion/soporte.
  *
- * <p>Resetea el mensaje a {@code PENDING} con {@code attempts = 0} y sin
- * {@code nextAttemptAt} (elegible inmediatamente por el proximo {@code
- * claimBatch}) ni {@code lastError} previo.
+ * <p>La fila <b>no se borra</b>: queda en {@code DISCARDED} conservando su
+ * {@code lastError}, de modo que deja de contar como incidencia pendiente sin
+ * perder la evidencia de que fallo. El motivo y el actor quedan en auditoria.
  */
 @Service
-public class RetryFailedOutboxMessage {
+public class DiscardFailedOutboxMessage {
 
     private final OutboxMessageRepository repository;
 
-    public RetryFailedOutboxMessage(OutboxMessageRepository repository) {
+    public DiscardFailedOutboxMessage(OutboxMessageRepository repository) {
         this.repository = repository;
     }
 
-    /** @return el mensaje tal como estaba antes de devolverlo a la cola */
+    /** @return el mensaje tal como estaba antes de descartarlo */
     @Transactional
-    public OutboxMessage retry(UUID messageId) {
+    public OutboxMessage discard(UUID messageId) {
         OutboxMessage message = repository
                 .findById(messageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Mensaje de outbox no encontrado: " + messageId));
         if (message.status() != OutboxMessageStatus.FAILED) {
             throw new OutboxMessageNotFailedException(message.status());
         }
-        // Escribir con guarda por estado y no con un markRetry incondicional:
-        // entre la lectura y la escritura otro administrador puede haber
-        // reintentado el mensaje y el publicador haberlo reclamado ya, y
-        // devolverlo entonces a PENDING lo publicaria dos veces.
-        if (!repository.requeueFailed(messageId)) {
+        // La comprobacion anterior distingue 404 de 409; esta guarda cierra la
+        // carrera con otro administrador entre la lectura y la escritura.
+        if (!repository.discardFailed(messageId)) {
             throw new OutboxMessageNotFailedException(currentStatus(messageId));
         }
         return message;

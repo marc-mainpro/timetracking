@@ -53,6 +53,24 @@ public class NotificationRepositoryAdapter implements NotificationRepository {
     }
 
     @Override
+    public PagedResult<Notification> findByStatus(
+            com.tfp.timetracking.notification.domain.NotificationStatus status, int page, int size) {
+        Page<NotificationJpaEntity> result =
+                jpaRepository.findByStatusOrderByCreatedAtAsc(status.name(), PageRequest.of(page, size));
+        return new PagedResult<>(
+                result.getContent().stream().map(NotificationMapper::toDomain).toList(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages());
+    }
+
+    @Override
+    public Optional<Notification> findByIdForPlatform(UUID id) {
+        return jpaRepository.findById(id).map(NotificationMapper::toDomain);
+    }
+
+    @Override
     public long countPendingForDelivery() {
         return jpaRepository.countPendingForDelivery();
     }

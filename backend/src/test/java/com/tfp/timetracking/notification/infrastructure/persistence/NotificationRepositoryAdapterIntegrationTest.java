@@ -78,6 +78,85 @@ class NotificationRepositoryAdapterIntegrationTest {
         assertThat(notificationRepository.countPendingForDelivery()).isZero();
     }
 
+    @Test
+    void findsFailedNotificationsAcrossTenantsForThePlatformPanel() {
+        jdbcTemplate.update("DELETE FROM notification");
+        UUID firstTenant = insertTenant();
+        UUID secondTenant = insertTenant();
+        Notification older = failed(firstTenant);
+        Notification newer = failed(secondTenant);
+        jdbcTemplate.update(
+                "UPDATE notification SET created_at = NOW() - interval '1 day' WHERE id = ?", older.id());
+
+        var firstPage = notificationRepository.findByStatus(
+                com.tfp.timetracking.notification.domain.NotificationStatus.FAILED, 0, 1);
+
+        // Cruza tenants a proposito: el panel vigila el envio del sistema
+        // entero, y lo mas antiguo es lo que lleva mas tiempo sin atenderse.
+        assertThat(firstPage.content()).extracting(Notification::id).containsExactly(older.id());
+        assertThat(firstPage.totalElements()).isEqualTo(2);
+        assertThat(newer.tenantId()).isNotEqualTo(older.tenantId());
+    }
+
+    @Test
+    void findsANotificationByIdWithoutATenantForPlatformOperations() {
+        UUID tenantId = insertTenant();
+        Notification failed = failed(tenantId);
+
+        assertThat(notificationRepository.findByIdForPlatform(failed.id()))
+                .get()
+                .extracting(Notification::id)
+                .isEqualTo(failed.id());
+        assertThat(notificationRepository.findByIdForPlatform(UUID.randomUUID())).isEmpty();
+    }
+
+    @Test
+    void aDiscardedNotificationIsPersistedAndStopsCountingAsFailed() {
+        jdbcTemplate.update("DELETE FROM notification");
+        UUID tenantId = insertTenant();
+        Notification failed = failed(tenantId);
+
+        failed.discardDelivery();
+        notificationRepository.save(failed);
+
+        // El CHECK de la V27 admite el estado nuevo, y la incidencia desaparece
+        // del panel sin que la fila se pierda.
+        assertThat(notificationRepository.countByStatus(
+                        com.tfp.timetracking.notification.domain.NotificationStatus.FAILED))
+                .isZero();
+        assertThat(notificationRepository.findByIdForPlatform(failed.id()))
+                .get()
+                .extracting(Notification::lastError)
+                .isEqualTo("SMTP caido");
+    }
+
+    @Test
+    void aDiscardedNotificationIsStillVisibleToItsRecipient() {
+        jdbcTemplate.update("DELETE FROM notification");
+        UUID tenantId = insertTenant();
+        Notification failed = failed(tenantId);
+
+        failed.discardDelivery();
+        notificationRepository.save(failed);
+
+        // Descartar renuncia al correo, no al aviso: quien lo esperaba debe
+        // seguir viendolo en la aplicacion, y contando como no leido.
+        assertThat(notificationRepository
+                        .findByRecipient(tenantId, failed.recipientUserId(), 0, 20)
+                        .content())
+                .extracting(Notification::id)
+                .containsExactly(failed.id());
+        assertThat(notificationRepository.countUnreadByRecipient(tenantId, failed.recipientUserId()))
+                .isEqualTo(1);
+    }
+
+    /** Una notificacion que ya agoto sus reintentos de envio, ya persistida. */
+    private Notification failed(UUID tenantId) {
+        Notification notification = save(tenantId, NotificationType.ABSENCE_APPROVED, true, "/absences");
+        notification.markAttemptFailed("SMTP caido", 1, Instant.now());
+        return notificationRepository.save(notification);
+    }
+
     private Notification save(UUID tenantId, NotificationType type, boolean emailRequired, String actionPath) {
         return save(tenantId, type, emailRequired, actionPath, "destinatario@acme.test");
     }

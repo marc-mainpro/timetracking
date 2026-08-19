@@ -193,6 +193,7 @@ backups. Lo que sigue abierto está al final, en «Pendiente».
 |---|---|---|---|---|
 | RF-REP-006 Exportación PDF | T100-06 | `ExportTimeSummaryPdfUseCase`, puerto `TimeSummaryPdfRenderer`, `TimeSummaryPdfWriter` (PDFBox) | `GET /api/v1/reports/tenant/export.pdf` | `TimeSummaryPdfWriterTest` (abre el PDF y lee su texto) |
 | RO-004 Panel técnico | T140-05 | `GetSystemStatusUseCase` con contribución `QueueStatusContributor`, `SystemStatusComponent` | `GET /api/v1/platform/system-status` | `GetSystemStatusUseCaseTest`, `system-status.component.spec` |
+| RO-005 Intervención sobre lo fallido | ADR-0020 | `FailedQueueMaintenance` (puerto), `ManageFailedQueueEntriesUseCase`, `DiscardFailedOutboxMessage`, `Notification.requeueDelivery/discardDelivery`, `FailedQueueComponent` | `GET/POST /api/v1/platform/queues/{queue}/failed[...]` | `FailedQueueControllerIntegrationTest`, `ManageFailedQueueEntriesUseCaseTest`, `NotificationFailedQueueMaintenanceTest`, `failed-queue.component.spec` |
 
 ## Pendiente
 

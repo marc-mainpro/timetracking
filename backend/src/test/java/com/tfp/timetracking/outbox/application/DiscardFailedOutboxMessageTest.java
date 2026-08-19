@@ -1,6 +1,8 @@
 package com.tfp.timetracking.outbox.application;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,56 +21,58 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class RetryFailedOutboxMessageTest {
+class DiscardFailedOutboxMessageTest {
 
     @Mock
     private OutboxMessageRepository repository;
 
     @Test
-    void retryingAnUnknownMessageThrowsNotFound() {
-        RetryFailedOutboxMessage retry = new RetryFailedOutboxMessage(repository);
+    void discardingAnUnknownMessageThrowsNotFound() {
+        DiscardFailedOutboxMessage discard = new DiscardFailedOutboxMessage(repository);
         UUID id = UUID.randomUUID();
         when(repository.findById(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> retry.retry(id)).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> discard.discard(id)).isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
-    void retryingAMessageThatIsNotFailedThrows() {
-        RetryFailedOutboxMessage retry = new RetryFailedOutboxMessage(repository);
+    void discardingAMessageThatIsNotFailedThrows() {
+        // Descartar es renunciar a un trabajo agotado; sobre un mensaje que
+        // todavia se esta intentando seria perder trabajo vivo.
+        DiscardFailedOutboxMessage discard = new DiscardFailedOutboxMessage(repository);
         OutboxMessage pending = message(OutboxMessageStatus.PENDING);
         when(repository.findById(pending.id())).thenReturn(Optional.of(pending));
 
-        assertThatThrownBy(() -> retry.retry(pending.id())).isInstanceOf(OutboxMessageNotFailedException.class);
+        assertThatThrownBy(() -> discard.discard(pending.id())).isInstanceOf(OutboxMessageNotFailedException.class);
+        verify(repository, never()).discardFailed(pending.id());
     }
 
     @Test
-    void retryingAFailedMessageResetsItToPending() {
-        RetryFailedOutboxMessage retry = new RetryFailedOutboxMessage(repository);
+    void discardingAFailedMessageReturnsItsStateBeforeTheChange() {
+        DiscardFailedOutboxMessage discard = new DiscardFailedOutboxMessage(repository);
         OutboxMessage failed = message(OutboxMessageStatus.FAILED);
         when(repository.findById(failed.id())).thenReturn(Optional.of(failed));
+        when(repository.discardFailed(failed.id())).thenReturn(true);
 
-        when(repository.requeueFailed(failed.id())).thenReturn(true);
+        OutboxMessage discarded = discard.discard(failed.id());
 
-        retry.retry(failed.id());
-
-        verify(repository).requeueFailed(failed.id());
+        // La foto previa es lo que permite auditar la accion sin releer nada.
+        assertThat(discarded.lastError()).isEqualTo("some error");
+        assertThat(discarded.attempts()).isEqualTo(8);
+        verify(repository).discardFailed(failed.id());
     }
 
     @Test
     void losingTheRaceAgainstAnotherAdminIsRejected() {
-        // Entre la lectura y la escritura otro administrador reintento el
-        // mensaje y el publicador ya lo reclamo: devolverlo ahora a PENDING lo
-        // publicaria dos veces, asi que la escritura guardada no toca nada.
-        RetryFailedOutboxMessage retry = new RetryFailedOutboxMessage(repository);
+        DiscardFailedOutboxMessage discard = new DiscardFailedOutboxMessage(repository);
         OutboxMessage failed = message(OutboxMessageStatus.FAILED);
         UUID id = failed.id();
         when(repository.findById(id))
                 .thenReturn(Optional.of(failed))
-                .thenReturn(Optional.of(message(OutboxMessageStatus.PROCESSING)));
-        when(repository.requeueFailed(id)).thenReturn(false);
+                .thenReturn(Optional.of(message(OutboxMessageStatus.PENDING)));
+        when(repository.discardFailed(id)).thenReturn(false);
 
-        assertThatThrownBy(() -> retry.retry(id)).isInstanceOf(OutboxMessageNotFailedException.class);
+        assertThatThrownBy(() -> discard.discard(id)).isInstanceOf(OutboxMessageNotFailedException.class);
     }
 
     private static OutboxMessage message(OutboxMessageStatus status) {

@@ -19,6 +19,8 @@ interface NotificationJpaRepository extends JpaRepository<NotificationJpaEntity,
 
     long countByStatus(String status);
 
+    Page<NotificationJpaEntity> findByStatusOrderByCreatedAtAsc(String status, Pageable pageable);
+
     @Query("""
             select n from NotificationJpaEntity n
             where n.status = 'PENDING' and n.emailRequired = true and n.recipientEmail is not null
