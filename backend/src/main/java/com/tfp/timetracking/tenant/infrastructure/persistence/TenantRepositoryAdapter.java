@@ -43,11 +43,18 @@ public class TenantRepositoryAdapter implements TenantRepository {
     }
 
     @Override
-    public PagedResult<Tenant> findAllExcluding(UUID excludedId, TenantStatus status, int page, int size) {
+    public PagedResult<Tenant> findAllExcluding(UUID excludedId, TenantStatus status, String name, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<TenantJpaEntity> result = status == null
-                ? jpaRepository.findByIdNot(excludedId, pageable)
-                : jpaRepository.findByIdNotAndStatus(excludedId, status.name(), pageable);
+        Page<TenantJpaEntity> result;
+        if (status != null && name != null) {
+            result = jpaRepository.findByIdNotAndStatusAndNameContainingIgnoreCase(excludedId, status.name(), name, pageable);
+        } else if (status != null) {
+            result = jpaRepository.findByIdNotAndStatus(excludedId, status.name(), pageable);
+        } else if (name != null) {
+            result = jpaRepository.findByIdNotAndNameContainingIgnoreCase(excludedId, name, pageable);
+        } else {
+            result = jpaRepository.findByIdNot(excludedId, pageable);
+        }
         return new PagedResult<>(
                 result.getContent().stream().map(TenantMapper::toDomain).toList(),
                 result.getNumber(),

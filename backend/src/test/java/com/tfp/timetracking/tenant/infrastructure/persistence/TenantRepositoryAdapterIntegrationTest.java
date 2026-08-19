@@ -99,4 +99,23 @@ class TenantRepositoryAdapterIntegrationTest {
         assertThat(recovered.suspensionReason()).isEqualTo("Impago");
         assertThat(recovered.suspendedAt()).isEqualTo(now.plusSeconds(30));
     }
+
+    @Test
+    void findAllExcludingSupportsStatusAndNameFilters() {
+        Instant now = Instant.parse("2026-01-15T10:00:00Z");
+        Tenant acme = Tenant.reconstitute(
+                UUID.randomUUID(), "Acme North", TenantStatus.ACTIVE, "UTC", now, now, now, null, null, null);
+        Tenant beta = Tenant.reconstitute(
+                UUID.randomUUID(), "Beta South", TenantStatus.ACTIVE, "UTC", now.plusSeconds(30), now.plusSeconds(30), now.plusSeconds(30), null, null, null);
+        Tenant archived = Tenant.reconstitute(
+                UUID.randomUUID(), "Acme Archive", TenantStatus.ARCHIVED, "UTC", now.plusSeconds(60), now.plusSeconds(60), now.plusSeconds(60), null, now.plusSeconds(60), null);
+
+        tenantRepository.save(acme);
+        tenantRepository.save(beta);
+        tenantRepository.save(archived);
+
+        var result = tenantRepository.findAllExcluding(UUID.randomUUID(), TenantStatus.ACTIVE, "acme", 0, 20);
+
+        assertThat(result.content()).extracting(Tenant::name).containsExactly("Acme North");
+    }
 }

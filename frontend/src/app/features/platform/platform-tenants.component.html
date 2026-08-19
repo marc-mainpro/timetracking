@@ -21,6 +21,13 @@
     @if (result(); as result) {
       <p class="filters__count mono">{{ result.totalElements }}</p>
     }
+    <input
+      type="search"
+      class="filters__search"
+      placeholder="Buscar por nombre"
+      aria-label="Buscar organizaciones por nombre"
+      [value]="search()"
+      (input)="applySearch($any($event.target).value)" />
   </div>
 
   <p class="status-line" role="status">
@@ -56,7 +63,13 @@
     } @empty {
       @if (!loading()) {
         <li class="list-empty">
-          @if (selectedStatus()) {
+          @if (search() && selectedStatus()) {
+            <p class="info">
+              Ninguna organización {{ filterLabel(selectedStatus()) | lowercase }} coincide con «{{ search() }}».
+            </p>
+          } @else if (search()) {
+            <p class="info">Ninguna organización coincide con «{{ search() }}».</p>
+          } @else if (selectedStatus()) {
             <p class="info">No hay organizaciones {{ filterLabel(selectedStatus()) | lowercase }}.</p>
           } @else {
             <p class="info">Aún no hay organizaciones.</p>

@@ -67,10 +67,13 @@ export interface PagedAuditEvents {
 export class PlatformTenantsService {
   private readonly http = inject(HttpClient);
 
-  list(page: number, size: number, status?: string): Observable<PagedTenants> {
+  list(page: number, size: number, status?: string, name?: string): Observable<PagedTenants> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (status) {
       params = params.set('status', status);
+    }
+    if (name) {
+      params = params.set('name', name);
     }
     return this.http.get<PagedTenants>('/api/v1/platform/tenants', { params });
   }

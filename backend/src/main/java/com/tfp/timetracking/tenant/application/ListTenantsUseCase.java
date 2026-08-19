@@ -14,8 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Lista los tenants para la administración de plataforma (RF-TEN-001,
- * T50-05), de forma paginada y opcionalmente filtrada por estado. Excluye el
- * tenant de sistema.
+ * T50-05), de forma paginada y opcionalmente filtrada por estado y nombre.
+ * Excluye el tenant de sistema.
  *
  * <p>Cada fila se acompaña de su número de usuarios y su último acceso, que
  * aporta {@link TenantUsageQuery}. El uso se pide para la página completa en
@@ -33,8 +33,8 @@ public class ListTenantsUseCase {
     }
 
     @Transactional(readOnly = true)
-    public PagedResult<TenantSummary> list(TenantStatus status, int page, int size) {
-        PagedResult<Tenant> tenants = tenantRepository.findAllExcluding(PlatformTenant.ID, status, page, size);
+    public PagedResult<TenantSummary> list(TenantStatus status, String name, int page, int size) {
+        PagedResult<Tenant> tenants = tenantRepository.findAllExcluding(PlatformTenant.ID, status, name, page, size);
         List<UUID> tenantIds = tenants.content().stream().map(Tenant::id).toList();
         Map<UUID, TenantUsageQuery.TenantUsage> usage = tenantUsageQuery.findUsage(tenantIds);
         List<TenantSummary> summaries = tenants.content().stream()

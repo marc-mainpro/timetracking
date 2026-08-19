@@ -70,14 +70,16 @@ public class PlatformTenantController {
     }
 
     @GetMapping
-    @Operation(summary = "Lista los tenants, con filtro opcional por estado")
+    @Operation(summary = "Lista los tenants, con filtro opcional por estado y nombre")
     public PagedPlatformTenantsResponse list(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String name) {
         PageQuery pageQuery = PageQuery.of(page, size);
         TenantStatus statusFilter = status != null ? TenantStatus.valueOf(status) : null;
-        return mapper.toPagedResponse(listTenantsUseCase.list(statusFilter, pageQuery.page(), pageQuery.size()));
+        String nameFilter = name != null && !name.trim().isEmpty() ? name.trim() : null;
+        return mapper.toPagedResponse(listTenantsUseCase.list(statusFilter, nameFilter, pageQuery.page(), pageQuery.size()));
     }
 
     @GetMapping("/{tenantId}")

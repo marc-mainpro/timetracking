@@ -11,4 +11,9 @@ interface TenantJpaRepository extends JpaRepository<TenantJpaEntity, UUID> {
     Page<TenantJpaEntity> findByIdNot(UUID excludedId, Pageable pageable);
 
     Page<TenantJpaEntity> findByIdNotAndStatus(UUID excludedId, String status, Pageable pageable);
+
+    Page<TenantJpaEntity> findByIdNotAndNameContainingIgnoreCase(UUID excludedId, String name, Pageable pageable);
+
+    Page<TenantJpaEntity> findByIdNotAndStatusAndNameContainingIgnoreCase(
+            UUID excludedId, String status, String name, Pageable pageable);
 }
