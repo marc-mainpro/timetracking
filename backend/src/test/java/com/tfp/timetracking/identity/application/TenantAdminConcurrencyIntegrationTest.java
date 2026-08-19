@@ -319,9 +319,10 @@ class TenantAdminConcurrencyIntegrationTest {
                 UUID tenantId,
                 UserStatus status,
                 com.tfp.timetracking.identity.domain.Role role,
+                String query,
                 int page,
                 int size) {
-            return delegate.findByTenant(tenantId, status, role, page, size);
+            return delegate.findByTenant(tenantId, status, role, query, page, size);
         }
 
         @Override

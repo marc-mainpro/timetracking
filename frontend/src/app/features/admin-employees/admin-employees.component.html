@@ -18,14 +18,13 @@
         {{ filterLabel(status) }}
       </button>
     }
-    <!-- Filtra la página cargada, no toda la plantilla: el endpoint no busca. -->
     <input
       type="search"
       class="filters__search"
-      placeholder="Filtrar esta página"
-      aria-label="Filtrar los empleados de esta página por nombre o correo"
+      placeholder="Buscar por nombre o correo"
+      aria-label="Buscar empleados por nombre o correo"
       [value]="search()"
-      (input)="search.set($any($event.target).value)" />
+      (input)="applySearch($any($event.target).value)" />
   </div>
 
   <p class="status-line" role="status">
@@ -41,7 +40,7 @@
   }
 
   <ul class="people">
-    @for (employee of visibleEmployees(); track employee.id) {
+    @for (employee of result()?.content ?? []; track employee.id) {
       <li class="person">
         <span class="person__name">
           <strong>{{ employee.firstName }} {{ employee.lastName }}</strong>
@@ -69,7 +68,7 @@
       @if (!loading()) {
         <li class="list-empty">
           @if (search()) {
-            <p class="info">Ningún empleado de esta página coincide con «{{ search() }}».</p>
+            <p class="info">Ningún empleado coincide con «{{ search() }}».</p>
           } @else if (selectedStatus()) {
             <p class="info">No hay empleados {{ filterLabel(selectedStatus()).toLowerCase() }}.</p>
           } @else {
