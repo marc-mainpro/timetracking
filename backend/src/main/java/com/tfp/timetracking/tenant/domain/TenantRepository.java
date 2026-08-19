@@ -19,8 +19,10 @@ public interface TenantRepository {
     /**
      * Listado paginado de tenants para la administración de plataforma
      * (RF-TEN-001), excluyendo el tenant indicado (el de sistema). Si
-     * {@code status} no es {@code null}, filtra por ese estado. Ordenado por
-     * fecha de creación descendente.
+     * {@code status} no es {@code null}, filtra por ese estado. Si
+     * {@code name} no es {@code null}, busca por coincidencia parcial sin
+     * distinguir mayúsculas/minúsculas. Ordenado por fecha de creación
+     * descendente.
      */
-    PagedResult<Tenant> findAllExcluding(UUID excludedId, TenantStatus status, int page, int size);
+    PagedResult<Tenant> findAllExcluding(UUID excludedId, TenantStatus status, String name, int page, int size);
 }

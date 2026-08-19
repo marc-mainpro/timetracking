@@ -21,7 +21,7 @@ describe('PlatformTenantsService', () => {
   });
 
   it('calls the platform tenant lifecycle endpoints', () => {
-    service.list(1, 10, 'SUSPENDED').subscribe();
+    service.list(1, 10, 'SUSPENDED', 'Acme').subscribe();
     service.get('t-1').subscribe();
     service.activate('t-1').subscribe();
     service.suspend('t-1', 'Impago').subscribe();
@@ -29,7 +29,7 @@ describe('PlatformTenantsService', () => {
     service.archive('t-1', 'Cierre').subscribe();
     service.audit(0, 20).subscribe();
 
-    httpMock.expectOne('/api/v1/platform/tenants?page=1&size=10&status=SUSPENDED').flush({
+    httpMock.expectOne('/api/v1/platform/tenants?page=1&size=10&status=SUSPENDED&name=Acme').flush({
       content: [],
       page: 1,
       size: 10,
@@ -73,7 +73,22 @@ describe('PlatformTenantsService', () => {
 
   it('omits the status query param when no filter is set', () => {
     service.list(0, 20).subscribe();
-    httpMock.expectOne('/api/v1/platform/tenants?page=0&size=20').flush({
+    const request = httpMock.expectOne('/api/v1/platform/tenants?page=0&size=20');
+    expect(request.request.params.has('status')).toBeFalse();
+    request.flush({
+      content: [],
+      page: 0,
+      size: 20,
+      totalElements: 0,
+      totalPages: 0
+    });
+  });
+
+  it('omits the name query param when no search is set', () => {
+    service.list(0, 20, 'ACTIVE').subscribe();
+    const request = httpMock.expectOne('/api/v1/platform/tenants?page=0&size=20&status=ACTIVE');
+    expect(request.request.params.has('name')).toBeFalse();
+    request.flush({
       content: [],
       page: 0,
       size: 20,

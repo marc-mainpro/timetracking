@@ -69,6 +69,39 @@ describe('PlatformTenantsComponent', () => {
     expect(component.selectedStatus()).toBe('SUSPENDED');
   });
 
+  it('busca por nombre y reinicia la paginación', () => {
+    component.page.set(3);
+
+    component.applySearch('acme');
+
+    const request = httpMock.expectOne(
+      (req) => req.url === '/api/v1/platform/tenants' && req.params.get('name') === 'acme' && req.params.get('page') === '0'
+    );
+    request.flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
+
+    expect(component.search()).toBe('acme');
+    expect(component.page()).toBe(0);
+  });
+
+  it('combina búsqueda y filtro de estado en la misma petición', () => {
+    component.applySearch('acme');
+    httpMock.expectOne((req) => req.url === '/api/v1/platform/tenants' && req.params.get('name') === 'acme').flush({
+      content: [],
+      page: 0,
+      size: 20,
+      totalElements: 0,
+      totalPages: 0
+    });
+
+    component.applyStatus('ACTIVE');
+
+    const request = httpMock.expectOne(
+      (req) => req.url === '/api/v1/platform/tenants' && req.params.get('name') === 'acme' && req.params.get('status') === 'ACTIVE'
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
+  });
+
   it('pide confirmación antes de suspender, sin lanzar la petición', () => {
     component.suspend(tenant);
 

@@ -299,7 +299,7 @@ paths:
     get:
       tags:
       - Platform - Tenants
-      summary: Lista los tenants, con filtro opcional por estado
+      summary: Lista los tenants, con filtro opcional por estado y nombre
       operationId: list
       parameters:
       - name: page
@@ -320,6 +320,11 @@ paths:
           maximum: 100
           minimum: 1
       - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: name
         in: query
         required: false
         schema:

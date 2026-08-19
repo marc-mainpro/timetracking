@@ -200,6 +200,40 @@ class PlatformTenantControllerIntegrationTest {
     }
 
     @Test
+    void platformAdminCanFilterTenantsByStatusAndPartialName() throws Exception {
+        String platformToken = createPlatformAdminToken("search");
+        String acmeEmail = "owner+search-acme+" + System.currentTimeMillis() + "@acme.test";
+        String betaEmail = "owner+search-beta+" + System.currentTimeMillis() + "@acme.test";
+
+        String acmeResponse = mockMvc.perform(post("/api/v1/platform/tenants")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(platformToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CreateTenantRequest(
+                                "Acme Search", "Europe/Madrid", acmeEmail, "supersecretpwd", "Owner", "Acme"))))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String acmeTenantId = objectMapper.readTree(acmeResponse).get("tenantId").asText();
+
+        mockMvc.perform(post("/api/v1/platform/tenants")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(platformToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CreateTenantRequest(
+                                "Beta Search", "Europe/Madrid", betaEmail, "supersecretpwd", "Owner", "Beta"))))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/v1/platform/tenants")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(platformToken))
+                        .param("status", "ACTIVE")
+                        .param("name", "acme"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(acmeTenantId))
+                .andExpect(jsonPath("$.content[0].name").value("Acme Search"));
+    }
+
+    @Test
     void tenantAdminCannotCreateTenants() throws Exception {
         TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("plat-create-forbidden");
 

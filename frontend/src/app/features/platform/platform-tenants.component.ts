@@ -76,6 +76,7 @@ export class PlatformTenantsComponent {
   readonly page = signal(0);
   readonly result = signal<PagedTenants | null>(null);
   readonly selectedStatus = signal<string>('');
+  readonly search = signal('');
   readonly selectedTenant = signal<PlatformTenantDetail | null>(null);
   readonly auditEvents = signal<AuditEvent[]>([]);
   readonly message = signal<string | null>(null);
@@ -111,7 +112,7 @@ export class PlatformTenantsComponent {
   load(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.tenantsService.list(this.page(), 20, this.selectedStatus() || undefined).subscribe({
+    this.tenantsService.list(this.page(), 20, this.selectedStatus() || undefined, this.search().trim() || undefined).subscribe({
       next: (result) => {
         this.result.set(result);
         this.renderedAt.set(Date.now());
@@ -133,6 +134,12 @@ export class PlatformTenantsComponent {
 
   applyStatus(status: string): void {
     this.selectedStatus.set(status);
+    this.page.set(0);
+    this.load();
+  }
+
+  applySearch(value: string): void {
+    this.search.set(value);
     this.page.set(0);
     this.load();
   }

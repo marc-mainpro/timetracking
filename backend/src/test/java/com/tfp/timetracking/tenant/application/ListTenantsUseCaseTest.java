@@ -30,32 +30,33 @@ class ListTenantsUseCaseTest {
 
     @Test
     void delegatesExcludingSystemTenantAndPropagatesFilter() {
-        when(tenantRepository.findAllExcluding(PlatformTenant.ID, TenantStatus.SUSPENDED, 0, 20))
+        when(tenantRepository.findAllExcluding(PlatformTenant.ID, TenantStatus.SUSPENDED, "Ac", 0, 20))
                 .thenReturn(new PagedResult<>(List.of(), 0, 20, 0, 0));
         when(tenantUsageQuery.findUsage(any())).thenReturn(Map.of());
 
-        useCase.list(TenantStatus.SUSPENDED, 0, 20);
+        useCase.list(TenantStatus.SUSPENDED, "Ac", 0, 20);
 
-        verify(tenantRepository).findAllExcluding(eq(PlatformTenant.ID), eq(TenantStatus.SUSPENDED), eq(0), eq(20));
+        verify(tenantRepository)
+                .findAllExcluding(eq(PlatformTenant.ID), eq(TenantStatus.SUSPENDED), eq("Ac"), eq(0), eq(20));
     }
 
     @Test
     void supportsNullStatusFilter() {
-        when(tenantRepository.findAllExcluding(PlatformTenant.ID, null, 0, 20))
+        when(tenantRepository.findAllExcluding(PlatformTenant.ID, null, null, 0, 20))
                 .thenReturn(new PagedResult<>(List.of(), 0, 20, 0, 0));
         when(tenantUsageQuery.findUsage(any())).thenReturn(Map.of());
 
-        assertThat(useCase.list(null, 0, 20).content()).isEmpty();
+        assertThat(useCase.list(null, null, 0, 20).content()).isEmpty();
     }
 
     @Test
     void enrichesEachTenantWithItsUsage() {
         Tenant tenant = someTenant();
-        when(tenantRepository.findAllExcluding(any(), any(), eq(0), eq(20)))
+        when(tenantRepository.findAllExcluding(any(), any(), any(), eq(0), eq(20)))
                 .thenReturn(new PagedResult<>(List.of(tenant), 0, 20, 1, 1));
         when(tenantUsageQuery.findUsage(any())).thenReturn(Map.of(tenant.id(), new TenantUsage(7, LAST_ACCESS)));
 
-        TenantSummary summary = useCase.list(null, 0, 20).content().getFirst();
+        TenantSummary summary = useCase.list(null, null, 0, 20).content().getFirst();
 
         assertThat(summary.tenant()).isSameAs(tenant);
         assertThat(summary.userCount()).isEqualTo(7);
@@ -67,11 +68,11 @@ class ListTenantsUseCaseTest {
         // Un tenant recien creado no tiene sesiones, asi que no aparece en el
         // mapa de uso. Debe listarse igualmente, no desaparecer del listado.
         Tenant tenant = someTenant();
-        when(tenantRepository.findAllExcluding(any(), any(), eq(0), eq(20)))
+        when(tenantRepository.findAllExcluding(any(), any(), any(), eq(0), eq(20)))
                 .thenReturn(new PagedResult<>(List.of(tenant), 0, 20, 1, 1));
         when(tenantUsageQuery.findUsage(any())).thenReturn(Map.of());
 
-        TenantSummary summary = useCase.list(null, 0, 20).content().getFirst();
+        TenantSummary summary = useCase.list(null, null, 0, 20).content().getFirst();
 
         assertThat(summary.userCount()).isZero();
         assertThat(summary.lastAccessAt()).isNull();
@@ -82,11 +83,11 @@ class ListTenantsUseCaseTest {
         // Resolverlo tenant a tenant daria una consulta por fila en cada carga.
         Tenant first = someTenant();
         Tenant second = someTenant();
-        when(tenantRepository.findAllExcluding(any(), any(), eq(0), eq(20)))
+        when(tenantRepository.findAllExcluding(any(), any(), any(), eq(0), eq(20)))
                 .thenReturn(new PagedResult<>(List.of(first, second), 0, 20, 2, 1));
         when(tenantUsageQuery.findUsage(any())).thenReturn(Map.of());
 
-        useCase.list(null, 0, 20);
+        useCase.list(null, null, 0, 20);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<java.util.Collection<UUID>> captor = ArgumentCaptor.forClass(java.util.Collection.class);
