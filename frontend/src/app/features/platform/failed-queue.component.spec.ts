@@ -150,4 +150,21 @@ describe('FailedQueueComponent', () => {
     expect(component.error()).toContain('No se encontró');
     expect(component.loading()).toBeFalse();
   });
+
+  it('mantiene la página elegida al avanzar en la cola', () => {
+    fixture.detectChanges();
+    httpMock
+      .expectOne((r) => r.url === '/api/v1/platform/queues/outbox/failed' && r.params.get('page') === '0')
+      .flush({ content: [entry], page: 0, size: 10, totalElements: 11, totalPages: 2 });
+
+    component.nextPage();
+
+    httpMock
+      .expectOne((r) => r.url === '/api/v1/platform/queues/outbox/failed' && r.params.get('page') === '1')
+      .flush({ content: [entry], page: 1, size: 10, totalElements: 11, totalPages: 2 });
+    fixture.detectChanges();
+
+    expect(component.page()).toBe(1);
+    expect(httpMock.match((r) => r.url === '/api/v1/platform/queues/outbox/failed').length).toBe(0);
+  });
 });

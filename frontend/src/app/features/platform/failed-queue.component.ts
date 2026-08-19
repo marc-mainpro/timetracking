@@ -70,7 +70,7 @@ export class FailedQueueComponent {
       // vuelve a la primera página, porque la anterior no significa nada aquí.
       this.queue();
       this.page.set(0);
-      this.load();
+      this.load(0);
     });
   }
 
@@ -81,12 +81,12 @@ export class FailedQueueComponent {
    *     a una acción fallida: la lista hay que refrescarla igualmente, pero
    *     borrar el motivo del fallo dejaría al usuario sin saber qué pasó.
    */
-  load(keepError = false): void {
+  load(page = this.page(), keepError = false): void {
     this.loading.set(true);
     if (!keepError) {
       this.error.set(null);
     }
-    this.failedQueueService.list(this.queue(), this.page(), PAGE_SIZE).subscribe({
+    this.failedQueueService.list(this.queue(), page, PAGE_SIZE).subscribe({
       next: (result) => {
         this.result.set(result);
         this.renderedAt.set(Date.now());
@@ -103,14 +103,14 @@ export class FailedQueueComponent {
     const result = this.result();
     if (result && result.page + 1 < result.totalPages) {
       this.page.update((page) => page + 1);
-      this.load();
+      this.load(this.page());
     }
   }
 
   previousPage(): void {
     if (this.page() > 0) {
       this.page.update((page) => page - 1);
-      this.load();
+      this.load(this.page());
     }
   }
 
@@ -209,7 +209,7 @@ export class FailedQueueComponent {
     if (result && result.content.length === 1 && this.page() > 0) {
       this.page.update((page) => page - 1);
     }
-    this.load(keepError);
+    this.load(this.page(), keepError);
     this.changed.emit();
   }
 }
