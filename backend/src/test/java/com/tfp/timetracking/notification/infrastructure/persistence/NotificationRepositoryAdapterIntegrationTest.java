@@ -150,6 +150,30 @@ class NotificationRepositoryAdapterIntegrationTest {
                 .isEqualTo(1);
     }
 
+    @Test
+    void manualTransitionsOnlyModifyNotificationsThatAreStillFailed() {
+        jdbcTemplate.update("DELETE FROM notification");
+        UUID tenantId = insertTenant();
+        Notification retry = failed(tenantId);
+        Notification discard = failed(tenantId);
+
+        assertThat(notificationRepository.requeueFailed(retry.id())).isTrue();
+        assertThat(notificationRepository.requeueFailed(retry.id())).isFalse();
+        assertThat(notificationRepository.discardFailed(retry.id())).isFalse();
+        assertThat(notificationRepository.discardFailed(discard.id())).isTrue();
+        assertThat(notificationRepository.discardFailed(discard.id())).isFalse();
+
+        Notification retried = notificationRepository.findByIdForPlatform(retry.id()).orElseThrow();
+        Notification discarded = notificationRepository.findByIdForPlatform(discard.id()).orElseThrow();
+        assertThat(retried.status())
+                .isEqualTo(com.tfp.timetracking.notification.domain.NotificationStatus.PENDING);
+        assertThat(retried.attempts()).isZero();
+        assertThat(retried.lastError()).isNull();
+        assertThat(discarded.status())
+                .isEqualTo(com.tfp.timetracking.notification.domain.NotificationStatus.DISCARDED);
+        assertThat(discarded.lastError()).isEqualTo("SMTP caido");
+    }
+
     /** Una notificacion que ya agoto sus reintentos de envio, ya persistida. */
     private Notification failed(UUID tenantId) {
         Notification notification = save(tenantId, NotificationType.ABSENCE_APPROVED, true, "/absences");

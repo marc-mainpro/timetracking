@@ -1,6 +1,7 @@
 package com.tfp.timetracking.notification.application;
 
 import com.tfp.timetracking.notification.domain.Notification;
+import com.tfp.timetracking.notification.domain.NotificationNotFailedException;
 import com.tfp.timetracking.notification.domain.NotificationRepository;
 import com.tfp.timetracking.notification.domain.NotificationStatus;
 import com.tfp.timetracking.outbox.application.FailedQueueMaintenance;
@@ -51,7 +52,9 @@ public class NotificationFailedQueueMaintenance implements FailedQueueMaintenanc
         Notification notification = load(id);
         FailedQueueEntry previous = toEntry(notification);
         notification.requeueDelivery();
-        repository.save(notification);
+        if (!repository.requeueFailed(id)) {
+            throw new NotificationNotFailedException(load(id).status());
+        }
         return previous;
     }
 
@@ -61,7 +64,9 @@ public class NotificationFailedQueueMaintenance implements FailedQueueMaintenanc
         Notification notification = load(id);
         FailedQueueEntry previous = toEntry(notification);
         notification.discardDelivery();
-        repository.save(notification);
+        if (!repository.discardFailed(id)) {
+            throw new NotificationNotFailedException(load(id).status());
+        }
         return previous;
     }
 

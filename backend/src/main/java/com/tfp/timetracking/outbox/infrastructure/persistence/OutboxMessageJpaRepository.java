@@ -79,7 +79,7 @@ interface OutboxMessageJpaRepository extends JpaRepository<OutboxMessageJpaEntit
      * evita que dos administradores concurrentes devuelvan a la cola un mensaje
      * que el publicador ya reclamo, publicandolo dos veces.
      */
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query(
             value =
                     """
@@ -91,7 +91,7 @@ interface OutboxMessageJpaRepository extends JpaRepository<OutboxMessageJpaEntit
     int requeueFailed(@Param("id") UUID id);
 
     /** Descarte manual. Misma guarda por estado, y conserva {@code last_error}. */
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query(
             value = "UPDATE outbox_message SET status = 'DISCARDED' WHERE id = :id AND status = 'FAILED'",
             nativeQuery = true)

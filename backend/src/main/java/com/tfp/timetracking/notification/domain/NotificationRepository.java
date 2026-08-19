@@ -56,6 +56,15 @@ public interface NotificationRepository {
     Optional<Notification> findByIdForPlatform(UUID id);
 
     /**
+     * Reencola una notificacion solo si sigue fallida. La guarda se ejecuta en
+     * la misma sentencia para no sobrescribir una intervencion concurrente.
+     */
+    boolean requeueFailed(UUID id);
+
+    /** Descarta una notificacion solo si sigue fallida, conservando su error. */
+    boolean discardFailed(UUID id);
+
+    /**
      * Cuenta el trabajo realmente encolado para envío: mismo filtro que
      * {@link #findPendingForDelivery(int)}.
      *

@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class NotificationRepositoryAdapter implements NotificationRepository {
@@ -68,6 +69,18 @@ public class NotificationRepositoryAdapter implements NotificationRepository {
     @Override
     public Optional<Notification> findByIdForPlatform(UUID id) {
         return jpaRepository.findById(id).map(NotificationMapper::toDomain);
+    }
+
+    @Override
+    @Transactional
+    public boolean requeueFailed(UUID id) {
+        return jpaRepository.requeueFailed(id) > 0;
+    }
+
+    @Override
+    @Transactional
+    public boolean discardFailed(UUID id) {
+        return jpaRepository.discardFailed(id) > 0;
     }
 
     @Override

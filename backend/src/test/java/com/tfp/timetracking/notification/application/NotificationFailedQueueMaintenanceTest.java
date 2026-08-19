@@ -59,6 +59,7 @@ class NotificationFailedQueueMaintenanceTest {
         NotificationFailedQueueMaintenance maintenance = new NotificationFailedQueueMaintenance(repository);
         Notification failed = failed();
         when(repository.findByIdForPlatform(failed.id())).thenReturn(Optional.of(failed));
+        when(repository.requeueFailed(failed.id())).thenReturn(true);
 
         FailedQueueEntry previous = maintenance.retry(failed.id());
 
@@ -66,7 +67,7 @@ class NotificationFailedQueueMaintenanceTest {
         assertThat(previous.lastError()).isEqualTo("SMTP caido");
         assertThat(failed.status()).isEqualTo(NotificationStatus.PENDING);
         assertThat(failed.isDeliverable()).isTrue();
-        verify(repository).save(failed);
+        verify(repository).requeueFailed(failed.id());
     }
 
     @Test
@@ -74,6 +75,7 @@ class NotificationFailedQueueMaintenanceTest {
         NotificationFailedQueueMaintenance maintenance = new NotificationFailedQueueMaintenance(repository);
         Notification failed = failed();
         when(repository.findByIdForPlatform(failed.id())).thenReturn(Optional.of(failed));
+        when(repository.discardFailed(failed.id())).thenReturn(true);
 
         maintenance.discard(failed.id());
 
@@ -81,7 +83,7 @@ class NotificationFailedQueueMaintenanceTest {
         // El aviso sigue existiendo para su destinatario: lo que se abandona es
         // el envio por correo, no el hecho que lo motivo.
         assertThat(failed.lastError()).isEqualTo("SMTP caido");
-        verify(repository).save(failed);
+        verify(repository).discardFailed(failed.id());
     }
 
     @Test
@@ -91,7 +93,7 @@ class NotificationFailedQueueMaintenanceTest {
         when(repository.findByIdForPlatform(id)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> maintenance.retry(id)).isInstanceOf(ResourceNotFoundException.class);
-        verify(repository, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(repository, never()).requeueFailed(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
@@ -102,7 +104,22 @@ class NotificationFailedQueueMaintenanceTest {
 
         assertThatThrownBy(() -> maintenance.discard(pending.id()))
                 .isInstanceOf(NotificationNotFailedException.class);
-        verify(repository, never()).save(org.mockito.ArgumentMatchers.any());
+        verify(repository, never()).discardFailed(org.mockito.ArgumentMatchers.any());
+
+    }
+
+    @Test
+    void aConcurrentInterventionIsRejected() {
+        NotificationFailedQueueMaintenance maintenance = new NotificationFailedQueueMaintenance(repository);
+        Notification failed = failed();
+        Notification discarded = failed();
+        discarded.discardDelivery();
+        when(repository.findByIdForPlatform(failed.id()))
+                .thenReturn(Optional.of(failed), Optional.of(discarded));
+        when(repository.requeueFailed(failed.id())).thenReturn(false);
+
+        assertThatThrownBy(() -> maintenance.retry(failed.id()))
+                .isInstanceOf(NotificationNotFailedException.class);
     }
 
     @Test
