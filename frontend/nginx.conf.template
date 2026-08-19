@@ -7,6 +7,22 @@
 # HTTPS. La compone 19-backend-origin.envsh, que además acepta la variable
 # antigua BACKEND_HOSTPORT. El filtro NGINX_ENVSUBST_FILTER del Dockerfile impide
 # que envsubst se coma las variables propias de nginx ($host, $uri, $scheme…).
+
+# Caché por tipo de recurso. Va en un `map` y no en `add_header` dentro de cada
+# `location` porque nginx no hereda las cabeceras del bloque superior en cuanto
+# un `location` añade la suya: hacerlo así dejaría el index sin CSP ni el resto
+# de cabeceras de seguridad.
+#
+# El index no se puede cachear: no lleva hash en el nombre, así que un navegador
+# con la copia vieja seguiría pidiendo los bundles antiguos y no vería el
+# despliegue nuevo —le pasó a una versión que ya estaba servida—. `no-cache` no
+# prohíbe guardarlo, solo obliga a revalidar, de modo que el 304 sigue ahorrando
+# la descarga. Los bundles sí llevan hash en el nombre, y por eso son inmutables.
+map $uri $cache_control {
+  default                                          "no-cache";
+  ~*\.(?:js|css|woff2?|png|jpg|jpeg|gif|svg|ico)$  "public, max-age=31536000, immutable";
+}
+
 server {
   listen 8080;
   server_name _;
@@ -19,6 +35,7 @@ server {
   gzip on;
   gzip_types text/plain text/css application/json application/javascript application/xml+rss image/svg+xml;
 
+  add_header Cache-Control $cache_control always;
   add_header X-Content-Type-Options nosniff always;
   add_header X-Frame-Options SAMEORIGIN always;
   add_header Referrer-Policy no-referrer always;
