@@ -3,8 +3,8 @@
 #
 # La única variable sustituida es ${BACKEND_ORIGIN} (esquema + host + puerto del
 # backend), porque ese dato solo se conoce en el despliegue: en docker-compose es
-# el nombre del servicio por HTTP y en Render puede ser una URL pública por
-# HTTPS. La compone 19-backend-origin.envsh, que además acepta la variable
+# el nombre del servicio por HTTP y en un entorno gestionado puede ser una URL
+# pública por HTTPS. La compone 19-backend-origin.envsh, que además acepta la variable
 # antigua BACKEND_HOSTPORT. El filtro NGINX_ENVSUBST_FILTER del Dockerfile impide
 # que envsubst se coma las variables propias de nginx ($host, $uri, $scheme…).
 
@@ -46,8 +46,8 @@ server {
     proxy_http_version 1.1;
 
     # Host tiene que ser el del backend, no el del navegador ($host). Los
-    # servicios gestionados (Render, Fly…) enrutan por Host: mandarles el del
-    # frontend devuelve 404 de su router, sin llegar a la aplicación. $proxy_host
+    # servicios gestionados enrutan por Host: mandarles el del frontend devuelve
+    # 404 de su router, sin llegar a la aplicación. $proxy_host
     # lo saca del propio proxy_pass, así que no hay una segunda variable que
     # mantener en sincronía. El backend no lee esta cabecera para nada.
     proxy_set_header Host $proxy_host;

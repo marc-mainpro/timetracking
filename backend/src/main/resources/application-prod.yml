@@ -4,13 +4,13 @@
 # La URL admite dos formas, por orden de preferencia:
 #
 #   1. DB_URL entera, si el entorno puede darla ya en formato JDBC.
-#   2. DB_HOST + DB_PORT + DB_NAME, que es lo que se usa en Render.
+#   2. DB_HOST + DB_PORT + DB_NAME, cuando el entorno solo expone las piezas.
 #
-# Hacen falta las dos porque los proveedores gestionados (Render, Heroku, Fly…)
-# publican la conexión como `postgresql://user:pass@host/db`, un formato que el
-# driver JDBC no entiende, y sus ficheros de despliegue no permiten concatenar
-# cadenas: solo pueden inyectar cada pieza por separado (ver render.yaml). En un
-# despliegue por contenedor a mano, en cambio, pasar DB_URL es lo cómodo.
+# Hacen falta las dos porque los proveedores gestionados suelen publicar la
+# conexión como `postgresql://user:pass@host/db`, un formato que el driver JDBC
+# no entiende, y sus ficheros de despliegue no permiten concatenar cadenas: solo
+# pueden inyectar cada pieza por separado. En un despliegue por contenedor a
+# mano, en cambio, pasar DB_URL es lo cómodo.
 #
 # Sin valores por defecto a propósito: si no llega ni DB_URL ni el trío de
 # piezas, el arranque falla en vez de apuntar en silencio a otra base de datos.

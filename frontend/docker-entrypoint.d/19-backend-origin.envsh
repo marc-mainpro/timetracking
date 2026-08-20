@@ -10,14 +10,14 @@
 # Existe porque hay dos formas de decir dónde está el backend y ninguna sirve
 # para los dos despliegues:
 #
-#   BACKEND_ORIGIN=https://mi-backend.onrender.com   origen completo con esquema
-#   BACKEND_HOSTPORT=backend:8080                    solo host:puerto
+#   BACKEND_ORIGIN=https://api.ejemplo.com   origen completo con esquema
+#   BACKEND_HOSTPORT=backend:8080            solo host:puerto
 #
-# La segunda es la que puede dar Render con `fromService ... property: hostport`,
-# que devuelve "host:puerto" sin esquema y no permite concatenar nada. La
-# primera es imprescindible desde que el backend puede ser un servicio público
-# por HTTPS: ahí el esquema no es deducible del puerto en todos los casos y
-# suponer http:// da un 400 del router de Render.
+# La segunda es la que dan las plataformas gestionadas que exponen el servicio
+# como "host:puerto" sin esquema y no permiten concatenar nada. La primera es
+# imprescindible desde que el backend puede ser un servicio público por HTTPS:
+# ahí el esquema no es deducible del puerto en todos los casos y suponer http://
+# hace que el router del proveedor responda 400.
 
 # Las expansiones llevan :- a propósito. El script se ejecuta con `set -u`
 # heredado de 15-local-resolvers.envsh, que el entrypoint sourcea antes que este
@@ -38,7 +38,7 @@ elif [ -n "${BACKEND_HOSTPORT:-}" ]; then
 else
     echo "ERROR: falta BACKEND_ORIGIN (o BACKEND_HOSTPORT). Sin destino al que" >&2
     echo "       reenviar /api/, nginx no puede arrancar. Ejemplos:" >&2
-    echo "         BACKEND_ORIGIN=https://mi-backend.onrender.com" >&2
+    echo "         BACKEND_ORIGIN=https://api.ejemplo.com" >&2
     echo "         BACKEND_HOSTPORT=backend:8080" >&2
 fi
 
