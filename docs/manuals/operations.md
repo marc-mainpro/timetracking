@@ -10,23 +10,19 @@
 
 Producción son dos servicios de Railway, `timetracking-backend` y
 `timetracking-frontend`, que consumen las imágenes publicadas en GHCR con la
-etiqueta **de versión** (`1.2.3`), no con `latest`.
+etiqueta `latest`.
 
 El despliegue es automático y va encadenado a la publicación de imágenes:
 
 1. Se publica un tag `v*` y `ghcr.yml` construye y sube las dos imágenes.
 2. Al terminar **correctamente**, `railway-redeploy.yml` se dispara por
-   `workflow_run` y comprueba que el commit etiquetado está contenido en `main`
-   —un tag sobre una rama sin revisar no despliega—.
-3. Deriva la versión del tag (`v1.2.3` → `1.2.3`) y **apunta cada servicio a esa
-   imagen concreta** con `railway service source connect --image`, antes de
-   desplegarlo con `railway redeploy --from-source`.
-4. El backend se despliega antes que el frontend, que le hace `proxy_pass`.
-
-Fijar la versión no es un adorno: apuntando a `latest`, Railway conserva la
-imagen que el servicio ya tiene fijada, de modo que el redespliegue repetía la
-versión anterior en lugar de traer la recién publicada. Con la etiqueta
-inmutable, lo desplegado es exactamente lo que dice el tag.
+   `workflow_run`, comprueba que el commit etiquetado está contenido en `main`
+   —un tag sobre una rama sin revisar no despliega— y redespliega los dos
+   servicios con
+   `railway redeploy --from-source`, que vuelve a resolver la etiqueta y baja
+   la imagen recién publicada. Un `redeploy` sin `--from-source` reutilizaría la
+   imagen ya fijada y produciría un despliegue sin cambios.
+3. El backend se redespliega antes que el frontend, que le hace `proxy_pass`.
 
 ### Qué hace falta configurar
 
@@ -46,26 +42,15 @@ commit que no ha pasado por `main`. Mergea el cambio y vuelve a etiquetar desde
 
 ### Rollback
 
-Apuntar los dos servicios a la versión anterior y redesplegarlos:
-
-```bash
-for service in timetracking-backend timetracking-frontend; do
-  RAILWAY_TOKEN=xxx npx -y @railway/cli@5 service source connect \
-    --service "$service" --environment production \
-    --image "ghcr.io/marc-mainpro/timetracking-${service#timetracking-}:1.2.2"
-  RAILWAY_TOKEN=xxx npx -y @railway/cli@5 redeploy \
-    --service "$service" --environment production --from-source --yes
-done
-```
+Republicar el tag anterior no basta: `latest` ya apunta a la versión nueva. Para
+volver atrás, redesplegar desde Railway la versión anterior del servicio, o
+apuntar el servicio a la etiqueta semántica concreta (`1.2.3`) y redesplegar.
 
 ### Despliegue manual
 
 Con el token de proyecto a mano:
 
 ```bash
-RAILWAY_TOKEN=xxx npx -y @railway/cli@5 service source connect \
-  --service timetracking-backend --environment production \
-  --image ghcr.io/marc-mainpro/timetracking-backend:1.2.3
 RAILWAY_TOKEN=xxx npx -y @railway/cli@5 redeploy \
   --service timetracking-backend --environment production --from-source --yes
 ```

@@ -81,48 +81,19 @@ jobs:
             exit 1
           fi
 
-      - name: Resolve the published version
-        # ghcr.yml etiqueta las imagenes con `type=semver,pattern={{version}}`,
-        # que publica 1.2.3 a partir del tag v1.2.3. Se exige la forma exacta:
-        # si el tag no es una version, no hay imagen que desplegar y es mejor
-        # parar que adivinar.
-        env:
-          PUBLISHED_REF: ${{ github.event.workflow_run.head_branch }}
-        run: |
-          version="${PUBLISHED_REF#v}"
-          if ! printf '%s' "${version}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
-            echo "La referencia '${PUBLISHED_REF}' no es un tag de version: no se despliega." >&2
-            exit 1
-          fi
-          echo "IMAGE_VERSION=${version}" >> "$GITHUB_ENV"
-
-      # Cada servicio se apunta a la version concreta antes de desplegar. Con
-      # `latest` no basta: Railway conserva la imagen que el servicio ya tiene
-      # fijada, asi que un redespliegue repetia la version anterior en vez de
-      # traer la recien publicada. Fijar la etiqueta inmutable hace ademas que
-      # lo desplegado sea exactamente lo que dice el tag.
-      #
       # El backend va primero: el frontend le hace proxy_pass y depende de su
       # API, asi que la ventana en la que las versiones no coinciden es menor
       # actualizandolo antes.
-      - name: Deploy timetracking-backend
+      - name: Redeploy timetracking-backend
         run: |
-          npx -y "${RAILWAY_CLI}" service source connect \
-            --service timetracking-backend \
-            --environment "${DEPLOY_ENVIRONMENT}" \
-            --image "ghcr.io/${GITHUB_REPOSITORY}-backend:${IMAGE_VERSION}"
           npx -y "${RAILWAY_CLI}" redeploy \
             --service timetracking-backend \
             --environment "${DEPLOY_ENVIRONMENT}" \
             --from-source \
             --yes
 
-      - name: Deploy timetracking-frontend
+      - name: Redeploy timetracking-frontend
         run: |
-          npx -y "${RAILWAY_CLI}" service source connect \
-            --service timetracking-frontend \
-            --environment "${DEPLOY_ENVIRONMENT}" \
-            --image "ghcr.io/${GITHUB_REPOSITORY}-frontend:${IMAGE_VERSION}"
           npx -y "${RAILWAY_CLI}" redeploy \
             --service timetracking-frontend \
             --environment "${DEPLOY_ENVIRONMENT}" \
@@ -144,6 +115,5 @@ jobs:
             echo
             printf -- "- Entorno: \`%s\`\n" "${DEPLOY_ENVIRONMENT}"
             printf -- "- Referencia publicada: \`%s\`\n" "${PUBLISHED_REF}"
-            printf -- "- Version desplegada: \`%s\`\n" "${IMAGE_VERSION:-desconocida}"
             printf -- "- Imagenes: [publicacion que lo origino](%s)\n" "${SOURCE_RUN_URL}"
           } >> "$GITHUB_STEP_SUMMARY"

@@ -344,9 +344,9 @@ request y semanalmente:
 etiquetas semánticas y `latest` en cada tag `v*`.
 
 `.github/workflows/railway-redeploy.yml` encadena el despliegue: cuando la
-publicación de imágenes termina correctamente, apunta en Railway los
-servicios `timetracking-backend` y `timetracking-frontend` a la imagen de esa
-versión concreta y los redespliega —en ese orden—. Se dispara por `workflow_run` y no por el
+publicación de imágenes termina correctamente, redespliega en Railway los
+servicios `timetracking-backend` y `timetracking-frontend` —en ese orden— para
+que bajen la imagen recién publicada. Se dispara por `workflow_run` y no por el
 tag, de modo que nunca redespliega una versión que no llegó al registro, y solo
 despliega commits contenidos en `main`.
 Requiere el secreto `RAILWAY_TOKEN`; ver [manual de
