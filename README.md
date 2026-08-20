@@ -132,12 +132,16 @@ Los correos de verificación y de recuperación llevan tokens de un solo uso que
 **nunca se escriben en los logs**: Mailpit es la única forma de leerlos en
 desarrollo.
 
-Datos de demostración y comprobación de humo:
+Datos de demostración y comprobación de humo, con el repositorio clonado:
 
 ```bash
 ./scripts/seed-demo.sh    # crea dos tenants demo; necesita las credenciales de PLATFORM_ADMIN
 ./scripts/smoke.sh        # levanta la pila y ejecuta un alta pública real de extremo a extremo
 ```
+
+`smoke.sh` construye desde fuente, porque su cometido es ejercitar el árbol de
+trabajo. Para comprobar en cambio una release ya publicada:
+`COMPOSE_FILE=docker-compose.yml ./scripts/smoke.sh`.
 
 Para parar y borrar también el volumen de PostgreSQL:
 
@@ -264,8 +268,11 @@ esquema va como migración `Vn__…` nueva**, nunca por autogeneración.
   ausencias, calendarios y turnos, registro público, recuperación de contraseña,
   sesiones, notificaciones por rol y aislamiento entre tenants.
 
-Los E2E requieren la pila levantada y credenciales válidas de `PLATFORM_ADMIN`.
-Estrategia completa en [`docs/testing/estrategia.md`](docs/testing/estrategia.md).
+Los E2E requieren credenciales válidas de `PLATFORM_ADMIN` y la pila levantada
+**desde fuente** (`docker compose -f docker-compose.local.yml up -d --build`):
+corriéndolos contra las imágenes publicadas se estaría probando la última
+release, no el código de trabajo. Estrategia completa en
+[`docs/testing/estrategia.md`](docs/testing/estrategia.md).
 
 ## Seguridad
 

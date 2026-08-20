@@ -9,6 +9,11 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
+# Construye desde fuente a proposito: el smoke debe ejercitar el arbol de
+# trabajo, no la ultima imagen publicada. Con COMPOSE_FILE=docker-compose.yml se
+# puede apuntar a las imagenes de GHCR para comprobar una release ya publicada.
+export COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.local.yml}"
+
 docker compose up -d --build
 
 for _ in $(seq 1 60); do

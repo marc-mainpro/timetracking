@@ -280,7 +280,7 @@ jobs:
           PLATFORM_ADMIN_PASSWORD: platform-secret-pwd
         run: |
           cp .env.example .env
-          docker compose up -d --build
+          docker compose -f docker-compose.local.yml up -d --build
           for i in $(seq 1 60); do
             curl -fsS http://localhost:8080/actuator/health >/dev/null && break
             sleep 5
@@ -293,7 +293,7 @@ jobs:
         run: npm run e2e
       - name: Diagnóstico si falla
         if: failure()
-        run: docker compose logs --tail 200 backend
+        run: docker compose -f docker-compose.local.yml logs --tail 200 backend
       - uses: actions/upload-artifact@v4
         if: always()
         with:
