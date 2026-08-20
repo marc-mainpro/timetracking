@@ -44,7 +44,9 @@ mailpit. No se simula el backend a propósito: el valor de estas pruebas está e
 atravesar todas las capas, y un backend simulado no detectaría una migración
 rota ni una fuga entre tenants.
 
-Requisitos para ejecutarlos: `docker compose up -d --build`
+Requisitos para ejecutarlos: `docker compose -f docker-compose.local.yml up -d
+--build` —construye backend y frontend desde el arbol de trabajo, que es lo que
+los E2E deben ejercitar—
 (`PUBLIC_REGISTRATION_ENABLED=true` por defecto) y `PLATFORM_ADMIN_EMAIL` /
 `PLATFORM_ADMIN_PASSWORD`.
 

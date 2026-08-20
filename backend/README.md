@@ -14,7 +14,9 @@ eventos de integración.
 - PostgreSQL + Flyway (migraciones versionadas, `ddl-auto: validate`).
 - springdoc-openapi (Swagger UI / OpenAPI).
 - Bucket4j (rate limiting), Micrometer/Actuator (health y métricas).
-- Testcontainers + JaCoCo para tests de integración y cobertura.
+- PDFBox (exportación PDF de informes).
+- Testcontainers + JaCoCo para tests de integración y cobertura, ArchUnit para
+  las reglas de arquitectura (todo dentro de `mvn verify`).
 
 ## Arquitectura
 
@@ -24,13 +26,17 @@ infraestructura / interfaces** por módulo de negocio. Cada módulo bajo
 
 | Módulo | Responsabilidad |
 | --- | --- |
-| `identity` | Autenticación (login/refresh/logout), usuarios y empleados, emisión de JWT. |
-| `tenant` | Registro de organización (tenant) y su administrador inicial. |
-| `timetracking` | Jornadas y pausas (inicio/fin, workday del empleado y vista admin). |
+| `identity` | Autenticación (login/refresh/logout), sesiones, recuperación de contraseña, usuarios y empleados, emisión de JWT. |
+| `tenant` | Solicitudes de alta, ciclo de vida del tenant (PENDING/ACTIVE/SUSPENDED/ARCHIVED) y administración de plataforma. |
+| `timetracking` | Jornadas y pausas (inicio/fin, workday del empleado y vista admin), reglas horarias y evaluación de la jornada cerrada. |
 | `corrections` | Solicitudes de corrección de jornada y su aprobación/rechazo. |
-| `reporting` | Informes de tiempo trabajado (empleado y tenant) y exportación CSV. |
-| `audit` | Eventos de auditoría de acciones sensibles. |
-| `outbox` | Transactional Outbox: persistencia y publicación de eventos de integración. |
+| `absence` | Tipos de ausencia, solicitud, cancelación, aprobación y rechazo. |
+| `calendar` | Calendarios laborales con festivos y jornadas especiales, y su resolución por ámbito (tenant, equipo o empleado). |
+| `shift` | Plantillas de turno y asignaciones, incluidos los turnos que cruzan medianoche. |
+| `reporting` | Informes de tiempo trabajado (empleado y tenant) y exportación CSV y PDF. |
+| `notification` | Notificaciones internas y por correo, con destinatarios por rol y política de canal. |
+| `audit` | Eventos de auditoría de acciones sensibles, de tenant y de plataforma. |
+| `outbox` | Transactional Outbox: persistencia, publicación, reintentos y mantenimiento de las colas fallidas. |
 | `shared` | Seguridad transversal (filtros, contexto de tenant, CORS, rate limit), utilidades y manejo de errores. |
 
 ### Multitenancy
@@ -42,10 +48,14 @@ datos entre organizaciones.
 ### Autenticación
 
 - `POST /api/v1/auth/login` devuelve un **access token** (JWT, claim `roles`
-  con `TENANT_ADMIN` / `EMPLOYEE`) y fija una **refresh cookie** `HttpOnly`.
+  con `TENANT_ADMIN` / `EMPLOYEE`, o `PLATFORM_ADMIN` para el rol global) y fija
+  una **refresh cookie** `HttpOnly`.
 - `POST /api/v1/auth/refresh` rota el refresh token; `POST /api/v1/auth/logout`
   lo revoca.
 - Autorización por rol con `@PreAuthorize("hasRole('TENANT_ADMIN')")` etc.
+- `PLATFORM_ADMIN` es un rol global: pertenece a un tenant de sistema fijo, no es
+  asignable dentro de un tenant ni por registro público, y solo se aprovisiona
+  por arranque controlado desde variables de entorno (ADR-0010).
 
 ## Endpoints principales
 
@@ -54,13 +64,24 @@ Base: `/api/v1`. Documentación viva en Swagger UI (ver abajo).
 | Prefijo | Módulo | Notas |
 | --- | --- | --- |
 | `/auth` | identity | login, refresh, logout. |
-| `/auth/register` | tenant | alta de organización + admin. |
+| `/auth/sessions` | identity | listado y revocación de sesiones activas. |
+| `/auth/password` | identity | solicitud y confirmación del restablecimiento de contraseña. |
+| `/public/tenant-registrations` | tenant | alta pública: solicitud, verificación de correo y reenvío. |
 | `/employees` | identity | gestión de empleados (admin). |
-| `/workdays` | timetracking | jornada del empleado y su historial. |
+| `/workdays` | timetracking | jornada del empleado, pausas e historial. |
 | `/admin/workdays` | timetracking | vista de jornadas del admin. |
+| `/admin/hourly-rules` | timetracking | consulta y actualización de las reglas horarias del tenant. |
 | `/corrections` | corrections | solicitudes y resolución de correcciones. |
-| `/reports` | reporting | informes y exportación CSV. |
+| `/app/absences`, `/admin/absences` | absence | solicitud y cancelación por el empleado; aprobación y rechazo por el admin. |
+| `/admin/calendars`, `/admin/calendar-assignments` | calendar | calendarios laborales y su asignación por ámbito. |
+| `/app/shifts`, `/admin/shifts` | shift | turnos del empleado; plantillas y asignaciones del admin. |
+| `/reports` | reporting | informes y exportación CSV y PDF. |
+| `/notifications` | notification | bandeja, contador de no leídas y marcado como leída. |
 | `/admin/audit-events` | audit | consulta de auditoría (admin). |
+| `/platform/tenants` | tenant | ciclo de vida de tenants (`PLATFORM_ADMIN`). |
+| `/platform/registrations` | tenant | revisión, aprobación y rechazo de solicitudes de alta. |
+| `/platform/audit` | audit | auditoría de plataforma. |
+| `/platform/system-status`, `/platform/queues` | outbox | salud de las colas y reintento o descarte de mensajes fallidos. |
 
 ## Requisitos
 
@@ -74,8 +95,12 @@ No hay Maven Wrapper: se usa el `mvn` del sistema.
 
 Perfiles Spring en `src/main/resources`:
 
-- `application.yml` — configuración base (lee variables de entorno).
+- `application.yml` — configuración base (lee variables de entorno). Importa
+  además los `config/*.yml` de cada área como `optional:`, así que la ausencia de
+  un fichero no rompe el arranque.
 - `application-local.yml` — desarrollo local.
+- `application-prod.yml` — datasource de producción (`DB_URL`, o bien
+  `DB_HOST` + `DB_PORT` + `DB_NAME`).
 - `application-test.yml` — tests (scheduler de outbox desactivado, etc.).
 
 Variables de entorno relevantes (ver [`../.env.example`](../.env.example)):
@@ -105,13 +130,14 @@ java -jar target/*.jar
 ```
 
 La forma recomendada de levantarlo junto a Postgres y el frontend es el
-`docker compose` de la raíz del repo.
+`docker compose` de la raíz del repo: `docker-compose.yml` usa las imágenes
+publicadas en GHCR y `docker-compose.local.yml` las construye desde fuente.
 
 ## Migraciones de base de datos
 
 Flyway aplica automáticamente las migraciones de
-`src/main/resources/db/migration` (`V1__baseline.sql` … `V9__processed_event.sql`)
-al arrancar. Con `ddl-auto: validate`, el esquema JPA debe coincidir con el
+`src/main/resources/db/migration` (desde `V1__baseline.sql` hasta la última,
+hoy `V27__queue_discard.sql`) al arrancar. Con `ddl-auto: validate`, el esquema JPA debe coincidir con el
 migrado; **cualquier cambio de esquema va como nueva migración `Vn__…`**, nunca
 por autogeneración.
 
@@ -138,4 +164,5 @@ Con el servicio arriba en `http://localhost:8080`:
 ## Imagen Docker
 
 `Dockerfile` multi-stage (build con Maven + runtime JRE). Se construye desde la
-raíz con `docker compose build backend`.
+raíz con `docker compose -f docker-compose.local.yml build backend`; el
+`docker-compose.yml` de la raíz no compila, descarga la imagen de GHCR.

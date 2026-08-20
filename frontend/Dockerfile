@@ -14,7 +14,8 @@ RUN apk add --no-cache wget
 # La configuración se resuelve al arrancar, no al construir: el entrypoint de la
 # imagen pasa por envsubst todo lo que haya en /etc/nginx/templates y escribe el
 # resultado en /etc/nginx/conf.d. Así la misma imagen vale para docker-compose y
-# para Render, que dan al backend direcciones internas distintas.
+# para un despliegue gestionado, que dan al backend direcciones distintas entre
+# sí.
 #
 # El filtro es imprescindible: sin él envsubst sustituiría en la plantilla
 # cualquier $variable que coincidiese con una del entorno del contenedor,

@@ -32,7 +32,9 @@ services:
       retries: 12
 
   backend:
-    image: ghcr.io/marc-mainpro/timetracking-backend:${TIMETRACKING_VERSION:-latest}
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
@@ -81,7 +83,9 @@ services:
       retries: 12
 
   frontend:
-    image: ghcr.io/marc-mainpro/timetracking-frontend:${TIMETRACKING_VERSION:-latest}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     depends_on:
       backend:
         condition: service_healthy
