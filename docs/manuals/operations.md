@@ -16,7 +16,9 @@ El despliegue es automático y va encadenado a la publicación de imágenes:
 
 1. Se publica un tag `v*` y `ghcr.yml` construye y sube las dos imágenes.
 2. Al terminar **correctamente**, `railway-redeploy.yml` se dispara por
-   `workflow_run` y redespliega los dos servicios con
+   `workflow_run`, comprueba que el commit etiquetado está contenido en `main`
+   —un tag sobre una rama sin revisar no despliega— y redespliega los dos
+   servicios con
    `railway redeploy --from-source`, que vuelve a resolver la etiqueta y baja
    la imagen recién publicada. Un `redeploy` sin `--from-source` reutilizaría la
    imagen ya fijada y produciría un despliegue sin cambios.
@@ -31,6 +33,12 @@ El despliegue es automático y va encadenado a la publicación de imágenes:
 
 El workflow falla de forma explícita si `RAILWAY_TOKEN` no está configurado, en
 vez de dejar un servicio a medio desplegar con un error de autenticación.
+
+### Qué hacer si el despliegue se rechaza
+
+Si el job aborta con «el commit no está contenido en main», el tag apunta a un
+commit que no ha pasado por `main`. Mergea el cambio y vuelve a etiquetar desde
+`main`; si es una urgencia, despliega a mano con el procedimiento de abajo.
 
 ### Rollback
 

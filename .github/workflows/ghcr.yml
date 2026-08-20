@@ -8,6 +8,15 @@ on:
 env:
   REGISTRY: ghcr.io
 
+# Una publicacion cada vez. Las dos imagenes comparten la etiqueta `latest`:
+# si dos tags se publican a la vez, el job mas lento puede sobrescribir
+# `latest` con la version anterior y dejar backend y frontend en versiones
+# distintas, que es lo que despues se redespliega. No se cancela la que este
+# en curso para no dejar publicada solo una de las dos imagenes.
+concurrency:
+  group: ghcr-publish
+  cancel-in-progress: false
+
 jobs:
   build-and-push-images:
     name: Build and push (${{ matrix.component }})

@@ -347,7 +347,8 @@ etiquetas semánticas y `latest` en cada tag `v*`.
 publicación de imágenes termina correctamente, redespliega en Railway los
 servicios `timetracking-backend` y `timetracking-frontend` —en ese orden— para
 que bajen la imagen recién publicada. Se dispara por `workflow_run` y no por el
-tag, de modo que nunca redespliega una versión que no llegó al registro.
+tag, de modo que nunca redespliega una versión que no llegó al registro, y solo
+despliega commits contenidos en `main`.
 Requiere el secreto `RAILWAY_TOKEN`; ver [manual de
 operación](docs/manuals/operations.md#despliegue-en-railway).
 

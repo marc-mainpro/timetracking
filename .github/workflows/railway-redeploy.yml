@@ -47,6 +47,31 @@ jobs:
       RAILWAY_CLI: '@railway/cli@5'
 
     steps:
+      # Historial completo: hace falta para poder decidir si el commit
+      # publicado esta contenido en main.
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Check that the published commit is on main
+        # ghcr.yml corre para cualquier tag v*, apunte donde apunte. Sin esta
+        # comprobacion, etiquetar un commit de una rama sin revisar lo publica
+        # como `latest` y lo despliega en produccion sin pasar por ninguna
+        # revision.
+        env:
+          PUBLISHED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if ! git cat-file -e "${PUBLISHED_SHA}^{commit}" 2>/dev/null; then
+            echo "El commit ${PUBLISHED_SHA} no existe en main: no se despliega." >&2
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "${PUBLISHED_SHA}" HEAD; then
+            echo "El commit ${PUBLISHED_SHA} no esta contenido en main: no se despliega." >&2
+            exit 1
+          fi
+
       - name: Check that the Railway token is configured
         # Sin el secreto la CLI fallaria mas adelante con un error de
         # autenticacion poco claro, ya con un servicio a medio desplegar.
@@ -77,11 +102,18 @@ jobs:
 
       - name: Summarise the deployment
         if: always()
+        # El nombre del tag entra por env y no interpolado en el script: git
+        # acepta nombres como `v$(...)` y GitHub sustituye la expresion antes de
+        # que bash la lea, asi que interpolarla ejecutaria el contenido del tag
+        # en un job que tiene RAILWAY_TOKEN en el entorno.
+        env:
+          PUBLISHED_REF: ${{ github.event.workflow_run.head_branch }}
+          SOURCE_RUN_URL: ${{ github.event.workflow_run.html_url }}
         run: |
           {
             echo "### Redespliegue en Railway"
             echo
-            echo "- Entorno: \`${DEPLOY_ENVIRONMENT}\`"
-            echo "- Referencia publicada: \`${{ github.event.workflow_run.head_branch }}\`"
-            echo "- Imagenes: [publicacion que lo origino](${{ github.event.workflow_run.html_url }})"
+            printf -- "- Entorno: \`%s\`\n" "${DEPLOY_ENVIRONMENT}"
+            printf -- "- Referencia publicada: \`%s\`\n" "${PUBLISHED_REF}"
+            printf -- "- Imagenes: [publicacion que lo origino](%s)\n" "${SOURCE_RUN_URL}"
           } >> "$GITHUB_STEP_SUMMARY"
