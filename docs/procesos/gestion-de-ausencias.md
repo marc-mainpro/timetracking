@@ -23,6 +23,11 @@ Los tipos de ausencia pertenecen a cada tenant, ninguna migración los crea y no
 hay endpoint que los dé de alta. Sin esta siembra, todo tenant nacería con el
 catálogo vacío y sus empleados no podrían solicitar nada.
 
+El tenant destino **se lee del payload del evento, nunca del envelope**. Los
+eventos del registro público se emiten con el tenant de plataforma como
+`tenantId` —una solicitud de alta es anterior al tenant y quien la observa es la
+plataforma—, y el id del tenant recién creado solo viaja en `payload.tenantId`.
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -31,7 +36,10 @@ sequenceDiagram
     participant BD as Base de datos
 
     O->>L: tenant.registered.v1 o<br/>tenant.registration-approved.v1
-    alt Evento ya procesado por este consumidor
+    L->>L: Tenant destino = payload.tenantId
+    alt El destino es el tenant de plataforma
+        L-->>O: Ignora
+    else Evento ya procesado por este consumidor
         L-->>O: Ignora
     else El tenant ya tiene tipos
         L-->>O: Ignora
@@ -45,6 +53,12 @@ se comprueba que el catálogo esté vacío. Hace falta lo segundo porque un mism
 tenant puede recibir varios eventos de alta según cómo se haya creado —registro
 aprobado o alta directa desde plataforma— y son eventos distintos, con `eventId`
 distinto.
+
+Los tenants que se crearon mientras la siembra usaba el `tenantId` del envelope
+—todos los nacidos por alta pública— quedaron con el catálogo vacío y sin forma
+de repararlo desde la aplicación. Los arregla la migración
+`V28__absence_type_backfill.sql`, que siembra el catálogo por defecto en todo
+tenant que no tenga ninguno.
 
 La siembra se hace reaccionando al evento y no dentro del caso de uso que crea el
 tenant, para no acoplar el módulo `tenant` con el módulo `absence`: la
@@ -123,7 +137,7 @@ resuelta no se cancela ni se vuelve a resolver.
 
 | Método | Ruta | Rol | Descripción |
 | --- | --- | --- | --- |
-| `GET` | `/api/v1/app/absence-types` | `EMPLOYEE` | Tipos activos del tenant. |
+| `GET` | `/api/v1/app/absence-types` | `EMPLOYEE`, `TENANT_ADMIN` | Tipos activos del tenant. |
 | `POST` | `/api/v1/app/absences` | `EMPLOYEE` | Solicita una ausencia. |
 | `GET` | `/api/v1/app/absences` | `EMPLOYEE` | Sus propias solicitudes, filtrables por fechas. |
 | `POST` | `/api/v1/app/absences/{id}/cancel` | `EMPLOYEE` | Cancela una solicitud pendiente propia. |

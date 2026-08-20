@@ -215,7 +215,7 @@ backups. Lo que sigue abierto está al final, en «Pendiente».
 
 | Requisito | Tarea | Caso de uso / componente | Endpoint | Pruebas |
 |---|---|---|---|---|
-| RF-ABS-001 Tipos de ausencia | T80-01 | `AbsenceType`, `SeedDefaultAbsenceTypesListener` (siembra el catálogo al crear el tenant) | `GET /api/v1/app/absence-types` | `SeedDefaultAbsenceTypesListenerTest`, `ausencia-notificacion.spec.ts` |
+| RF-ABS-001 Tipos de ausencia | T80-01 | `AbsenceType`, `SeedDefaultAbsenceTypesListener` (siembra el catálogo al crear el tenant, con el tenant del payload), `V28__absence_type_backfill.sql` (repara los tenants sin catálogo) | `GET /api/v1/app/absence-types` | `SeedDefaultAbsenceTypesListenerTest`, `AbsenceTypeBackfillMigrationIntegrationTest`, `ausencia-notificacion.spec.ts`, `registro-publico.spec.ts` |
 
 ## Notificaciones (RF-NOT)
 

@@ -6,6 +6,7 @@ import com.tfp.timetracking.outbox.application.IntegrationEventListener;
 import com.tfp.timetracking.outbox.application.ProcessedEventStore;
 import com.tfp.timetracking.shared.domain.IdGenerator;
 import com.tfp.timetracking.shared.domain.IntegrationEvent;
+import com.tfp.timetracking.shared.domain.PlatformTenant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
@@ -28,6 +29,16 @@ import org.springframework.transaction.annotation.Transactional;
  * consumidor)} y ademas comprueba si el tenant ya tiene tipos, porque el mismo
  * tenant recibe varios eventos de alta segun como se haya creado (registro
  * aprobado o alta directa desde plataforma).
+ *
+ * <p><b>El tenant destino se toma del payload, no del envelope.</b> Los eventos
+ * del registro publico se emiten con {@code tenantId = PlatformTenant.ID}
+ * (ver {@code TenantIntegrationEventMapper#registrationEvent}) porque una
+ * solicitud de alta es anterior al tenant y quien la observa es la plataforma;
+ * el id del tenant recien creado solo viaja en {@code payload.tenantId}.
+ * Sembrar sobre {@code event.tenantId()} dejaba el catalogo en el tenant de
+ * plataforma y a todo tenant nacido por registro publico sin tipos, es decir
+ * sin poder solicitar ninguna ausencia. Los tenants ya afectados se reparan en
+ * la migracion {@code V28__absence_type_backfill.sql}.
  */
 @Component
 public class SeedDefaultAbsenceTypesListener implements IntegrationEventListener {
@@ -61,13 +72,39 @@ public class SeedDefaultAbsenceTypesListener implements IntegrationEventListener
     @Override
     @Transactional
     public void onEvent(IntegrationEvent event) {
-        if (!TENANT_CREATED_EVENTS.contains(event.eventType()) || event.tenantId() == null) {
+        if (!TENANT_CREATED_EVENTS.contains(event.eventType())) {
+            return;
+        }
+        UUID tenantId = targetTenantId(event);
+        if (tenantId == null || PlatformTenant.ID.equals(tenantId)) {
             return;
         }
         if (!processedEventStore.tryClaim(event.eventId(), CONSUMER)) {
             return;
         }
-        seedFor(event.tenantId());
+        seedFor(tenantId);
+    }
+
+    /**
+     * Tenant que debe recibir el catalogo. Ambos eventos aceptados llevan el id
+     * del tenant en {@code payload.tenantId}; el envelope solo sirve como
+     * respaldo. El valor llega como {@link UUID} cuando el listener se invoca
+     * en la misma JVM y como {@link String} cuando ha pasado por la
+     * serializacion del outbox.
+     */
+    private static UUID targetTenantId(IntegrationEvent event) {
+        Object fromPayload = event.payload().get("tenantId");
+        if (fromPayload instanceof UUID tenantId) {
+            return tenantId;
+        }
+        if (fromPayload instanceof String tenantId) {
+            try {
+                return UUID.fromString(tenantId);
+            } catch (IllegalArgumentException ignored) {
+                return event.tenantId();
+            }
+        }
+        return event.tenantId();
     }
 
     private void seedFor(UUID tenantId) {

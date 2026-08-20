@@ -62,6 +62,15 @@ que **ningún empleado podía solicitar una ausencia**. RF-ABS-001 estaba escrit
 modelado, con API y con pruebas —que creaban sus tipos a mano—. *Cerrado en
 `2b667e4`.*
 
+El cierre resultó parcial. La siembra tomaba el tenant del envelope del evento,
+pero el alta pública lo emite con el tenant de plataforma y lleva el tenant real
+en el payload: el catálogo acababa en la plataforma y **toda empresa registrada
+por la vía pública seguía sin poder solicitar ausencias**. El test unitario del
+listener construía el evento de aprobación con un envelope que el mapper real
+nunca produce, y los E2E creaban sus tenants desde plataforma, el único camino
+sano. Corregido tomando el tenant del payload, con backfill en
+`V28__absence_type_backfill.sql` y cobertura en `registro-publico.spec.ts`.
+
 ### El alta pública creaba tenants operativos de un paso
 
 `POST /api/v1/auth/register` seguía llamando a `Tenant.register()`, saltándose la

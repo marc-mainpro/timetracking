@@ -42,8 +42,14 @@ public class AppAbsenceController {
         this.mapper = mapper;
     }
 
+    /**
+     * El catalogo tambien lo necesita el {@code TENANT_ADMIN}: la pantalla de
+     * resolucion de ausencias traduce el {@code absenceTypeId} de cada
+     * solicitud a su nombre. No amplia el alcance de los datos, porque el caso
+     * de uso filtra siempre por el tenant del token.
+     */
     @GetMapping("/absence-types")
-    @PreAuthorize("hasRole('EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('EMPLOYEE','TENANT_ADMIN')")
     public List<AbsenceTypeResponse> types() {
         return mapper.toTypeResponse(listAbsenceTypesUseCase.listActive());
     }
