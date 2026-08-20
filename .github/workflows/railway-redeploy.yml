@@ -1,0 +1,87 @@
+name: Redeploy on Railway
+
+# Encadena el despliegue a la publicacion de imagenes: cuando "Build and
+# Publish Docker Images" termina bien tras un tag v*, los servicios de Railway
+# vuelven a tirar de GHCR. Se usa workflow_run y no otro `push: tags` porque
+# redesplegar antes de que las imagenes esten publicadas dejaria produccion en
+# la version anterior sin que nadie lo notara.
+on:
+  workflow_run:
+    workflows: ["Build and Publish Docker Images"]
+    types: [completed]
+
+# El redespliegue no lee el repositorio, pero GitHub exige declarar el permiso
+# minimo explicitamente (T30-05). El acceso a Railway va por RAILWAY_TOKEN, no
+# por el token de GitHub.
+permissions:
+  contents: read
+
+# Un despliegue cada vez y sin cancelar el que este en curso: interrumpir un
+# redespliegue a medias puede dejar los dos servicios en versiones distintas.
+concurrency:
+  group: railway-redeploy-production
+  cancel-in-progress: false
+
+jobs:
+  redeploy:
+    name: Redeploy production services
+    runs-on: ubuntu-latest
+
+    # workflow_run se dispara tambien cuando el workflow de origen falla o se
+    # cancela: sin esta condicion se redesplegaria una version que nunca llego
+    # al registro.
+    if: github.event.workflow_run.conclusion == 'success'
+
+    environment:
+      name: production
+
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      # El token de proyecto ya esta atado a un entorno, pero pasarlo explicito
+      # evita que un token equivocado despliegue en el entorno que no toca. No
+      # se llama RAILWAY_ENVIRONMENT a proposito: ese nombre lo interpreta la
+      # propia CLI y aqui el valor es un nombre de entorno, no un id.
+      DEPLOY_ENVIRONMENT: ${{ vars.RAILWAY_ENVIRONMENT || 'production' }}
+      # Version mayor fijada: `latest` convertiria cualquier publicacion del CLI
+      # en un cambio no revisado en la ruta de despliegue.
+      RAILWAY_CLI: '@railway/cli@5'
+
+    steps:
+      - name: Check that the Railway token is configured
+        # Sin el secreto la CLI fallaria mas adelante con un error de
+        # autenticacion poco claro, ya con un servicio a medio desplegar.
+        run: |
+          if [ -z "${RAILWAY_TOKEN}" ]; then
+            echo "Falta el secreto RAILWAY_TOKEN (token de proyecto de Railway)." >&2
+            exit 1
+          fi
+
+      # El backend va primero: el frontend le hace proxy_pass y depende de su
+      # API, asi que la ventana en la que las versiones no coinciden es menor
+      # actualizandolo antes.
+      - name: Redeploy timetracking-backend
+        run: |
+          npx -y "${RAILWAY_CLI}" redeploy \
+            --service timetracking-backend \
+            --environment "${DEPLOY_ENVIRONMENT}" \
+            --from-source \
+            --yes
+
+      - name: Redeploy timetracking-frontend
+        run: |
+          npx -y "${RAILWAY_CLI}" redeploy \
+            --service timetracking-frontend \
+            --environment "${DEPLOY_ENVIRONMENT}" \
+            --from-source \
+            --yes
+
+      - name: Summarise the deployment
+        if: always()
+        run: |
+          {
+            echo "### Redespliegue en Railway"
+            echo
+            echo "- Entorno: \`${DEPLOY_ENVIRONMENT}\`"
+            echo "- Referencia publicada: \`${{ github.event.workflow_run.head_branch }}\`"
+            echo "- Imagenes: [publicacion que lo origino](${{ github.event.workflow_run.html_url }})"
+          } >> "$GITHUB_STEP_SUMMARY"

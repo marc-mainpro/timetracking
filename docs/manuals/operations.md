@@ -6,6 +6,47 @@
 - Parada: `docker compose down`
 - Limpieza completa: `docker compose down -v`
 
+## Despliegue en Railway
+
+Producción son dos servicios de Railway, `timetracking-backend` y
+`timetracking-frontend`, que consumen las imágenes publicadas en GHCR con la
+etiqueta `latest`.
+
+El despliegue es automático y va encadenado a la publicación de imágenes:
+
+1. Se publica un tag `v*` y `ghcr.yml` construye y sube las dos imágenes.
+2. Al terminar **correctamente**, `railway-redeploy.yml` se dispara por
+   `workflow_run` y redespliega los dos servicios con
+   `railway redeploy --from-source`, que vuelve a resolver la etiqueta y baja
+   la imagen recién publicada. Un `redeploy` sin `--from-source` reutilizaría la
+   imagen ya fijada y produciría un despliegue sin cambios.
+3. El backend se redespliega antes que el frontend, que le hace `proxy_pass`.
+
+### Qué hace falta configurar
+
+| Dónde | Nombre | Valor |
+| --- | --- | --- |
+| Secreto del repositorio | `RAILWAY_TOKEN` | Token **de proyecto** de Railway, creado desde los ajustes del proyecto para el entorno de producción. |
+| Variable del repositorio (opcional) | `RAILWAY_ENVIRONMENT` | Entorno de Railway al que desplegar. Por defecto `production`. |
+
+El workflow falla de forma explícita si `RAILWAY_TOKEN` no está configurado, en
+vez de dejar un servicio a medio desplegar con un error de autenticación.
+
+### Rollback
+
+Republicar el tag anterior no basta: `latest` ya apunta a la versión nueva. Para
+volver atrás, redesplegar desde Railway la versión anterior del servicio, o
+apuntar el servicio a la etiqueta semántica concreta (`1.2.3`) y redesplegar.
+
+### Despliegue manual
+
+Con el token de proyecto a mano:
+
+```bash
+RAILWAY_TOKEN=xxx npx -y @railway/cli@5 redeploy \
+  --service timetracking-backend --environment production --from-source --yes
+```
+
 ## Variables de entorno clave
 
 ### Base de datos y aplicación

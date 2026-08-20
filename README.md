@@ -343,6 +343,14 @@ request y semanalmente:
 `.github/workflows/ghcr.yml` publica las imágenes en GitHub Container Registry con
 etiquetas semánticas y `latest` en cada tag `v*`.
 
+`.github/workflows/railway-redeploy.yml` encadena el despliegue: cuando la
+publicación de imágenes termina correctamente, redespliega en Railway los
+servicios `timetracking-backend` y `timetracking-frontend` —en ese orden— para
+que bajen la imagen recién publicada. Se dispara por `workflow_run` y no por el
+tag, de modo que nunca redespliega una versión que no llegó al registro.
+Requiere el secreto `RAILWAY_TOKEN`; ver [manual de
+operación](docs/manuals/operations.md#despliegue-en-railway).
+
 ## Estructura del repositorio
 
 ```
