@@ -12,6 +12,7 @@ import com.tfp.timetracking.absence.domain.AbsenceType;
 import com.tfp.timetracking.absence.domain.AbsenceTypeRepository;
 import com.tfp.timetracking.outbox.application.ProcessedEventStore;
 import com.tfp.timetracking.shared.domain.IntegrationEvent;
+import com.tfp.timetracking.shared.domain.PlatformTenant;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -46,13 +47,44 @@ class SeedDefaultAbsenceTypesListenerTest {
     }
 
     @Test
-    void alsoSeedsWhenTheTenantComesFromAnApprovedRegistration() {
+    void seedsTheTenantOfThePayloadWhenAPublicRegistrationIsApproved() {
+        // El evento del registro público viaja con el tenant de plataforma en el
+        // envelope: la solicitud es anterior al tenant. Tomar ese id sembraba el
+        // catálogo en la plataforma y dejaba sin tipos a todo tenant nacido por
+        // alta pública.
         when(processedEventStore.tryClaim(any(), any())).thenReturn(true);
         when(repository.findByTenantId(tenantId)).thenReturn(List.of());
 
-        listener.onEvent(event("tenant.registration-approved.v1"));
+        listener.onEvent(approvedRegistrationEvent(tenantId));
 
-        verify(repository, times(5)).save(any());
+        ArgumentCaptor<AbsenceType> captor = ArgumentCaptor.forClass(AbsenceType.class);
+        verify(repository, times(5)).save(captor.capture());
+        assertThat(captor.getAllValues()).allSatisfy(type -> assertThat(type.tenantId()).isEqualTo(tenantId));
+    }
+
+    @Test
+    void readsTheTenantOfThePayloadEvenAfterTheOutboxSerialisesIt() {
+        // Al pasar por el outbox el payload se serializa y el UUID vuelve como
+        // cadena.
+        when(processedEventStore.tryClaim(any(), any())).thenReturn(true);
+        when(repository.findByTenantId(tenantId)).thenReturn(List.of());
+
+        listener.onEvent(approvedRegistrationEvent(tenantId.toString()));
+
+        ArgumentCaptor<AbsenceType> captor = ArgumentCaptor.forClass(AbsenceType.class);
+        verify(repository, times(5)).save(captor.capture());
+        assertThat(captor.getAllValues()).allSatisfy(type -> assertThat(type.tenantId()).isEqualTo(tenantId));
+    }
+
+    @Test
+    void neverSeedsThePlatformTenant() {
+        // No es un tenant de negocio: nadie solicita ausencias en él.
+        when(processedEventStore.tryClaim(any(), any())).thenReturn(true);
+
+        listener.onEvent(approvedRegistrationEvent(PlatformTenant.ID));
+
+        verify(repository, never()).save(any());
+        verify(processedEventStore, never()).tryClaim(any(), any());
     }
 
     @Test
@@ -83,6 +115,27 @@ class SeedDefaultAbsenceTypesListenerTest {
         listener.onEvent(event("tenant.registered.v1"));
 
         verify(repository, never()).save(any());
+    }
+
+    /**
+     * Reproduce el envelope que emite de verdad
+     * {@code TenantIntegrationEventMapper} para el alta pública: tenant de
+     * plataforma en el envelope y tenant real solo en el payload.
+     */
+    private IntegrationEvent approvedRegistrationEvent(Object payloadTenantId) {
+        UUID registrationId = UUID.randomUUID();
+        return new IntegrationEvent(
+                UUID.randomUUID(),
+                "tenant.registration-approved.v1",
+                1,
+                Instant.parse("2026-08-06T10:00:00Z"),
+                PlatformTenant.ID,
+                registrationId,
+                "TenantRegistration",
+                Map.of(
+                        "registrationId", registrationId,
+                        "tenantId", payloadTenantId,
+                        "ownerUserId", UUID.randomUUID()));
     }
 
     private IntegrationEvent event(String eventType) {

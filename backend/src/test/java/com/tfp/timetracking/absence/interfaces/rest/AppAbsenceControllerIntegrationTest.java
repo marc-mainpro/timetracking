@@ -153,9 +153,31 @@ class AppAbsenceControllerIntegrationTest {
                                 "reason", "R".repeat(501)))))
                 .andExpect(status().isBadRequest());
 
+        // Solicitar es cosa del empleado: el admin no puede hacerlo por él.
+        mockMvc.perform(post("/api/v1/app/absences")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "absenceTypeId", typeId,
+                                "startDate", "2026-08-10",
+                                "endDate", "2026-08-12"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminReadsTheCatalogueOfItsOwnTenantToResolveRequests() throws Exception {
+        // La pantalla de resolución traduce el absenceTypeId de cada solicitud a
+        // su nombre; sin esto mostraba UUIDs crudos.
+        TestTenantFactory.TenantActors tenant = testTenantFactory.createTenantActors("absence-admin-types");
+        TestTenantFactory.TenantActors other = testTenantFactory.createTenantActors("absence-admin-other");
+        insertAbsenceType(tenant.tenantId(), "VAC", true, true);
+        insertAbsenceType(other.tenantId(), "AJENO", true, true);
+
         mockMvc.perform(get("/api/v1/app/absence-types")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tenant.admin().token()))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].code").value("VAC"));
     }
 
     private UUID insertAbsenceType(UUID tenantId, String code, boolean active, boolean requiresApproval) {

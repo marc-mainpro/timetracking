@@ -175,7 +175,8 @@ export class AdminAbsencesComponent {
     this.absencesService.listTypes().subscribe({
       next: (types) => {
         this.types.set(Object.fromEntries(types.map((type: AbsenceType) => [type.id, type.name])));
-      }
+      },
+      error: () => this.types.set({})
     });
   }
 

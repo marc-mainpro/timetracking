@@ -91,6 +91,22 @@ test.describe('Alta pública de tenant', () => {
     // 6) Ahora sí: el propietario puede autenticarse.
     const ownerToken = await login(api, email, password);
     expect(ownerToken).toBeTruthy();
+
+    // 7) El tenant nace con su catálogo de tipos de ausencia (RF-ABS-001). El
+    // alta pública emite su evento con el tenant de plataforma en el envelope y
+    // el tenant real solo en el payload: sembrar sobre el envelope dejaba a
+    // toda empresa registrada por esta vía sin poder solicitar ausencias, y no
+    // se detectaba porque el resto de E2E crea el tenant desde plataforma.
+    // Llega por el outbox, así que hay una ventana de consistencia eventual.
+    await expect
+      .poll(
+        async () => {
+          const response = await api.get('/api/v1/app/absence-types', { headers: bearer(ownerToken) });
+          return response.ok() ? (await response.json()).length : 0;
+        },
+        { timeout: 40_000, intervals: [1_000] }
+      )
+      .toBe(5);
   });
 
   test('una solicitud repetida no revela que el correo ya existe', async () => {

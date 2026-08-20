@@ -17,7 +17,7 @@ repositorio como `docs/api/openapi.yaml`.
 | DELETE | `/api/v1/auth/sessions` | Bearer JWT | T60 |
 | POST | `/api/v1/auth/password/forgot` | público | T60 |
 | POST | `/api/v1/auth/password/reset` | público | T60 |
-| GET | `/api/v1/app/absence-types` | `EMPLOYEE` | T80 |
+| GET | `/api/v1/app/absence-types` | `EMPLOYEE`, `TENANT_ADMIN` | T80 |
 | POST | `/api/v1/app/absences` | `EMPLOYEE` | T80 |
 | GET | `/api/v1/app/absences` | `EMPLOYEE` | T80 |
 | POST | `/api/v1/app/absences/{absenceId}/cancel` | `EMPLOYEE` | T80 |
@@ -93,7 +93,8 @@ cookie `refresh_token`.
 autenticado, incluida la actual, y devuelve `204` limpiando la cookie.
 
 `GET /api/v1/app/absence-types`: lista los tipos de ausencia activos del tenant
-autenticado para que el empleado pueda solicitar una ausencia.
+autenticado para que el empleado pueda solicitar una ausencia. También lo lee el
+`TENANT_ADMIN`, que necesita el nombre de cada tipo para resolver solicitudes.
 
 `POST /api/v1/app/absences`: crea una solicitud de ausencia del empleado
 autenticado. Body: `{absenceTypeId, startDate, endDate, reason}`. Si el tipo
