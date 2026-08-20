@@ -142,5 +142,6 @@ necesarios para la CSP estricta servida por nginx (`nginx.conf`):
 ## Imagen Docker
 
 `Dockerfile` multi-stage (build de Angular + nginx). Se construye desde la raíz
-con `docker compose build frontend`. En producción, nginx sirve el SPA y hace
-proxy de `/api/` hacia el backend.
+con `docker compose -f docker-compose.local.yml build frontend`; el
+`docker-compose.yml` de la raíz no compila, descarga la imagen de GHCR. En
+producción, nginx sirve el SPA y hace proxy de `/api/` hacia el backend.
