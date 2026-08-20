@@ -2,6 +2,10 @@
 
 Fuente de verdad: `tasks/_context/CONTEXT-DOMINIO.md` §1.
 
+Este documento describe el modelo desde el **dominio**. Su reflejo en la base de
+datos —tablas, columnas, índices y claves ajenas— está en
+[`docs/database/`](../database/README.md).
+
 ## Tenant
 
 Campos: `id`, `name`, `status` (`ACTIVE`|`INACTIVE`), `timezone`, `createdAt`,
