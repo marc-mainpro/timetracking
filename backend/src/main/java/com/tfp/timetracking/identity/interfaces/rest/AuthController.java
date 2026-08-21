@@ -9,6 +9,7 @@ import com.tfp.timetracking.identity.application.RefreshSessionCommand;
 import com.tfp.timetracking.identity.application.RefreshSessionUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import org.springframework.http.CacheControl;
@@ -52,6 +53,7 @@ public class AuthController {
         this.cookieSecure = cookieSecure;
     }
 
+    @SecurityRequirements
     @PostMapping("/login")
     @Operation(summary = "Autentica un usuario y emite access token + refresh cookie")
     public ResponseEntity<AuthTokenResponse> login(@Valid @RequestBody AuthLoginRequest request) {
@@ -60,6 +62,7 @@ public class AuthController {
         return sessionResponse(session);
     }
 
+    @SecurityRequirements
     @PostMapping("/refresh")
     @Operation(summary = "Rota el refresh token y devuelve un nuevo access token")
     public ResponseEntity<AuthTokenResponse> refresh(
