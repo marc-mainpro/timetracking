@@ -373,6 +373,7 @@ operación](docs/manuals/operations.md#despliegue-en-railway).
 | Decisiones de arquitectura | [`docs/adr/`](docs/adr) |
 | Vista C4 y componentes | [`docs/architecture/`](docs/architecture) |
 | Dominio, glosario y reglas de negocio | [`docs/domain/`](docs/domain) |
+| Base de datos: esquema, relaciones y migraciones | [`docs/database/`](docs/database) |
 | Procesos de negocio (diagramas) | [`docs/procesos/`](docs/procesos) |
 | API y contrato OpenAPI | [`docs/api/`](docs/api) |
 | Seguridad | [`docs/security/`](docs/security) |

@@ -6,7 +6,8 @@ un test unitario asociado.
 ## Tenant / User
 
 - Nombre de tenant obligatorio; timezone IANA válida.
-- Un tenant inactivo no puede operar (ninguna operación de negocio).
+- Solo un tenant `ACTIVE` puede operar: `PENDING`, `SUSPENDED` y `ARCHIVED`
+  rechazan toda operación de negocio (`TENANT_INACTIVE`).
 - Email único **globalmente** (ADR-0008) para eliminar ambigüedad en el login.
 - Un usuario inactivo no se autentica.
 - Un usuario pertenece a un único tenant.

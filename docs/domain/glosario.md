@@ -2,8 +2,9 @@
 
 - **Tenant**: organización cliente del SaaS. Todos los datos de negocio están
   aislados por `tenant_id`.
-- **User**: persona autenticable perteneciente a un único tenant, con rol
-  `TENANT_ADMIN` o `EMPLOYEE`.
+- **User**: persona autenticable perteneciente a un único tenant, con uno o
+  varios roles: `TENANT_ADMIN` o `EMPLOYEE` dentro de una organización, o
+  `PLATFORM_ADMIN` en el tenant de plataforma.
 - **Workday (jornada)**: periodo de trabajo de un empleado en un día,
   agregado raíz que contiene sus pausas.
 - **BreakEntry (pausa)**: intervalo de pausa dentro de una jornada.

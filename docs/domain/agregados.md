@@ -2,10 +2,32 @@
 
 Fuente de verdad: `tasks/_context/CONTEXT-DOMINIO.md` §1.
 
+Este documento describe el modelo desde el **dominio**. Su reflejo en la base de
+datos —tablas, columnas, índices y claves ajenas— está en
+[`docs/database/`](../database/README.md).
+
 ## Tenant
 
-Campos: `id`, `name`, `status` (`ACTIVE`|`INACTIVE`), `timezone`, `createdAt`,
-`updatedAt`.
+Campos: `id`, `name`, `status`, `timezone`, `createdAt`, `updatedAt`,
+`activatedAt`, `suspendedAt`, `archivedAt`, `suspensionReason`.
+
+Estados: `PENDING`, `ACTIVE`, `SUSPENDED`, `ARCHIVED`. **Solo `ACTIVE` permite
+operar**; el resto de módulos lo comprueban con `isActive()`.
+
+Transiciones válidas:
+
+- `PENDING → ACTIVE` (activate)
+- `ACTIVE → SUSPENDED` (suspend, con motivo)
+- `SUSPENDED → ACTIVE` (reactivate)
+- `ACTIVE → ARCHIVED` y `SUSPENDED → ARCHIVED` (archive)
+
+`ARCHIVED` es terminal. Un tenant nace `ACTIVE` por creación directa
+(`register`) o `PENDING` por registro público controlado
+(`requestRegistration`): el alta pública nunca crea una organización operativa
+sin decisión de un `PLATFORM_ADMIN`.
+
+Genera los eventos de dominio `TenantRegistered`, `TenantActivated`,
+`TenantSuspended`, `TenantReactivated` y `TenantArchived`.
 
 ## User
 
@@ -32,7 +54,10 @@ Transiciones válidas:
 - `OPEN → CLOSED` (end)
 - `CLOSED → ADJUSTED` (corrección aprobada)
 
-Cualquier otra transición lanza una excepción de dominio (HTTP 409).
+Cualquier otra transición lanza una excepción de dominio (HTTP 409). En
+particular, `ADJUSTED` es terminal: una jornada ya ajustada no se cierra ni
+se vuelve a ajustar, y una jornada `ON_BREAK` no se puede cerrar sin terminar
+antes la pausa.
 
 ## BreakEntry (dentro de Workday)
 
@@ -88,6 +113,14 @@ quien invoca la resolución.
 
 Campos: `id`, `tenantId`, `workdayId`, `requestedBy`, `reason`,
 `proposedChanges` (JSON), `status`, `resolvedBy`, `resolvedAt`,
-`resolutionComment`, `createdAt`.
+`resolutionComment`, `version` (optimistic locking), `createdAt`.
 
 Estados: `PENDING`, `APPROVED`, `REJECTED`.
+
+---
+
+Este documento cubre los agregados del núcleo. Los módulos posteriores
+—ausencias, turnos, evaluación de jornada, reglas horarias, notificaciones,
+sesiones y solicitudes de alta— aún no tienen ficha aquí; su modelo persistido
+está descrito en
+[`docs/database/diccionario-de-datos.md`](../database/diccionario-de-datos.md).
