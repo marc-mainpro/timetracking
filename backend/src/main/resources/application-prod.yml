@@ -1,5 +1,6 @@
-# Datasource de producción. Es lo único que aporta este perfil: el resto de la
-# configuración vive en application.yml y en config/*.yml, que se cargan siempre.
+# Perfil de producción: datasource y apagado de la documentación viva. El resto
+# de la configuración vive en application.yml y en config/*.yml, que se cargan
+# siempre.
 #
 # La URL admite dos formas, por orden de preferencia:
 #
@@ -20,3 +21,27 @@ spring:
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+
+# La documentación viva (OpenAPI + Swagger UI) se apaga en producción.
+#
+# No es que exponerla abra ningún endpoint: la regla sigue siendo
+# `anyRequest().authenticated()` y RouteAuthorizationIntegrationTest lo vigila.
+# Lo que evita es regalar el reconocimiento: `SharedPublicEndpoints` abre
+# /v3/api-docs y /swagger-ui sin autenticar, así que publicarlas en internet
+# entrega a cualquiera el inventario completo de rutas, verbos y esquemas de
+# request, incluidos los de plataforma y los de registro y recuperación de
+# contraseña (OWASP API9: Improper Inventory Management).
+#
+# Apagarlo aquí no cuesta nada porque nadie consume estas rutas en producción:
+# el contrato está versionado en docs/api/openapi.yaml (se exporta desde un
+# arranque local), la demo corre en local con docker compose, y el frontend
+# llama a la API, no al documento.
+#
+# `enabled: false` desregistra los endpoints en vez de protegerlos, que es lo
+# que hace falta: exigir token en /v3/api-docs no serviría, porque Swagger UI
+# carga ese documento antes de que exista ningún token y se quedaría en blanco.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
