@@ -5,6 +5,7 @@ import com.tfp.timetracking.tenant.application.ResendTenantRegistrationVerificat
 import com.tfp.timetracking.tenant.application.VerifyTenantRegistrationEmailUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/public/tenant-registrations")
 @Tag(name = "Public - Tenant registrations")
+@SecurityRequirements
 public class PublicTenantRegistrationController {
 
     private final RequestTenantRegistrationUseCase requestUseCase;
