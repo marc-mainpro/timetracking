@@ -121,22 +121,19 @@ clave AWS de ejemplo en `.env.example` y gitleaks la detectó).
 
 ### Frontend
 
-`npm audit`: 32 vulnerabilidades (1 critical, 22 high, 7 moderate, 2 low).
-**24 advisories high/critical**, todos con excepción aprobada y fecha de revisión
-2026-11-04. Ninguno es resoluble sin modificar `frontend/package.json` o
-`frontend/package-lock.json`, ficheros reservados al agente principal
-(ver `HANDOFF.md`):
+`npm audit`: 30 vulnerabilidades (0 critical, 21 high, 7 moderate, 2 low).
+**13 advisories high/critical**, todos con excepción aprobada y fecha de revisión
+2026-11-04 o 2026-11-10:
 
 * **5 advisories de runtime**, todos en la cadena Angular 19
   (`@angular/common`, `@angular/core`). El único fix es Angular 21, que es un
   salto de dos versiones mayores. Los tres vectores (HttpTransferCache,
   hidratación de cliente, i18n) exigen funcionalidades que esta SPA no activa.
-* **19 advisories de build** (`tar`, `vite`, `postcss`, `piscina`,
-  `serialize-javascript`, `http-proxy-middleware`, `sigstore`,
-  `brace-expansion`, `fast-uri`, `ip-address`). No se empaquetan en la imagen del
-  frontend. Cinco de ellos (`brace-expansion`, `fast-uri`, `ip-address`) tienen
-  fix **no breaking**: se corrigen con un `npm audit fix` que actualice solo el
-  lockfile, pendiente del agente propietario del fichero.
+* **8 advisories de build** (`vite`, `postcss`, `piscina`,
+  `serialize-javascript`, `http-proxy-middleware`, `sigstore`, `image-size`).
+  No se empaquetan en la imagen del frontend. El advisory de `tar` se corrigió
+  forzando `pacote@20.0.1`, que ya usa `tar@7.5.22` sin requerir salto mayor de
+  Angular; lo restante sigue exigiendo Angular 21 o carece de parche upstream.
 
 ### Backend
 
