@@ -166,7 +166,7 @@ Variables leídas por Docker Compose (plantilla completa en
 | `PUBLIC_REGISTRATION_ENABLED` | `true` | A `false` cierra el alta pública y deja el alta de tenants como operación exclusiva de `PLATFORM_ADMIN`. |
 | `REGISTRATION_VERIFICATION_URL` | derivado de `FRONTEND_ORIGIN` | Enlace del correo de verificación del alta. Un único `%s`. |
 | `APP_REQUEST_MAX_PAYLOAD_BYTES` | `65536` | Límite de tamaño de petición. |
-| `MAIL_ENABLED` / `MAIL_PROVIDER` / `MAIL_HOST` / `MAIL_PORT` / `MAIL_FROM` | `true` / `smtp` / `mailpit` / `1025` / `no-reply@timetracking.local` | Correo saliente. `MAIL_PROVIDER=smtp` usa SMTP; `MAIL_PROVIDER=resend` usa la API HTTP de Resend con `RESEND_API_KEY`, ignora `MAIL_HOST`/`MAIL_PORT`/`MAIL_USERNAME`/`MAIL_PASSWORD` y exige un dominio verificado en Resend para producción. |
+| `MAIL_ENABLED` / `MAIL_PROVIDER` / `MAIL_HOST` / `MAIL_PORT` / `MAIL_FROM` | `true` / `smtp` / `mailpit` / `1025` / `no-reply@timetracking.local` | Correo saliente. `MAIL_PROVIDER=smtp` usa SMTP; `MAIL_PROVIDER=resend` usa la API HTTP de Resend con `RESEND_API_KEY`, `RESEND_CONNECT_TIMEOUT` y `RESEND_READ_TIMEOUT`, ignora `MAIL_HOST`/`MAIL_PORT`/`MAIL_USERNAME`/`MAIL_PASSWORD` y exige un dominio verificado en Resend para producción. |
 | `NOTIFICATION_APP_BASE_URL` | `http://localhost:4200` | Base absoluta del enlace de cada notificación por correo. |
 | `TIMETRACKING_VERSION` | `latest` | Tag de las imágenes de GHCR (solo en la vía A). |
 

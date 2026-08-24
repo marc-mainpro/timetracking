@@ -25,10 +25,12 @@ class ResendEmailSenderTest {
     private final NotificationMetrics metrics = new NotificationMetrics(registry);
     private final RestClient.Builder restClientBuilder = RestClient.builder();
     private final MockRestServiceServer server = MockRestServiceServer.bindTo(restClientBuilder).build();
-    private final ResendEmailSender sender = new ResendEmailSender(
-            restClientBuilder,
-            new MailProperties(true, "resend", "no-reply@acme.test", new MailProperties.Resend("https://api.resend.com", "re_test_123")),
-            metrics);
+    private final RestClient restClient = restClientBuilder
+            .baseUrl("https://api.resend.com")
+            .defaultHeader("Authorization", "Bearer re_test_123")
+            .defaultHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+            .build();
+    private final ResendEmailSender sender = new ResendEmailSender(restClient, "no-reply@acme.test", metrics);
 
     @Test
     void sendsMessageThroughResendApi() {

@@ -13,6 +13,8 @@ mail:
   resend:
     base-url: ${RESEND_BASE_URL:https://api.resend.com}
     api-key: ${RESEND_API_KEY:}
+    connect-timeout: ${RESEND_CONNECT_TIMEOUT:PT3S}
+    read-timeout: ${RESEND_READ_TIMEOUT:PT10S}
 
 spring:
   mail:

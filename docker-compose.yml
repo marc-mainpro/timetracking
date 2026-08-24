@@ -76,6 +76,8 @@ services:
       MAIL_FROM: ${MAIL_FROM:-no-reply@timetracking.local}
       RESEND_BASE_URL: ${RESEND_BASE_URL:-https://api.resend.com}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_CONNECT_TIMEOUT: ${RESEND_CONNECT_TIMEOUT:-PT3S}
+      RESEND_READ_TIMEOUT: ${RESEND_READ_TIMEOUT:-PT10S}
       # Base del enlace de las notificaciones por correo (T170-09). Se deriva
       # del origen del frontend, igual que los enlaces de verificacion.
       NOTIFICATION_APP_BASE_URL: ${NOTIFICATION_APP_BASE_URL:-${FRONTEND_ORIGIN:-http://localhost:4200}}

@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -27,13 +28,29 @@ public class ResendEmailSender implements EmailSender {
     private final NotificationMetrics metrics;
 
     public ResendEmailSender(RestClient.Builder restClientBuilder, MailProperties mailProperties, NotificationMetrics metrics) {
-        this.restClient = restClientBuilder
-                .baseUrl(mailProperties.resend().baseUrl())
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + mailProperties.resend().apiKey())
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
-        this.from = mailProperties.from();
+        this(createRestClient(restClientBuilder, mailProperties.resend()), mailProperties.from(), metrics);
+    }
+
+    ResendEmailSender(RestClient restClient, String from, NotificationMetrics metrics) {
+        this.restClient = restClient;
+        this.from = from;
         this.metrics = metrics;
+    }
+
+    private static SimpleClientHttpRequestFactory requestFactory(MailProperties.Resend resend) {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(resend.connectTimeout());
+        requestFactory.setReadTimeout(resend.readTimeout());
+        return requestFactory;
+    }
+
+    private static RestClient createRestClient(RestClient.Builder restClientBuilder, MailProperties.Resend resend) {
+        return restClientBuilder
+                .baseUrl(resend.baseUrl())
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + resend.apiKey())
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .requestFactory(requestFactory(resend))
+                .build();
     }
 
     @Override

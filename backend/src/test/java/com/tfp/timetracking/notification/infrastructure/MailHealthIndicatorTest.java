@@ -101,6 +101,10 @@ class MailHealthIndicatorTest {
     }
 
     private MailProperties mailProperties(boolean enabled, String provider, String apiKey) {
-        return new MailProperties(enabled, provider, "no-reply@acme.test", new MailProperties.Resend("https://api.resend.com", apiKey));
+        return new MailProperties(
+                enabled,
+                provider,
+                "no-reply@acme.test",
+                new MailProperties.Resend("https://api.resend.com", apiKey, java.time.Duration.ofSeconds(3), java.time.Duration.ofSeconds(10)));
     }
 }

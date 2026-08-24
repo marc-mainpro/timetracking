@@ -93,9 +93,10 @@ RAILWAY_TOKEN=xxx npx -y @railway/cli@5 redeploy \
   `spring.mail.*`; `resend` usa la API HTTP de Resend.
 - En modo `smtp`: `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`,
   `MAIL_SMTP_AUTH` y `MAIL_SMTP_STARTTLS`.
-- En modo `resend`: `RESEND_API_KEY` y opcionalmente `RESEND_BASE_URL`
-  (`https://api.resend.com` por defecto). `MAIL_HOST`, `MAIL_PORT`,
-  `MAIL_USERNAME` y `MAIL_PASSWORD` se ignoran.
+- En modo `resend`: `RESEND_API_KEY` y opcionalmente `RESEND_BASE_URL`,
+  `RESEND_CONNECT_TIMEOUT` y `RESEND_READ_TIMEOUT` (`https://api.resend.com`,
+  `PT3S` y `PT10S` por defecto). `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME` y
+  `MAIL_PASSWORD` se ignoran.
 - `MAIL_FROM`: remitente visible del correo. En Resend debe pertenecer a un
   dominio verificado para producción; `onboarding@resend.dev` sirve solo para
   pruebas de integración con su sandbox.
