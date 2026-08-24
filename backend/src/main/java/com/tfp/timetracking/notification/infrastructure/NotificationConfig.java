@@ -7,5 +7,5 @@ import org.springframework.context.annotation.Configuration;
 
 /** Activa la configuracion del modulo notification (config/notification.yml). */
 @Configuration
-@EnableConfigurationProperties({NotificationDeliveryProperties.class, NotificationEmailProperties.class})
+@EnableConfigurationProperties({NotificationDeliveryProperties.class, NotificationEmailProperties.class, MailProperties.class})
 public class NotificationConfig {}

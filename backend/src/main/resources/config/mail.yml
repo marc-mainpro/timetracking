@@ -1,14 +1,18 @@
 # Correo saliente (T110-01, ADR-0012).
 #
-# mail.enabled=false por defecto: sin SMTP configurado el contenedor levanta
-# LoggingEmailSender, que solo registra destinatario y asunto. Así ni los tests
-# ni un arranque local sin mailpit intentan abrir una conexión SMTP.
+# mail.enabled=false por defecto: sin proveedor configurado el contenedor
+# levanta LoggingEmailSender, que solo registra destinatario y asunto. Asi ni
+# los tests ni un arranque local sin mailpit intentan abrir una conexion real.
 #
-# Con mail.enabled=true hace falta que spring.mail.* apunte a un servidor real
-# (mailpit en desarrollo, ver docker-compose.yml).
+# Con mail.enabled=true, mail.provider=smtp usa spring.mail.*; y
+# mail.provider=resend usa la API HTTP de Resend.
 mail:
   enabled: ${MAIL_ENABLED:false}
+  provider: ${MAIL_PROVIDER:smtp}
   from: ${MAIL_FROM:no-reply@timetracking.local}
+  resend:
+    base-url: ${RESEND_BASE_URL:https://api.resend.com}
+    api-key: ${RESEND_API_KEY:}
 
 spring:
   mail:
