@@ -7,13 +7,19 @@ import org.springframework.util.StringUtils;
 @ConfigurationProperties(prefix = "mail")
 public record MailProperties(boolean enabled, String provider, String from, Resend resend) {
 
+    private static final String SMTP = "smtp";
+    private static final String RESEND = "resend";
+
     public MailProperties {
-        provider = StringUtils.hasText(provider) ? provider.trim().toLowerCase() : "smtp";
+        provider = StringUtils.hasText(provider) ? provider.trim().toLowerCase() : SMTP;
+        if (!SMTP.equals(provider) && !RESEND.equals(provider)) {
+            throw new IllegalArgumentException("mail.provider debe ser 'smtp' o 'resend'");
+        }
         resend = resend == null ? new Resend("https://api.resend.com", "") : resend;
     }
 
     public boolean usesResend() {
-        return "resend".equals(provider);
+        return RESEND.equals(provider);
     }
 
     public record Resend(String baseUrl, String apiKey) {
