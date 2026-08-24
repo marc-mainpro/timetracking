@@ -2,7 +2,8 @@
 
 ## Arranque y parada
 
-- Local/demo: `cp .env.example .env && docker compose up -d --build`
+- Local/demo desde las imágenes publicadas: `cp .env.example .env && docker compose up -d`
+- Local/demo construyendo desde fuente: `cp .env.example .env && docker compose -f docker-compose.local.yml up -d --build`
 - Parada: `docker compose down`
 - Limpieza completa: `docker compose down -v`
 
@@ -83,6 +84,24 @@ RAILWAY_TOKEN=xxx npx -y @railway/cli@5 redeploy \
 - `LOG_STRUCTURED_FORMAT` (formato de log: `ecs` por defecto; vacío = texto plano)
 - `OBSERVABILITY_OUTBOX_PENDING_THRESHOLD` (backlog a partir del cual el health
   check del Outbox pasa a `DEGRADED`; 1000 por defecto)
+
+### Correo saliente
+
+- `MAIL_ENABLED`: activa el adaptador real de correo. A `false`, el backend no
+  entrega nada y solo registra destinatario y asunto.
+- `MAIL_PROVIDER`: `smtp` o `resend`. `smtp` es el valor por defecto y usa
+  `spring.mail.*`; `resend` usa la API HTTP de Resend.
+- En modo `smtp`: `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`,
+  `MAIL_SMTP_AUTH` y `MAIL_SMTP_STARTTLS`.
+- En modo `resend`: `RESEND_API_KEY` y opcionalmente `RESEND_BASE_URL`,
+  `RESEND_CONNECT_TIMEOUT` y `RESEND_READ_TIMEOUT` (`https://api.resend.com`,
+  `PT3S` y `PT10S` por defecto). `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME` y
+  `MAIL_PASSWORD` se ignoran.
+- `MAIL_FROM`: remitente visible del correo. En Resend debe pertenecer a un
+  dominio verificado para producción; `onboarding@resend.dev` sirve solo para
+  pruebas de integración con su sandbox.
+- Railway Hobby no permite SMTP saliente: en ese entorno la configuración
+  soportada es `MAIL_PROVIDER=resend`.
 
 ### Alta de tenants y administración de plataforma (ADR-0010)
 
@@ -181,8 +200,9 @@ Estados y qué hacer con cada uno:
 - `UP`: nada.
 - `DEGRADED` (estado propio, responde **HTTP 200** a propósito para no provocar
   el reinicio de un contenedor sano): hay backlog de Outbox por encima del
-  umbral, mensajes `FAILED` esperando intervención, o el SMTP no responde. Ver
-  «Outbox FAILED» más abajo y revisar el servidor de correo.
+  umbral, mensajes `FAILED` esperando intervención, o el proveedor de correo no
+  responde / está mal configurado. Ver «Outbox FAILED» más abajo y revisar el
+  relay SMTP o la cuenta de Resend.
 - `DOWN`: la aplicación no puede servir; normalmente PostgreSQL inaccesible.
   Responde 503 y el orquestador reciclará el contenedor.
 - `UNKNOWN` en `mail`: `mail.enabled=false`. El correo está apagado a propósito

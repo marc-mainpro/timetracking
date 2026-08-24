@@ -31,11 +31,14 @@ servidor de correo estaba caído).
 
 3. **`mail.enabled=false` por defecto.** Con el flag apagado el contenedor
    levanta un `EmailSender` que solo registra destinatario y asunto. Ni los tests
-   ni un arranque local sin servidor de correo intentan abrir una conexión SMTP.
-   Con `mail.enabled=true` se activa `SmtpEmailSender`.
+   ni un arranque local sin proveedor de correo intentan abrir una conexión de
+   red. Con `mail.enabled=true`, `mail.provider=smtp` activa `SmtpEmailSender` y
+   `mail.provider=resend` activa `ResendEmailSender`.
 
 4. **`mailpit` como servidor SMTP de desarrollo**, en `docker-compose.yml`,
-   con interfaz web en el puerto 8025.
+   con interfaz web en el puerto 8025. En entornos que no permiten SMTP
+   saliente, el despliegue productivo puede usar `mail.provider=resend` sin
+   alterar el puerto `EmailSender` ni los consumidores.
 
 5. **Nunca se registra el cuerpo del mensaje** (RS-014): los correos de
    verificación y recuperación llevan tokens de un solo uso. Solo se registran
@@ -48,18 +51,21 @@ servidor de correo estaba caído).
 
 ## Consecuencias
 
-* (+) Un SMTP caído o lento no afecta a la latencia ni a la integridad de las
+* (+) Un proveedor de correo caído o lento no afecta a la latencia ni a la
+  integridad de las
   operaciones de negocio.
 * (+) Los reintentos, el backoff y la idempotencia son los del Outbox, ya
   probados; no hay una segunda infraestructura de reintento que mantener.
-* (+) Los tests corren sin servidor de correo y sin mocks de SMTP.
+* (+) Los tests corren sin servidor de correo y sin mocks de SMTP ni de la API
+  HTTP.
 * (−) El correo es asíncrono: entre la acción del usuario y la llegada del mensaje
   media al menos un ciclo de polling del Outbox (5 s por defecto). Aceptable para
   verificación y recuperación.
 * (−) Con el adaptador por defecto los tokens se pierden: para probar esos flujos
   hay que capturar los mensajes con un doble de test o levantar mailpit.
 * (−) `mailpit` no debe llegar a producción; el despliegue productivo tiene que
-  apuntar `MAIL_HOST` a un SMTP real.
+  apuntar a un proveedor real, ya sea por SMTP (`MAIL_HOST`) o por API HTTP
+  (`mail.provider=resend` con `RESEND_API_KEY`).
 
 ## Alternativas descartadas
 

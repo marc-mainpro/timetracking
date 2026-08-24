@@ -141,7 +141,7 @@ HTTP 200**. Reparto de estados:
 | `ping` (aplicación) | siempre | — | — | — |
 | `db` (PostgreSQL, de serie) | conexión válida | — | sin conexión | — |
 | `outbox` | backlog bajo umbral y 0 `FAILED` | backlog alto o algún `FAILED` | no se puede ni consultar la tabla | — |
-| `mail` | SMTP acepta la conexión | SMTP no responde | — | `mail.enabled=false` |
+| `mail` | el proveedor configurado está listo | el proveedor no responde o falta configuración | — | `mail.enabled=false` |
 
 `DOWN` queda reservado para lo que hace la aplicación inservible. El correo
 deshabilitado devuelve `UNKNOWN` con `enabled=false`: está apagado a propósito
