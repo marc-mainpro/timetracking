@@ -4,10 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-  # El escaneo de dependencias tambien corre semanalmente: una dependencia sin
-  # cambios puede volverse vulnerable sin que nadie toque el repositorio.
-  schedule:
-    - cron: '17 4 * * 1'
 
 # Permisos minimos para todo el workflow (T30-05). Ningun job publica
 # resultados, comenta PRs ni sube paquetes, asi que basta con leer el codigo.
