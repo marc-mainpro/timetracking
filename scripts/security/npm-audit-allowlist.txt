@@ -12,7 +12,7 @@
 #     advisory siga en la lista. Es intencionado: obliga a revisarla.
 #   - Aprobacion: ver docs/security/dependency-scanning-policy.md.
 #
-# Estado a 2026-08-24: 13 advisories high/critical, ninguno resoluble sin tocar
+# Estado a 2026-09-14: 14 advisories high/critical, ninguno resoluble sin tocar
 # dependencias mayores de Angular 19 o sin parche disponible en el upstream.
 
 # --- Cadena Angular 19: unico fix es actualizar a Angular 21 (breaking) ---
@@ -31,3 +31,4 @@ GHSA-x9g3-xrwr-cwfg|piscina|build|2026-11-04|Transitiva de @angular/build. Fix e
 GHSA-r28c-9q8g-f849|postcss|build|2026-11-04|Lectura de ficheros .map en tiempo de build con sourceMappingURL controlado; las fuentes del build son del propio repo. Fix exige devkit 21 (breaking).
 GHSA-5c6j-r48x-rmvq|serialize-javascript|build|2026-11-04|Transitiva de copy-webpack-plugin en la cadena de build. Fix exige devkit 21 (breaking).
 GHSA-52v5-jr5w-gjxr|sigstore|build|2026-11-04|Transitiva de @angular/cli (verificacion de firmas npm). Fix exige @angular/cli 21 (breaking).
+GHSA-w4pp-8pjf-rmxw|pacote|build|2026-12-15|Transitiva de @angular/cli 19 (ya fijada por override a 20.0.1 por un advisory previo). El parche es pacote 21.5.1, que solo entra con @angular/cli 21 (breaking). DoS en addGitSha al resolver dependencias git; el proyecto no declara ninguna dependencia git y pacote solo corre en `ng add`/`ng update`, nunca en el build de CI ni en la imagen del frontend.
